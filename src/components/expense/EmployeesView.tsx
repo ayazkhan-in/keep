@@ -172,7 +172,7 @@ export const EmployeesView: React.FC = () => {
       </div>
 
       {/* Employees Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {filteredEmployees.map((data) => {
           const emp = data.employee;
 
@@ -180,26 +180,26 @@ export const EmployeesView: React.FC = () => {
             <div
               key={emp.id}
               onClick={() => setInspectEmployee(emp)}
-              className="bg-white border border-[#E2E8F0] hover:border-indigo-300 hover:shadow-md rounded-2xl p-5 transition-all cursor-pointer flex flex-col justify-between group"
+              className="bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-xs rounded-xl p-3.5 transition-all cursor-pointer flex flex-col justify-between group"
             >
               <div>
                 {/* Header: Avatar, Name & Role */}
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-sm font-bold text-indigo-700 shadow-2xs">
+                <div className="flex items-start justify-between gap-2.5 mb-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700 shrink-0">
                       {emp.identity.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
                     </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-[#0F172A] group-hover:text-indigo-600 transition-colors">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-xs sm:text-sm text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
                         {emp.identity.name}
                       </h3>
-                      <p className="text-[11px] text-[#64748B] truncate">
-                        {emp.identity.email}
+                      <p className="text-[11px] text-slate-500 truncate">
+                        {emp.department} • {emp.homeCity}
                       </p>
                     </div>
                   </div>
 
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-semibold shrink-0 ${
                     emp.role === 'finance'
                       ? 'bg-purple-50 text-purple-700 border border-purple-200'
                       : 'bg-slate-100 text-slate-700'
@@ -208,59 +208,46 @@ export const EmployeesView: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Location & Department Pills */}
-                <div className="flex items-center gap-2 text-xs text-[#64748B] mb-4">
-                  <span className="flex items-center gap-1">
-                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{emp.department}</span>
-                  </span>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{emp.homeCity} ({data.cityTier})</span>
-                  </span>
-                </div>
-
-                {/* KPI Metrics Box */}
-                <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-center mb-4">
+                {/* Compact Financial Stats Row */}
+                <div className="grid grid-cols-3 gap-1.5 py-2 px-2.5 rounded-lg bg-slate-50 border border-slate-100 text-center mb-3">
                   <div>
-                    <div className="text-[10px] text-slate-500 uppercase font-mono-code">Claims</div>
-                    <div className="font-bold text-xs sm:text-sm text-[#0F172A]">{data.totalSubmitted}</div>
+                    <div className="text-[10px] text-slate-400 uppercase font-mono-code">Claims</div>
+                    <div className="font-bold text-xs text-slate-900">{data.totalSubmitted}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-slate-500 uppercase font-mono-code">Reimbursed</div>
-                    <div className="font-bold text-xs sm:text-sm text-emerald-700">₹{Math.round(data.approvedAmount).toLocaleString()}</div>
+                    <div className="text-[10px] text-slate-400 uppercase font-mono-code">Approved</div>
+                    <div className="font-bold text-xs text-emerald-700 font-mono-code">₹{Math.round(data.approvedAmount).toLocaleString()}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] text-slate-500 uppercase font-mono-code">Pending</div>
-                    <div className="font-bold text-xs sm:text-sm text-amber-700">₹{Math.round(data.inReviewAmount).toLocaleString()}</div>
+                    <div className="text-[10px] text-slate-400 uppercase font-mono-code">Pending</div>
+                    <div className="font-bold text-xs text-amber-700 font-mono-code">₹{Math.round(data.inReviewAmount).toLocaleString()}</div>
                   </div>
                 </div>
 
-                {/* Allowance Meter */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-600 font-medium">Daily Meal Cap ({data.cityTier})</span>
-                    <span className="font-mono-code font-bold text-slate-900">₹{data.dailyCap.toLocaleString()} / day</span>
+                {/* Minimal Allowance Meter */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                    <span>Allowance: {data.cityTier}</span>
+                    <span className="font-mono-code font-bold text-slate-800">{data.allowancePercent}% used</span>
                   </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${
+                      className={`h-full rounded-full transition-all ${
                         data.allowancePercent > 80 ? 'bg-amber-500' : 'bg-indigo-600'
                       }`}
-                      style={{ width: `${Math.max(5, data.allowancePercent)}%` }}
+                      style={{ width: `${Math.max(4, data.allowancePercent)}%` }}
                     />
                   </div>
                 </div>
               </div>
 
               {/* Card Footer */}
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-[11px] text-slate-500">
-                  {data.rejectedCount > 0 ? `${data.rejectedCount} flagged exceptions` : 'Clean record'}
+              <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span className="text-[11px]">
+                  {data.rejectedCount > 0 ? `${data.rejectedCount} flagged` : 'No flags'}
                 </span>
-                <span className="font-semibold text-indigo-600 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                  <span>Claims History</span>
+                <span className="font-semibold text-indigo-600 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
+                  <span>History</span>
                   <ChevronRight className="w-3.5 h-3.5" />
                 </span>
               </div>
@@ -271,7 +258,7 @@ export const EmployeesView: React.FC = () => {
 
       {/* Slide-over Detail Drawer for Selected Employee */}
       {inspectEmployee && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex justify-end">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex justify-end">
           <div className="w-full max-w-xl bg-white h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between">
             <div>
               {/* Drawer Header */}

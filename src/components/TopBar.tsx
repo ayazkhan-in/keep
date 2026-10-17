@@ -353,42 +353,44 @@ export const TopBar: React.FC<TopBarProps> = ({
                 </div>
               </div>
 
-              {/* Manage Section */}
-              <div className="pt-2 border-t border-[#F1F5F9]">
-                <p className="px-3 py-1 text-[11px] font-mono-code uppercase tracking-wider text-[#94A3B8] font-semibold">
-                  Manage
-                </p>
-                <div className="space-y-1 mt-1">
-                  {manageItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activeView === item.id;
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          setActiveView(item.id);
-                          setMobileMenuOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
-                          isActive
-                            ? 'bg-indigo-50 text-indigo-900 font-semibold'
-                            : 'text-[#475569] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-600' : 'text-[#94A3B8]'}`} />
-                          <span>{item.label}</span>
-                        </div>
-                        {item.badge && (
-                          <span className="text-[10px] font-mono-code font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
-                            {item.badge}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+              {/* Manage Section (Only for finance auditor / admin) */}
+              {(userRole === 'finance' || userRole === 'admin') && (
+                <div className="pt-2 border-t border-[#F1F5F9]">
+                  <p className="px-3 py-1 text-[11px] font-mono-code uppercase tracking-wider text-[#94A3B8] font-semibold">
+                    Manage
+                  </p>
+                  <div className="space-y-1 mt-1">
+                    {manageItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeView === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            setActiveView(item.id);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                            isActive
+                              ? 'bg-indigo-50 text-indigo-900 font-semibold'
+                              : 'text-[#475569] hover:bg-[#F8FAFC] hover:text-[#0F172A]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-600' : 'text-[#94A3B8]'}`} />
+                            <span>{item.label}</span>
+                          </div>
+                          {item.badge && (
+                            <span className="text-[10px] font-mono-code font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                              {item.badge}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Quick Actions & Account */}

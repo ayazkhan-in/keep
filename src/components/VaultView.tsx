@@ -276,7 +276,7 @@ TAX & COMPLIANCE:
                 </div>
               )}
 
-              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-2xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <span className="bg-white text-[#0F172A] text-[12px] font-medium px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" /> AI Deep Audit
                 </span>
@@ -340,10 +340,10 @@ TAX & COMPLIANCE:
       <AnimatePresence>
         {previewDoc && (
           <motion.div
-            initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-            animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
-            exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 16, filter: 'blur(8px)' }}

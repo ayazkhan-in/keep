@@ -164,10 +164,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-          animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
-          exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-          className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center pt-20 p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-start justify-center pt-20 p-4"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: -12, filter: 'blur(8px)' }}

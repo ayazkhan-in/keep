@@ -312,10 +312,10 @@ Return Window: 30 Days return policy`;
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-          animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
-          exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 16, filter: 'blur(8px)' }}
@@ -432,7 +432,7 @@ Return Window: 30 Days return policy`;
                       <p className="text-[13px] font-medium">{cameraError}</p>
                     </div>
                   ) : (
-                    <div className="relative w-full max-w-md aspect-[4/3] bg-black rounded-xl overflow-hidden flex items-center justify-center">
+                    <div className="relative w-full max-w-md aspect-[4/3] bg-slate-950 rounded-xl overflow-hidden flex items-center justify-center">
                       <video
                         ref={videoRef}
                         autoPlay
@@ -446,7 +446,7 @@ Return Window: 30 Days return policy`;
                           <span>RECEIPT SCANNER</span>
                           <span>AI READY</span>
                         </div>
-                        <div className="text-center text-[11px] text-white/80 bg-black/40 py-1 rounded">
+                        <div className="text-center text-[11px] text-white/80 bg-slate-900/60 py-1 rounded">
                           Position receipt within frame
                         </div>
                       </div>

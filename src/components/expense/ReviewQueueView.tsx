@@ -451,7 +451,7 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({ initialTab = '
                           {hasDup && !isDismissedDup && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-rose-100 text-rose-800 border border-rose-200">
                               <AlertTriangle className="w-2.5 h-2.5" />
-                              Duplicate Match ({(exp.duplicateInfo!.highestMatchScore * 100).toFixed(0)}%)
+                              Duplicate Match ({(((exp.duplicateInfo?.highestScore ?? (exp.duplicateInfo as any)?.highestMatchScore ?? 0)) * 100).toFixed(0)}%)
                             </span>
                           )}
 
@@ -484,11 +484,11 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({ initialTab = '
                     <div className="flex items-center justify-between md:justify-end gap-3 shrink-0 pl-7 md:pl-0">
                       <div className="text-right">
                         <div className="text-xs sm:text-sm font-bold text-[#0F172A]">
-                          ₹{(exp.normalizedCurrency.targetAmountMinor / 100).toFixed(2)}
+                          ₹{((exp.normalizedCurrency?.targetAmountMinor ?? 0) / 100).toFixed(2)}
                         </div>
-                        {exp.normalizedCurrency.sourceCurrency !== 'INR' && (
+                        {exp.normalizedCurrency?.sourceCurrency && exp.normalizedCurrency.sourceCurrency !== 'INR' && (
                           <div className="font-mono-code text-[10px] text-[#64748B]">
-                            {exp.normalizedCurrency.sourceAmount.toFixed(2)} {exp.normalizedCurrency.sourceCurrency}
+                            {((exp.normalizedCurrency.sourceAmount ?? (exp.normalizedCurrency.sourceAmountMinor / 100))).toFixed(2)} {exp.normalizedCurrency.sourceCurrency}
                           </div>
                         )}
                       </div>
@@ -543,7 +543,7 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({ initialTab = '
 
       {/* Evidence Timeline Modal */}
       {timelineExpense && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-xl border border-[#E2E8F0]">
             <EvidenceTimeline
               expense={timelineExpense}

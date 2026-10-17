@@ -153,7 +153,7 @@ export const ExportView: React.FC = () => {
         `"${exp.employeeId}"`,
         `"${category}"`,
         `"${merchant.replace(/"/g, '""')}"`,
-        exp.normalizedCurrency.sourceAmount.toFixed(2),
+        (exp.normalizedCurrency.sourceAmount ?? (exp.normalizedCurrency.sourceAmountMinor / 100)).toFixed(2),
         `"${exp.normalizedCurrency.sourceCurrency}"`,
         exp.normalizedCurrency.fxRate.toFixed(4),
         ((exp.verdict?.approvedAmountMinor || 0) / 100).toFixed(2),

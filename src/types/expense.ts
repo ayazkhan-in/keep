@@ -286,6 +286,7 @@ export interface ReceiptRef {
 
 export interface NormalizedCurrency {
   sourceCurrency: string;
+  sourceAmount?: number;
   sourceAmountMinor: number;
   targetCurrency: string;
   targetAmountMinor: number;

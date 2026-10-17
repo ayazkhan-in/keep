@@ -20,6 +20,15 @@ import {
   ChevronUp,
   Users,
   FileText,
+  LayoutDashboard,
+  ShoppingBag,
+  FileSpreadsheet,
+  FilePlus2,
+  ShieldCheck,
+  RotateCcw,
+  Vault,
+  BarChart3,
+  Clock,
 } from 'lucide-react';
 import { ActiveView } from '../types';
 import { UserRole } from '../types/expense';
@@ -56,16 +65,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { user, logout } = useAuth();
 
   // Legacy items grouped inside "Manage" dropdown
-  const manageItems: Array<{ id: ActiveView; label: string; badge?: string }> = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'purchases', label: 'Purchases' },
-    { id: 'invoices', label: 'Invoices' },
-    { id: 'create-invoice', label: 'Create Invoice' },
-    { id: 'warranties', label: 'Warranties' },
-    { id: 'returns', label: 'Returns', badge: riskCount > 0 ? `${riskCount}` : undefined },
-    { id: 'vault', label: 'Vault' },
-    { id: 'analytics', label: 'Analytics' },
-    { id: 'timeline', label: 'Timeline' },
+  const manageItems: NavItem[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
+    { id: 'invoices', label: 'Invoices', icon: FileSpreadsheet },
+    { id: 'create-invoice', label: 'Create Invoice', icon: FilePlus2 },
+    { id: 'warranties', label: 'Warranties', icon: ShieldCheck },
+    { id: 'returns', label: 'Returns', icon: RotateCcw, badge: riskCount > 0 ? `${riskCount}` : undefined },
+    { id: 'vault', label: 'Vault', icon: Vault },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'timeline', label: 'Timeline', icon: Clock },
   ];
 
   const isManageItemActive = manageItems.some((item) => item.id === activeView);
@@ -122,11 +131,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <h2 className="font-semibold text-base text-[#0F172A] tracking-tight leading-none flex items-center gap-1.5">
               <span>Keepr</span>
               <span className="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 font-bold uppercase">
-                Auditor
+                {userRole === 'finance' || userRole === 'admin' ? 'Auditor' : 'Employee'}
               </span>
             </h2>
             <p className="font-mono-code text-[10px] text-[#76777D] uppercase tracking-wider mt-1 truncate">
-              Corporate Intelligence
+              {userRole === 'finance' || userRole === 'admin' ? 'Corporate Intelligence' : 'Expense & Reimbursements'}
             </p>
           </div>
         </div>
@@ -161,65 +170,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
         })}
       </nav>
 
-      {/* Manage Section (Dropdown Accordion with Curved Tree-line Connector) */}
-      <div className="mt-3 pt-3 border-t border-[#F1F5F9]">
-        <button
-          onClick={() => setIsManageOpen(!isManageOpen)}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-semibold transition-colors cursor-pointer ${
-            isManageItemActive
-              ? 'text-indigo-900 bg-indigo-50/50'
-              : 'text-[#334155] hover:text-[#0F172A] hover:bg-[#F8FAFC]'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
-            <span>Manage</span>
-          </div>
-          {isManageOpen ? (
-            <ChevronUp className="w-4 h-4 text-[#94A3B8]" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-[#94A3B8]" />
-          )}
-        </button>
+      {/* Manage Section (Only for finance auditor / admin, NOT employee) */}
+      {(userRole === 'finance' || userRole === 'admin') && (
+        <div className="mt-2 pt-2 border-t border-[#F1F5F9]">
+          <button
+            onClick={() => setIsManageOpen(!isManageOpen)}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all cursor-pointer ${
+              isManageItemActive
+                ? 'text-indigo-900 bg-indigo-50/60 font-semibold'
+                : 'text-[#45464D] hover:text-[#0F172A] hover:bg-[#F9F9FB]'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              <span>Manage Tools</span>
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 text-[#94A3B8] transition-transform duration-200 ${isManageOpen ? 'rotate-180' : ''}`} />
+          </button>
 
-        {isManageOpen && (
-          <div className="relative mt-1">
-            {/* Continuous vertical trunk line connecting to the last branch */}
-            <div className="absolute left-[20px] top-0 bottom-4 w-px bg-slate-300 pointer-events-none" />
-
-            <div className="space-y-0.5">
+          {isManageOpen && (
+            <div className="space-y-0.5 mt-1">
               {manageItems.map((item) => {
+                const Icon = item.icon;
                 const isActive = activeView === item.id;
                 return (
-                  <div key={item.id} className="relative flex items-center h-8">
-                    {/* Curved branch line connecting trunk to item */}
-                    <span
-                      className="absolute left-[20px] top-0 h-4 w-3.5 border-l border-b border-slate-300 rounded-bl-[7px] pointer-events-none"
-                      aria-hidden="true"
-                    />
-
-                    <button
-                      onClick={() => setActiveView(item.id)}
-                      className={`w-full flex items-center justify-between pl-10 pr-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                        isActive
-                          ? 'text-indigo-700 bg-indigo-50 font-semibold'
-                          : 'text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC]'
-                      }`}
-                    >
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveView(item.id)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-[#F1F5F9] text-[#0F172A] shadow-xs font-semibold'
+                        : 'text-[#45464D] hover:text-[#0F172A] hover:bg-[#F9F9FB]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600' : 'text-[#76777D]'}`} />
                       <span className="truncate">{item.label}</span>
-                      {item.badge && (
-                        <span className="font-mono-code text-[10px] px-1.5 py-0.2 rounded-full bg-[#FEE2E2] text-[#991B1B] font-semibold">
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  </div>
+                    </div>
+                    {item.badge && (
+                      <span className="font-mono-code text-[10px] px-2 py-0.5 rounded-full bg-[#FEE2E2] text-[#991B1B] font-semibold">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
                 );
               })}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className="flex-1" />
 

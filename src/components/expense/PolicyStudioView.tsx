@@ -275,12 +275,13 @@ export const PolicyStudioView: React.FC = () => {
                   <div className="flex items-start justify-between gap-3 mb-2.5">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono-code ${
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold border ${
                           pol.status === 'active'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-800'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
+                            : 'bg-amber-50 text-amber-800 border-amber-200/60'
                         }`}>
-                          {pol.status === 'active' ? 'Active Standard' : 'Draft Revision'}
+                          <span className={`w-1.5 h-1.5 rounded-full ${pol.status === 'active' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                          <span>{pol.status === 'active' ? 'Active Standard' : 'Draft Revision'}</span>
                         </span>
                         <span className="text-xs font-mono-code text-slate-500">v{pol.versionNumber}</span>
                       </div>
@@ -530,7 +531,7 @@ export const PolicyStudioView: React.FC = () => {
 
       {/* UPLOAD POLICY DOCUMENT MODAL */}
       {isUploadModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2">
@@ -604,7 +605,7 @@ export const PolicyStudioView: React.FC = () => {
 
       {/* CREATE POLICY MANUALLY MODAL */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2">

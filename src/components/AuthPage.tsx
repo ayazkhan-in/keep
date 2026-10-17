@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Lock,
   Mail,
@@ -46,6 +46,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setActiveRole('employee');
       setActiveEmployee('emp_101');
     }
+  };
+
+  const handleQuickRoleEnter = (role: UserRole) => {
+    if (role === 'finance') {
+      setActiveRole('finance');
+      setActiveEmployee('emp_106');
+    } else {
+      setActiveRole('employee');
+      setActiveEmployee('emp_101');
+    }
+    onLoginSuccess();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,126 +107,73 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   };
 
   const handleGuestDemo = () => {
-    onLoginSuccess();
+    handleQuickRoleEnter(selectedRole);
   };
 
   return (
     <div
-      className="min-h-screen bg-cover bg-center bg-no-repeat flex flex-col justify-between relative selection:bg-[#0F172A] selection:text-white"
+      className="h-screen max-h-screen overflow-hidden bg-cover bg-center bg-no-repeat flex flex-col justify-between relative selection:bg-slate-900 selection:text-white"
       style={{ backgroundImage: "url('/bg.jpg')" }}
     >
-      {/* Top Header with Blur Appear */}
+      {/* Top Header */}
       <motion.header
-        initial={{ opacity: 0, y: -16, filter: 'blur(8px)' }}
+        initial={{ opacity: 0, y: -12, filter: 'blur(6px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between"
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="relative z-10 max-w-5xl w-full mx-auto px-4 py-3 flex items-center justify-between"
       >
         <button
           onClick={onBackToLanding}
-          className="inline-flex items-center gap-2 text-[13px] font-medium text-[#0F172A] bg-white/90 hover:bg-white border border-[#E2E8F0] px-4 py-2 rounded-full transition-all shadow-md backdrop-blur-md cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-800 bg-white/90 hover:bg-white border border-slate-200 px-3 py-1.5 rounded-full transition-all shadow-2xs backdrop-blur-md cursor-pointer"
         >
-          <ArrowLeft className="w-4 h-4 text-[#0F172A]" />
+          <ArrowLeft className="w-3.5 h-3.5 text-slate-700" />
           <span>Back to Overview</span>
         </button>
+
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono-code text-slate-600 bg-white/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-slate-200 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Audit Enclave v2.4
+          </span>
+        </div>
       </motion.header>
 
-      {/* Main Center Auth Container with Blur Appear */}
-      <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6 my-auto">
+      {/* Main Center Auth Container - Ultra compact & fits any viewport */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-2 my-auto">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20, filter: 'blur(16px)' }}
+          initial={{ opacity: 0, scale: 0.96, y: 16, filter: 'blur(12px)' }}
           animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-          transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
-          className="w-full max-w-md bg-white/95 backdrop-blur-2xl border border-white/80 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-8"
+          transition={{ duration: 0.45, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="w-full max-w-[410px] bg-white/95 backdrop-blur-2xl border border-white/90 rounded-2xl shadow-xl overflow-hidden p-5 sm:p-6"
         >
-          {/* Top Logo inside Auth Card */}
-          <div className="flex flex-col items-center justify-center mb-5">
-            <div className="w-14 h-14 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center shadow-xs mb-2.5">
-              <img src="/abstract.png" alt="Keepr Logo" className="w-9 h-9 object-contain" />
-            </div>
-            <span className="font-heading font-semibold text-2xl text-[#0F172A] tracking-tight">Keepr</span>
-          </div>
-
-          {/* Header text */}
-          <div className="text-center mb-6">
-            <h1 className="font-heading font-semibold text-xl text-[#0F172A] tracking-tight">
-              {mode === 'signin' ? 'Welcome back' : 'Create your account'}
-            </h1>
-            <p className="text-[13px] text-[#76777D] mt-1">
-              {mode === 'signin'
-                ? 'Sign in to access your assets, warranties & encrypted vault.'
-                : 'Start tracking warranties and safeguarding return deadlines today.'}
-            </p>
-
-            {/* Role Selection Slider */}
-            <div className="bg-[#F8FAFC] border border-[#E2E8F0] p-1.5 rounded-2xl mt-4 mb-3 text-left">
-              <div className="px-2 py-0.5 text-[10px] font-mono-code font-bold uppercase tracking-wider text-[#64748B]">
-                Select Workspace Persona
+          {/* Top Brand & Mode Switcher Row */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shadow-2xs shrink-0">
+                <img src="/abstract.png" alt="Keepr Logo" className="w-5 h-5 object-contain" />
               </div>
-              <div className="grid grid-cols-2 gap-1.5 mt-1">
-                <button
-                  type="button"
-                  onClick={() => handleRoleApply('employee')}
-                  className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    selectedRole === 'employee'
-                      ? 'bg-white text-[#0F172A] shadow-xs border border-[#E2E8F0]'
-                      : 'text-[#64748B] hover:text-[#0F172A]'
-                  }`}
-                >
-                  <UserIcon className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Employee</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRoleApply('finance')}
-                  className={`py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                    selectedRole === 'finance'
-                      ? 'bg-[#0F172A] text-white shadow-xs'
-                      : 'text-[#64748B] hover:text-[#0F172A]'
-                  }`}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Finance Auditor</span>
-                </button>
+              <div>
+                <span className="font-heading font-bold text-base text-slate-900 tracking-tight leading-none block">
+                  Keepr
+                </span>
+                <span className="text-[10px] text-slate-500 font-mono-code leading-none block mt-0.5">
+                  Corporate Ingestion
+                </span>
               </div>
-              <p className="px-2 pt-1.5 pb-0.5 text-[11px] text-[#64748B]">
-                {selectedRole === 'employee'
-                  ? 'Submit receipts, track allowances, and monitor reimbursement progress.'
-                  : 'Audit review queue, inspect all claims, manage policies & generate reports.'}
-              </p>
             </div>
 
-            {/* Quick 1-Click Role Login */}
-            <button
-              type="button"
-              onClick={() => {
-                if (selectedRole === 'finance') {
-                  setActiveRole('finance');
-                  setActiveEmployee('emp_106');
-                } else {
-                  setActiveRole('employee');
-                  setActiveEmployee('emp_101');
-                }
-                onLoginSuccess();
-              }}
-              className="w-full mb-3 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-2xs"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-              <span>Enter as {selectedRole === 'finance' ? 'Finance Auditor (Frank)' : 'Employee (Alice)'}</span>
-            </button>
-
-            {/* Mode Switcher Pills */}
-            <div className="flex bg-[#F1F5F9] p-1 rounded-xl mt-2 border border-[#E2E8F0]">
+            {/* Segmented Mode Switcher */}
+            <div className="flex bg-slate-100/90 p-0.5 rounded-lg border border-slate-200/80 text-[11px]">
               <button
                 type="button"
                 onClick={() => {
                   setMode('signin');
                   setError(null);
                 }}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                className={`px-2.5 py-1 font-semibold rounded-md transition-all cursor-pointer ${
                   mode === 'signin'
-                    ? 'bg-white text-[#0F172A] shadow-xs'
-                    : 'text-[#76777D] hover:text-[#0F172A]'
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
                 Sign In
@@ -226,22 +184,80 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   setMode('signup');
                   setError(null);
                 }}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                className={`px-2.5 py-1 font-semibold rounded-md transition-all cursor-pointer ${
                   mode === 'signup'
-                    ? 'bg-white text-[#0F172A] shadow-xs'
-                    : 'text-[#76777D] hover:text-[#0F172A]'
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                Create Account
+                Register
               </button>
             </div>
           </div>
 
+          {/* Modern Segmented Role Slider */}
+          <div className="relative bg-slate-100/90 p-1 rounded-xl flex items-center border border-slate-200/80 mb-2.5">
+            {/* Sliding background indicator */}
+            <div
+              className={`absolute top-1 bottom-1 rounded-lg bg-white shadow-xs border border-slate-200/60 transition-all duration-200 ease-out ${
+                selectedRole === 'employee' ? 'left-1 w-[calc(50%-4px)]' : 'left-[calc(50%+1px)] w-[calc(50%-4px)]'
+              }`}
+            />
+            <button
+              type="button"
+              onClick={() => handleRoleApply('employee')}
+              className={`relative z-10 flex-1 py-1.5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                selectedRole === 'employee' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <UserIcon
+                className={`w-3.5 h-3.5 transition-colors ${
+                  selectedRole === 'employee' ? 'text-blue-600' : 'text-slate-400'
+                }`}
+              />
+              <span>Employee</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleApply('finance')}
+              className={`relative z-10 flex-1 py-1.5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                selectedRole === 'finance' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <ShieldCheck
+                className={`w-3.5 h-3.5 transition-colors ${
+                  selectedRole === 'finance' ? 'text-indigo-600' : 'text-slate-400'
+                }`}
+              />
+              <span>Finance Auditor</span>
+            </button>
+          </div>
+
+          {/* Persona Helper & 1-Click Fast Enter */}
+          <div className="flex items-center justify-between px-2.5 py-1.5 mb-3 bg-slate-50 rounded-lg border border-slate-200/70 text-[11px]">
+            <div className="flex items-center gap-1.5 text-slate-600 truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              <span className="truncate">
+                {selectedRole === 'finance'
+                  ? 'Frank Castle (Finance Auditor)'
+                  : 'Alice Walker (Employee • emp_101)'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleQuickRoleEnter(selectedRole)}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 shrink-0 cursor-pointer"
+            >
+              <span>1-Click In</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+
           {/* Error Alert */}
           {error && (
-            <div className="flex items-start gap-2.5 p-3.5 mb-4 text-xs bg-red-50 text-red-700 border border-red-200 rounded-2xl">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
-              <span>{error}</span>
+            <div className="flex items-start gap-2 p-2.5 mb-3 text-xs bg-red-50 text-red-700 border border-red-200 rounded-xl">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500 mt-0.5" />
+              <span className="text-[11px] leading-tight">{error}</span>
             </div>
           )}
 
@@ -249,9 +265,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 bg-white hover:bg-[#F9F9FB] border border-[#E2E8F0] text-[#0F172A] rounded-xl text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 rounded-xl text-xs font-medium shadow-2xs transition-colors disabled:opacity-50 cursor-pointer mb-2.5"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -272,57 +288,57 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <span>Continue with Google</span>
           </button>
 
-          <div className="relative flex items-center justify-center my-4">
-            <div className="w-full border-t border-[#E2E8F0]" />
-            <span className="absolute bg-white px-3 text-[11px] text-[#94A3B8] font-mono-code">
-              OR EMAIL
+          <div className="relative flex items-center justify-center my-2.5">
+            <div className="w-full border-t border-slate-200" />
+            <span className="absolute bg-white px-2.5 text-[10px] text-slate-400 font-mono-code uppercase tracking-wider">
+              Or Work Email
             </span>
           </div>
 
           {/* Email Form */}
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form onSubmit={handleSubmit} className="space-y-2.5">
             {mode === 'signup' && (
               <div>
-                <label className="block text-[11px] font-semibold text-[#45464D] uppercase tracking-wider mb-1 font-mono-code">
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1 font-mono-code">
                   Full Name
                 </label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-2.5 w-4 h-4 text-[#94A3B8]" />
+                  <UserIcon className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400" />
                   <input
                     type="text"
                     required
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Alex Morgan"
-                    className="w-full pl-9 pr-3 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#0F172A] focus:bg-white transition-colors"
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#45464D] uppercase tracking-wider mb-1 font-mono-code">
-                Email Address
+              <label className="block text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1 font-mono-code">
+                Work Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-[#94A3B8]" />
+                <Mail className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="alex@keepr.ai"
-                  className="w-full pl-9 pr-3 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#0F172A] focus:bg-white transition-colors"
+                  placeholder="name@company.com"
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#45464D] uppercase tracking-wider mb-1 font-mono-code">
+              <label className="block text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1 font-mono-code">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-2.5 w-4 h-4 text-[#94A3B8]" />
+                <Lock className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400" />
                 <input
                   type="password"
                   required
@@ -330,7 +346,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl text-xs text-[#0F172A] focus:outline-none focus:border-[#0F172A] focus:bg-white transition-colors"
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-hidden focus:border-indigo-500 focus:bg-white transition-colors"
                 />
               </div>
             </div>
@@ -338,43 +354,39 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-2.5 bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
+              className="w-full mt-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <LogIn className="w-4 h-4" />
-                  <span>{mode === 'signin' ? 'Sign In to Dashboard' : 'Create Protected Account'}</span>
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>{mode === 'signin' ? 'Sign In to Workspace' : 'Create Protected Account'}</span>
                 </>
               )}
             </button>
           </form>
 
-          {/* Quick Demo Bypass Button */}
-          <div className="mt-5 pt-4 border-t border-[#E2E8F0] text-center">
+          {/* Quick Demo Bypass */}
+          <div className="mt-3 pt-2.5 border-t border-slate-200 text-center">
             <button
               onClick={handleGuestDemo}
-              className="w-full py-2 bg-[#F9F9FB] hover:bg-[#F1F5F9] border border-[#E2E8F0] text-[#0F172A] rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              className="text-[11px] text-slate-500 hover:text-slate-800 transition-colors inline-flex items-center gap-1 cursor-pointer font-medium hover:underline"
             >
-              <span>Explore as Guest (Instant Access)</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#76777D]" />
+              <span>Explore full workspace as guest preview</span>
+              <ArrowRight className="w-3 h-3 text-slate-400" />
             </button>
           </div>
         </motion.div>
       </main>
 
-      {/* Footer with Blur Appear */}
-      <motion.footer
-        initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }}
-        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-        transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
-        className="relative z-10 py-6 text-center text-xs text-[#0F172A]"
-      >
-        <span className="inline-block px-4 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-[#E2E8F0] shadow-xs font-medium">
+      {/* Footer */}
+      <footer className="relative z-10 py-3 text-center text-[11px] text-slate-600">
+        <span className="inline-block px-3 py-1 rounded-full bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-2xs">
           Protected by bank-grade zero-knowledge encryption enclave.
         </span>
-      </motion.footer>
+      </footer>
     </div>
   );
 };
+

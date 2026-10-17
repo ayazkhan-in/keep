@@ -128,10 +128,10 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-          animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
-          exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-          className="fixed inset-0 bg-black/60 z-50 flex justify-end"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex justify-end"
         >
           <motion.div
             initial={{ x: '100%', opacity: 0, filter: 'blur(10px)' }}

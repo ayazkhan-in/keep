@@ -201,21 +201,34 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
                       )}
                     </div>
 
-                    {/* Status Pill */}
+                    {/* Status Dot & Pill */}
                     <span
-                      className={`text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md border capitalize ${
                         exp.status === 'auto_approved' || exp.status === 'approved'
-                          ? 'bg-emerald-100 text-emerald-800'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
                           : exp.status === 'partially_approved'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200/60'
                           : exp.status === 'needs_info'
-                          ? 'bg-amber-100 text-amber-900'
+                          ? 'bg-amber-50 text-amber-800 border-amber-200/60'
                           : exp.status === 'rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-slate-100 text-slate-700'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200/60'
+                          : 'bg-slate-50 text-slate-700 border-slate-200/60'
                       }`}
                     >
-                      {exp.status.replace('_', ' ')}
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          exp.status === 'auto_approved' || exp.status === 'approved'
+                            ? 'bg-emerald-500'
+                            : exp.status === 'partially_approved'
+                            ? 'bg-blue-500'
+                            : exp.status === 'needs_info'
+                            ? 'bg-amber-500'
+                            : exp.status === 'rejected'
+                            ? 'bg-rose-500'
+                            : 'bg-slate-400'
+                        }`}
+                      />
+                      <span>{exp.status.replace('_', ' ')}</span>
                     </span>
 
                     <ChevronRight
@@ -251,7 +264,7 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
 
       {/* Modals */}
       {showTimelineModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-4 border border-[#E2E8F0] shadow-xl relative">
             <button
               onClick={() => setShowTimelineModal(null)}

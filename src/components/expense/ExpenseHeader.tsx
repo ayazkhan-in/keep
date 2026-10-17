@@ -46,7 +46,11 @@ export const ExpenseHeader: React.FC<ExpenseHeaderProps> = ({
         {/* Workspace Mode Indicator */}
         <div className="hidden sm:flex items-center gap-1.5 text-xs text-[#64748B]">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span className="font-medium text-[#334155]">Corporate Expense Auditor</span>
+          <span className="font-medium text-[#334155]">
+            {currentRole === 'finance' || currentRole === 'admin'
+              ? 'Corporate Audit & Finance Console'
+              : 'Employee Self-Service Portal'}
+          </span>
         </div>
       </div>
 
