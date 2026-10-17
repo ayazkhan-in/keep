@@ -62,7 +62,9 @@ const STORAGE_KEY_CURRENT_ROLE = 'keepr_active_role';
 
 export function getActiveEmployee(): Employee {
   try {
-    const savedId = localStorage.getItem(STORAGE_KEY_CURRENT_EMPLOYEE);
+    const savedId =
+      (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(STORAGE_KEY_CURRENT_EMPLOYEE) : null) ||
+      (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY_CURRENT_EMPLOYEE) : null);
     if (savedId) {
       const found = DEMO_EMPLOYEES.find((e) => e.id === savedId);
       if (found) return found;
@@ -74,16 +76,25 @@ export function getActiveEmployee(): Employee {
 }
 
 export function setActiveEmployee(employeeId: string): void {
-  localStorage.setItem(STORAGE_KEY_CURRENT_EMPLOYEE, employeeId);
+  try {
+    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(STORAGE_KEY_CURRENT_EMPLOYEE, employeeId);
+    if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY_CURRENT_EMPLOYEE, employeeId);
+  } catch (e) {}
   const found = DEMO_EMPLOYEES.find((e) => e.id === employeeId);
   if (found) {
-    localStorage.setItem(STORAGE_KEY_CURRENT_ROLE, found.role);
+    try {
+      if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(STORAGE_KEY_CURRENT_ROLE, found.role);
+      if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY_CURRENT_ROLE, found.role);
+    } catch (e) {}
   }
 }
 
 export function getActiveRole(): UserRole {
   try {
-    const role = localStorage.getItem(STORAGE_KEY_CURRENT_ROLE) as UserRole;
+    const role = (
+      (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(STORAGE_KEY_CURRENT_ROLE) : null) ||
+      (typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY_CURRENT_ROLE) : null)
+    ) as UserRole;
     if (role) return role;
   } catch (err) {
     console.error('Error reading active role:', err);
@@ -92,5 +103,8 @@ export function getActiveRole(): UserRole {
 }
 
 export function setActiveRole(role: UserRole): void {
-  localStorage.setItem(STORAGE_KEY_CURRENT_ROLE, role);
+  try {
+    if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(STORAGE_KEY_CURRENT_ROLE, role);
+    if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY_CURRENT_ROLE, role);
+  } catch (e) {}
 }

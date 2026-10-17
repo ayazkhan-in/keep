@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Mail, User as UserIcon, LogIn, AlertCircle, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useWorkspace } from '../context/WorkspaceContext';
 import { UserRole } from '../types/expense';
 import { setActiveRole, setActiveEmployee } from '../services/employeeService';
 
@@ -20,6 +21,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { handleRoleChange } = useWorkspace();
 
   const handleRoleApply = (role: UserRole) => {
     setSelectedRole(role);
@@ -38,9 +40,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (role === 'finance') {
       setActiveRole('finance');
       setActiveEmployee('emp_106');
+      handleRoleChange('finance');
     } else {
       setActiveRole('employee');
       setActiveEmployee('emp_101');
+      handleRoleChange('employee');
     }
     onClose();
   };
@@ -54,9 +58,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (selectedRole === 'finance') {
         setActiveRole('finance');
         setActiveEmployee('emp_106');
+        handleRoleChange('finance');
       } else {
         setActiveRole('employee');
         setActiveEmployee('emp_101');
+        handleRoleChange('employee');
       }
 
       if (mode === 'signin') {
@@ -79,9 +85,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (selectedRole === 'finance') {
         setActiveRole('finance');
         setActiveEmployee('emp_106');
+        handleRoleChange('finance');
       } else {
         setActiveRole('employee');
         setActiveEmployee('emp_101');
+        handleRoleChange('employee');
       }
       await signInWithGoogle();
       onClose();

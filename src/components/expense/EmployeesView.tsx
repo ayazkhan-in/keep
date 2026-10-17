@@ -187,7 +187,7 @@ export const EmployeesView: React.FC = () => {
                 <div className="flex items-start justify-between gap-2.5 mb-2.5">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-700 shrink-0">
-                      {emp.identity.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                      {(emp.identity?.name || 'Employee').split(' ').map((n) => n[0] || '').join('').slice(0, 2) || 'EM'}
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-xs sm:text-sm text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
@@ -265,7 +265,7 @@ export const EmployeesView: React.FC = () => {
               <div className="flex items-start justify-between border-b border-slate-200 pb-4 mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-base font-bold text-indigo-700">
-                    {inspectEmployee.identity.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                    {((inspectEmployee.identity?.name || 'Employee').split(' ').map((n) => n[0] || '').join('') || 'EM').slice(0, 2)}
                   </div>
                   <div>
                     <h2 className="font-bold text-lg text-[#0F172A]">

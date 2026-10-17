@@ -160,7 +160,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search receipts, items, warranties (⌘K)..."
+            placeholder="Search expenses, merchants, policies (⌘K)..."
             onClick={openCommandPalette}
             className="w-full pl-9 pr-14 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl text-[13px] text-[#0F172A] focus:outline-none focus:border-[#0F172A] focus:bg-white transition-colors placeholder:text-[#94A3B8] h-9.5 shadow-2xs"
           />

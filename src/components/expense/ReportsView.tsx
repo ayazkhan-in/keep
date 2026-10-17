@@ -252,7 +252,7 @@ export const ReportsView: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {reportExpenses.slice(0, 15).map((exp) => (
+                {(reportExpenses || []).slice(0, 15).map((exp) => (
                   <tr key={exp.id} className="hover:bg-slate-50">
                     <td className="py-2 px-2.5 font-mono-code font-bold text-slate-900">{exp.id}</td>
                     <td className="py-2 px-2.5 text-slate-600 whitespace-nowrap">{exp.expenseDate}</td>

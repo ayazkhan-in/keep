@@ -13,6 +13,7 @@ import {
   Check,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useWorkspace } from '../context/WorkspaceContext';
 import { UserRole } from '../types/expense';
 import { setActiveRole, setActiveEmployee } from '../services/employeeService';
 
@@ -34,6 +35,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [loading, setLoading] = useState(false);
 
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { handleRoleChange } = useWorkspace();
 
   const handleRoleApply = (role: UserRole) => {
     setSelectedRole(role);
@@ -52,9 +54,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     if (role === 'finance') {
       setActiveRole('finance');
       setActiveEmployee('emp_106');
+      handleRoleChange('finance');
     } else {
       setActiveRole('employee');
       setActiveEmployee('emp_101');
+      handleRoleChange('employee');
     }
     onLoginSuccess();
   };
@@ -68,9 +72,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       if (selectedRole === 'finance') {
         setActiveRole('finance');
         setActiveEmployee('emp_106');
+        handleRoleChange('finance');
       } else {
         setActiveRole('employee');
         setActiveEmployee('emp_101');
+        handleRoleChange('employee');
       }
 
       if (mode === 'signin') {
@@ -93,9 +99,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       if (selectedRole === 'finance') {
         setActiveRole('finance');
         setActiveEmployee('emp_106');
+        handleRoleChange('finance');
       } else {
         setActiveRole('employee');
         setActiveEmployee('emp_101');
+        handleRoleChange('employee');
       }
       await signInWithGoogle();
       onLoginSuccess();

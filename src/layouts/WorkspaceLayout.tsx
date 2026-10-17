@@ -99,10 +99,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ portal }) => {
         />
 
         {/* Corporate Expense Header */}
-        <ExpenseHeader
-          currentRole={currentRole}
-          onRoleChange={handleRoleChange}
-        />
+        <ExpenseHeader currentRole={currentRole} />
 
         {/* Viewport Screen */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-7 max-w-7xl w-full mx-auto">

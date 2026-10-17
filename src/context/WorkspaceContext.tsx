@@ -93,8 +93,37 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Role state initialized from storage
-  const [currentRole, setCurrentRole] = useState<UserRole>(() => getActiveRole());
+  // Role state initialized from route context or tab session storage
+  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
+    if (typeof window !== 'undefined') {
+      const p = window.location.pathname.toLowerCase();
+      if (p.startsWith('/auditor')) {
+        setActiveRole('finance');
+        return 'finance';
+      }
+      if (p.startsWith('/employee')) {
+        setActiveRole('employee');
+        return 'employee';
+      }
+    }
+    return getActiveRole();
+  });
+
+  // Keep role in sync with active portal route
+  useEffect(() => {
+    const p = location.pathname.toLowerCase();
+    if (p.startsWith('/auditor')) {
+      if (currentRole !== 'finance' && currentRole !== 'admin') {
+        setCurrentRole('finance');
+        setActiveRole('finance');
+      }
+    } else if (p.startsWith('/employee')) {
+      if (currentRole !== 'employee') {
+        setCurrentRole('employee');
+        setActiveRole('employee');
+      }
+    }
+  }, [location.pathname, currentRole]);
 
   // Derive active view automatically from current URL
   const activeView = useMemo(() => getPathToView(location.pathname), [location.pathname]);

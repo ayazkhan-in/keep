@@ -86,7 +86,7 @@ export const AppRoutes: React.FC = () => {
       <Route
         path={ROUTES.EMPLOYEE.ROOT}
         element={
-          <RoleGuard allowedRoles={['employee', 'finance', 'admin']}>
+          <RoleGuard allowedRoles={['employee', 'admin']}>
             <EmployeeLayout />
           </RoleGuard>
         }
