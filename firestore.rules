@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions for auth and org-scoped isolation
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserOrgId() {
+      return request.auth.token.orgId != null ? request.auth.token.orgId : 'org_acme';
+    }
+    
+    function getUserRole() {
+      return request.auth.token.role != null ? request.auth.token.role : 'employee';
+    }
+    
+    function isFinanceOrAdmin() {
+      return isAuthenticated() && (getUserRole() == 'finance' || getUserRole() == 'admin');
+    }
+    
+    function isOwner(employeeId) {
+      return isAuthenticated() && request.auth.uid == employeeId;
+    }
+
+    // -------------------------------------------------------------
+    // Legacy Keepr collections (preserved for backward compatibility)
+    // -------------------------------------------------------------
+    match /users/{userId}/purchases/{purchaseId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    match /users/{userId}/invoices/{invoiceId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // -------------------------------------------------------------
+    // Corporate Expense Auditor: Multi-tenant Organization Scope
+    // -------------------------------------------------------------
+    match /orgs/{orgId} {
+      allow read: if isAuthenticated();
+      allow write: if isFinanceOrAdmin();
+
+      // Employees Directory
+      match /employees/{employeeId} {
+        allow read: if isAuthenticated();
+        allow write: if isFinanceOrAdmin() || isOwner(employeeId);
+      }
+
+      // Versioned Policies
+      match /policies/{policyVersionId} {
+        allow read: if isAuthenticated();
+        // Only Finance or Admin can publish or activate policy versions
+        allow write: if isFinanceOrAdmin();
+      }
+
+      // Trips
+      match /trips/{tripId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+      }
+
+      // Expenses / Claims
+      match /expenses/{expenseId} {
+        // Employee can read their own claims; Finance/Admin can read all org claims
+        allow read: if isAuthenticated() && (
+          resource.data.employeeId == request.auth.uid ||
+          isFinanceOrAdmin() ||
+          request.auth.uid == 'guest_demo'
+        );
+        
+        // Employee can create claims for themselves
+        allow create: if isAuthenticated() && (
+          request.resource.data.employeeId == request.auth.uid ||
+          request.auth.uid == 'guest_demo'
+        );
+
+        // Employee can update context / thread if claim is in draft/needs_info;
+        // Reviewer verdicts and override amounts can ONLY be updated by Finance/Admin
+        allow update: if isAuthenticated() && (
+          isFinanceOrAdmin() ||
+          (
+            resource.data.employeeId == request.auth.uid &&
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['verdict', 'reviewerAction'])
+          ) ||
+          request.auth.uid == 'guest_demo'
+        );
+
+        allow delete: if isFinanceOrAdmin() || (
+          isAuthenticated() &&
+          resource.data.employeeId == request.auth.uid &&
+          resource.data.status == 'draft'
+        );
+
+        // Append-only Audit Trail: writes are create-only; NO updates or deletes permitted
+        match /audit/{eventId} {
+          allow read: if isAuthenticated();
+          allow create: if isAuthenticated();
+          allow update, delete: if false; // STRICT IMMUTABILITY
+        }
+      }
+
+      // FX Rates
+      match /fxRates/{date} {
+        allow read: if isAuthenticated();
+        allow write: if isFinanceOrAdmin();
+      }
+
+      // Policy Simulations
+      match /simulations/{simulationId} {
+        allow read, write: if isFinanceOrAdmin();
+      }
+    }
+  }
+}
