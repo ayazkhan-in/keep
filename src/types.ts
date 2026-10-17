@@ -99,6 +99,7 @@ export type ActiveView =
   | 'my-expenses'
   | 'submit-expense'
   | 'my-caps'
+  | 'employee-policies'
   | 'trips'
   | 'messages'
   | 'review-queue'

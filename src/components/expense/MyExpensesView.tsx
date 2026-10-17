@@ -21,6 +21,7 @@ import { VerdictCard } from './VerdictCard';
 import { EvidenceTimeline } from './EvidenceTimeline';
 import { DuplicateCompareModal } from './DuplicateCompareModal';
 import { FixItModal } from './FixItModal';
+import { EmployeePolicyAssistant } from './EmployeePolicyAssistant';
 
 interface MyExpensesViewProps {
   onNavigateToSubmit: () => void;
@@ -97,6 +98,9 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Employee Policy Coverage Assistant */}
+      <EmployeePolicyAssistant />
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

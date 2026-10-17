@@ -251,7 +251,7 @@ export const ExportView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight flex items-center gap-2.5">
-            <FileSpreadsheet className="w-6 h-6 text-indigo-600" />
+            <FileSpreadsheet className="w-6 h-6 text-emerald-600" />
             Batch Reimbursement & Accounting Export
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
@@ -318,7 +318,7 @@ export const ExportView: React.FC = () => {
             Historical Disbursed (Paid)
           </span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-indigo-700">
+            <span className="text-xl font-bold text-emerald-700">
               ₹{stats.paidTotal.toLocaleString()}
             </span>
             <span className="text-xs text-[#64748B]">
@@ -389,7 +389,7 @@ export const ExportView: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by claim ID, merchant, employee..."
-              className="w-full pl-8 pr-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs focus:outline-none focus:border-indigo-500"
+              className="w-full pl-8 pr-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs focus:outline-none focus:border-emerald-500"
             />
           </div>
         </div>
@@ -407,7 +407,7 @@ export const ExportView: React.FC = () => {
                       selectedIds.size === exportableExpenses.length
                     }
                     onChange={handleSelectAll}
-                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                   />
                 </th>
                 <th className="py-2.5 px-3 font-semibold">Claim ID</th>
@@ -438,7 +438,7 @@ export const ExportView: React.FC = () => {
                     <tr
                       key={exp.id}
                       className={`hover:bg-[#F8FAFC] transition-colors ${
-                        isChecked ? 'bg-indigo-50/40' : ''
+                        isChecked ? 'bg-emerald-50/40' : ''
                       }`}
                     >
                       <td className="py-2.5 px-3">
@@ -446,7 +446,7 @@ export const ExportView: React.FC = () => {
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => handleToggleSelect(exp.id)}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                          className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                         />
                       </td>
                       <td className="py-2.5 px-3 font-mono-code font-bold text-[#0F172A]">
@@ -474,7 +474,7 @@ export const ExportView: React.FC = () => {
                             : exp.status === 'approved'
                             ? 'bg-emerald-50 text-emerald-700'
                             : exp.status === 'paid'
-                            ? 'bg-indigo-50 text-indigo-700'
+                            ? 'bg-emerald-50 text-emerald-700'
                             : 'bg-slate-100 text-slate-700'
                         }`}>
                           {exp.status}

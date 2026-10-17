@@ -63,7 +63,7 @@ export const ScorecardView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight flex items-center gap-2.5">
-            <BarChart3 className="w-6 h-6 text-indigo-600" />
+            <BarChart3 className="w-6 h-6 text-emerald-600" />
             Analytics Scorecard & Live Benchmark
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
@@ -76,7 +76,7 @@ export const ScorecardView: React.FC = () => {
           <button
             onClick={handleRunBenchmark}
             disabled={isRunning}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer"
           >
             <Play className={`w-4 h-4 fill-white ${isRunning ? 'animate-spin' : ''}`} />
             <span>{isRunning ? 'Benchmarking...' : 'Run Live Benchmark'}</span>
@@ -122,7 +122,7 @@ export const ScorecardView: React.FC = () => {
             <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
               <div className="flex items-center justify-between text-[#64748B]">
                 <span className="text-[10px] font-mono-code uppercase tracking-wider font-semibold">Decision Accuracy</span>
-                <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               </div>
               <div className="mt-1 flex items-baseline gap-1.5">
                 <span className="text-2xl font-bold text-[#0F172A]">
@@ -220,7 +220,7 @@ export const ScorecardView: React.FC = () => {
               </span>
               <div className="flex items-center justify-between pt-1">
                 <span className="text-xs text-[#475569]">Est. Time Saved:</span>
-                <span className="text-sm font-bold text-indigo-700 font-mono-code">
+                <span className="text-sm font-bold text-emerald-700 font-mono-code">
                   {(benchmarkData.metrics.estimatedTimeSavedMinutes / 60).toFixed(1)} Hours
                 </span>
               </div>
@@ -284,7 +284,7 @@ export const ScorecardView: React.FC = () => {
                     value={filterQuery}
                     onChange={(e) => setFilterQuery(e.target.value)}
                     placeholder="Search claims..."
-                    className="w-full pl-8 pr-3 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs focus:outline-none focus:border-indigo-500"
+                    className="w-full pl-8 pr-3 py-1 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-xs focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>

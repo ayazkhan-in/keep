@@ -5,13 +5,16 @@ import './index.css';
 import './firebase.ts';
 import { AuthProvider } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <CurrencyProvider>
-        <App />
-      </CurrencyProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <CurrencyProvider>
+          <App />
+        </CurrencyProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </StrictMode>,
 );

@@ -14,6 +14,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { PurchaseItem } from '../types';
+import { getActivePolicy, queryPolicyGrounded } from '../services/policyService';
 
 interface Message {
   id: string;
@@ -44,7 +45,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
       id: 'msg-welcome',
       role: 'assistant',
       content:
-        "Hello! I am your Keepr AI Purchase & Warranty Intelligence Assistant. Ask me anything about your active warranties, upcoming return deadlines, receipt vaults, or tax deductibles.",
+        "Hello! I am your Keepr AI Assistant. Ask me anything about corporate reimbursement policies (e.g. 'Can I expense a cab after 10 pm?', 'Is dinner alcohol covered?'), spend allowances, or warranty records.",
       timestamp: 'Just now',
     },
   ]);
@@ -72,6 +73,30 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
     setIsTyping(true);
 
     try {
+      const activePolicy = getActivePolicy();
+      const grounded = queryPolicyGrounded(text, activePolicy);
+      const isPolicyQuery =
+        !grounded.isSilent ||
+        /policy|reimburse|expense|cover|meal|cab|taxi|alcohol|beer|receipt|dinner|allowance|cap|threshold|deadline/i.test(
+          text
+        );
+
+      if (isPolicyQuery) {
+        let reply = grounded.answer;
+        if (grounded.citedRule) {
+          reply += `\n\n📌 Policy Citation: ${grounded.citedRule.title} (${grounded.citedRule.section})`;
+        }
+        const assistantMessage: Message = {
+          id: `ai-${Date.now()}`,
+          role: 'assistant',
+          content: reply,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        setIsTyping(false);
+        return;
+      }
+
       // Build conversation history format for backend
       const history = messages
         .filter((m) => m.id !== 'msg-welcome')
@@ -96,7 +121,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
         role: 'assistant',
         content:
           data.reply ||
-          "I've analyzed your purchases and records. Let me know if you need specific claim forms or return draft notices.",
+          "I've analyzed your records. Ask me anything about corporate reimbursement policies, receipts, or warranties.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -118,10 +143,10 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   };
 
   const samplePrompts = [
-    'Which return windows are closing soon?',
-    'What is my total tax-deductible expense amount?',
-    'Check warranty status on my Breville espresso machine',
-    'Calculate depreciation on my electronics',
+    'Can I expense a cab after 10 pm?',
+    'Is alcohol covered with client dinner?',
+    'What is the daily meal cap in Mumbai?',
+    'What is the receipt submission deadline?',
   ];
 
   return (

@@ -11,6 +11,7 @@ import {
 import { getActivePolicy } from '../../services/policyService';
 import { getActiveEmployee } from '../../services/employeeService';
 import { getEmployeeExpenses } from '../../services/expenseService';
+import { EmployeePolicyAssistant } from './EmployeePolicyAssistant';
 
 export const MyCapsView: React.FC = () => {
   const activeEmp = getActiveEmployee();
@@ -37,6 +38,9 @@ export const MyCapsView: React.FC = () => {
           Live meters tracking daily, per-claim, and city-tier corporate reimbursement allowances
         </p>
       </div>
+
+      {/* Coverage Checker Assistant */}
+      <EmployeePolicyAssistant />
 
       {/* Main Meter Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -71,10 +75,10 @@ export const MyCapsView: React.FC = () => {
         <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#0F172A] flex items-center gap-1.5">
-              <Scale className="w-3.5 h-3.5 text-indigo-600" />
+              <Scale className="w-3.5 h-3.5 text-emerald-600" />
               Per-Transaction Meal Cap
             </span>
-            <span className="text-xs font-mono-code font-bold text-indigo-700">
+            <span className="text-xs font-mono-code font-bold text-emerald-700">
               ₹2,000 / claim
             </span>
           </div>
@@ -127,10 +131,10 @@ export const MyCapsView: React.FC = () => {
                 <td className="py-2.5 text-[#64748B]">Section 4.1</td>
               </tr>
               <tr>
-                <td className="py-2.5 font-bold text-purple-900">International Travel</td>
+                <td className="py-2.5 font-bold text-emerald-900 dark:text-emerald-300">International Travel</td>
                 <td className="py-2.5">All international business destinations</td>
-                <td className="py-2.5 font-mono-code font-bold text-purple-700">₹6,500 equiv. / day</td>
-                <td className="py-2.5 text-[#64748B]">Section 4.1</td>
+                <td className="py-2.5 font-mono-code font-bold text-emerald-700 dark:text-emerald-400">₹6,500 equiv. / day</td>
+                <td className="py-2.5 text-[#64748B] dark:text-slate-400">Section 4.1</td>
               </tr>
             </tbody>
           </table>

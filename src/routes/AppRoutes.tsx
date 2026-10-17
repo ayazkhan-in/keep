@@ -16,6 +16,7 @@ import { getActiveRole } from '../services/employeeService';
 import { MyExpensesPage } from '../pages/employee/MyExpensesPage';
 import { SubmitExpensePage } from '../pages/employee/SubmitExpensePage';
 import { MyCapsPage } from '../pages/employee/MyCapsPage';
+import { EmployeePoliciesPage } from '../pages/employee/EmployeePoliciesPage';
 import { TripsPage } from '../pages/employee/TripsPage';
 
 // Auditor Pages
@@ -96,6 +97,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="submit" element={<SubmitExpensePage />} />
         <Route path="allowances" element={<MyCapsPage />} />
         <Route path="caps" element={<Navigate to={ROUTES.EMPLOYEE.ALLOWANCES} replace />} />
+        <Route path="policies" element={<EmployeePoliciesPage />} />
+        <Route path="policy" element={<Navigate to={ROUTES.EMPLOYEE.POLICIES} replace />} />
         <Route path="trips" element={<TripsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

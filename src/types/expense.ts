@@ -214,6 +214,9 @@ export interface PolicyRule {
   priority: number; // lower number = higher priority
   enabled: boolean;
   sourceQuote?: string; // Exact quote from policy document
+  sourceParagraphIndex?: number;
+  isAmbiguous?: boolean;
+  ambiguityNote?: string;
   conditions: {
     category?: string[];
     isTravel?: boolean;
@@ -238,6 +241,7 @@ export interface PolicyRule {
     thresholdAmountMinor?: number;
     timeWindowDays?: number;
     documentTypes?: string[];
+    onViolationBehavior?: 'reject' | 'cap' | 'escalate' | 'require_info';
   };
 }
 
@@ -259,8 +263,43 @@ export interface PolicyVersion {
     fxRates: Record<string, number>; // currency -> multiplier to base
   };
   conflictWarnings: string[];
+  dismissedWarnings?: Array<{ warningId: string; warningText: string; note: string; dismissedAt: string; dismissedBy?: string }>;
+  changeNote?: string;
   createdAt: string;
   activatedAt?: string;
+}
+
+export interface PolicyAuditEntry {
+  id: string;
+  policyId: string;
+  versionNumber: number;
+  policyName: string;
+  changeNote: string;
+  activatedBy: string;
+  activatedAt: string;
+  reevaluatedPendingCount: number;
+  rulesCount: number;
+}
+
+export interface PolicyGapSuggestion {
+  id: string;
+  issue: string;
+  affectedClaimsCount: number;
+  category: string;
+  suggestedRule: Partial<PolicyRule>;
+  explanation: string;
+}
+
+export interface StructuredConflictWarning {
+  id: string;
+  type: 'same_priority_caps' | 'threshold_lower_than_cap' | 'exclusion_contradiction' | 'missing_tier' | 'wording_ambiguity' | 'other';
+  severity: 'warning' | 'error';
+  title: string;
+  description: string;
+  ruleIds: string[];
+  sourceQuotes: string[];
+  isDismissed?: boolean;
+  dismissalNote?: string;
 }
 
 export interface ThreadMessage {

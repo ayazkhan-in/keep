@@ -1,723 +1,1804 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  FileText,
-  Shield,
-  HelpCircle,
-  AlertTriangle,
-  CheckCircle2,
   Plus,
   Search,
-  Sparkles,
-  Layers,
-  ChevronDown,
-  ChevronRight,
-  Sliders,
-  DollarSign,
-  Calendar,
-  Lock,
-  ArrowRight,
-  BookOpen,
-  Globe,
-  Quote,
   Upload,
+  CheckCircle2,
+  AlertTriangle,
+  ChevronRight,
+  RotateCcw,
+  Sparkles,
+  HelpCircle,
   X,
+  Code,
+  Edit3,
+  Trash2,
+  ArrowRight,
+  Play,
+  History,
   FileCheck2,
+  XCircle,
+  UploadCloud,
+  FileText,
+  Check,
+  Building,
 } from 'lucide-react';
-import { PolicyRule, PolicyVersion } from '../../types/expense';
+import {
+  PolicyRule,
+  PolicyVersion,
+  StructuredConflictWarning,
+  PolicyGapSuggestion,
+  CityTier,
+  Expense,
+} from '../../types/expense';
 import {
   getActivePolicy,
   saveActivePolicy,
   getDraftPolicy,
   saveDraftPolicy,
+  deleteDraftPolicy,
+  getAllPolicies,
+  getPolicyAuditLog,
   activateDraftPolicy,
+  createDraftFromActive,
+  createDraftFromTemplate,
+  createDraftFromText,
+  dismissConflictWarning,
+  getStructuredPolicyConflicts,
+  detectPolicyGaps,
   queryPolicyGrounded,
+  calculatePolicyDiff,
   DEFAULT_ACME_POLICY,
 } from '../../services/policyService';
-import { detectPolicyConflicts } from '../../engine/policySchema';
+import { evaluateExpense } from '../../engine/evaluator';
+import { ExpenseLedger } from '../../engine/ledger';
+import { simulatePolicyChange } from '../../engine/simulator';
+import { getAllExpenses } from '../../services/expenseService';
+import { DEMO_EMPLOYEES } from '../../services/employeeService';
+import { SYNTHETIC_EXPENSES } from '../../data/syntheticClaims';
+
+type StudioTab = 'review' | 'tiers' | 'checks' | 'test' | 'diff' | 'qa';
+
+const SAMPLE_POLICY_TEXT = `ACME CORPORATE TRAVEL & REIMBURSEMENT POLICY (REV 2026.2)
+
+1. DAILY MEAL PER-DIEM
+Tier-1 Cities (Mumbai, Bengaluru, Delhi, Hyderabad): Capped at ₹3,000 per day.
+Tier-2 Cities (Pune, Chennai, Kolkata, Ahmedabad): Capped at ₹1,800 per day.
+Tier-3 Cities (Jaipur, Goa, and domestic remote): Capped at ₹1,200 per day.
+
+2. NON-REIMBURSABLE EXPENSES
+Alcohol, tobacco products, minibar items, and parking/traffic fines are non-reimbursable. Associated statutory taxes will be excluded proportionally.
+
+3. APPROVAL THRESHOLDS
+Claims below ₹10,000 are eligible for automated touchless approval. Claims between ₹10,000 and ₹50,000 require Finance authorization. Claims exceeding ₹50,000 require CFO executive approval.
+
+4. TIMELY SUBMISSION DEADLINE
+All itemized receipts must be submitted within 30 calendar days of the transaction date.`;
 
 export const PolicyStudioView: React.FC = () => {
   const [activePolicy, setActivePolicy] = useState<PolicyVersion>(() => getActivePolicy());
-  const [draftPolicy, setDraftPolicy] = useState<PolicyVersion>(() => getDraftPolicy());
+  const [allPolicies, setAllPolicies] = useState<PolicyVersion[]>(() => getAllPolicies());
   const [selectedPolicyId, setSelectedPolicyId] = useState<string>(() => getActivePolicy().id);
+  const [activeTab, setActiveTab] = useState<StudioTab>('review');
+
+  const selectedPolicy = useMemo(() => {
+    return allPolicies.find((p) => p.id === selectedPolicyId) || activePolicy;
+  }, [allPolicies, selectedPolicyId, activePolicy]);
+
+  const isDraft = selectedPolicy.status === 'draft';
+  const isActive = selectedPolicy.status === 'active';
+
+  // Side-by-side Bi-directional Highlighting state
+  const [highlightedRuleId, setHighlightedRuleId] = useState<string | null>(null);
+  const [highlightedParagraphIdx, setHighlightedParagraphIdx] = useState<number | null>(null);
+
+  // Filter & Search in Review Tab
   const [ruleTypeFilter, setRuleTypeFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [ruleSearchQuery, setRuleSearchQuery] = useState('');
 
-  // Modals
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  // Modals & Extraction
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [uploadText, setUploadText] = useState('');
-  const [uploadedFileName, setUploadedFileName] = useState('');
+  const [createMode, setCreateMode] = useState<'upload' | 'template' | 'manual'>('upload');
+  const [selectedTemplate, setSelectedTemplate] = useState<'enterprise' | 'tech_startup'>('enterprise');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionProgress, setExtractionProgress] = useState('');
 
-  // Manual Creation Form State
-  const [manualTitle, setManualTitle] = useState('Acme Global Travel & Expense Policy 2026.2');
+  // Upload state
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const [uploadedFileSize, setUploadedFileSize] = useState<string | null>(null);
+  const [uploadText, setUploadText] = useState('');
+
+  // Manual creation state
+  const [manualTitle, setManualTitle] = useState('Acme Global T&E Policy 2026.2');
   const [manualCurrency, setManualCurrency] = useState('INR');
   const [manualTier1Cap, setManualTier1Cap] = useState('3000');
   const [manualTier2Cap, setManualTier2Cap] = useState('1800');
   const [manualThreshold, setManualThreshold] = useState('10000');
-  const [manualLateWindow, setManualLateWindow] = useState('30');
+
+  // Rule Editor Modal (Form vs Raw JSON)
+  const [editingRule, setEditingRule] = useState<PolicyRule | null>(null);
+  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
+  const [editInJsonMode, setEditInJsonMode] = useState(false);
+  const [ruleJsonText, setRuleJsonText] = useState('');
+  const [ruleJsonError, setRuleJsonError] = useState<string | null>(null);
+
+  // Conflict Dismissal Modal
+  const [dismissingWarning, setDismissingWarning] = useState<StructuredConflictWarning | null>(null);
+  const [dismissalNote, setDismissalNote] = useState('');
+
+  // Activation Modal
+  const [isActivateModalOpen, setIsActivateModalOpen] = useState(false);
+  const [activationChangeNote, setActivationChangeNote] = useState('');
+  const [reevaluatePending, setReevaluatePending] = useState(true);
 
   // Q&A State
-  const [question, setQuestion] = useState('');
+  const [questionText, setQuestionText] = useState('');
   const [qaResult, setQaResult] = useState<{
     answer: string;
     citedRule?: PolicyRule;
     isSilent: boolean;
   } | null>(null);
 
-  // Success / alert notices
+  // Sandbox State
+  const [sandboxPreset, setSandboxPreset] = useState<'mumbai_beer' | 'pune_lunch' | 'late_cab' | 'high_client'>('mumbai_beer');
+  const [sandboxResult, setSandboxResult] = useState<ReturnType<typeof evaluateExpense> | null>(null);
+
+  // Backtest Simulator State
+  const [simulationResult, setSimulationResult] = useState<ReturnType<typeof simulatePolicyChange> | null>(null);
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  // Notice banner
   const [notice, setNotice] = useState<string | null>(null);
 
-  const policyList = [activePolicy, draftPolicy];
-  const policy = selectedPolicyId === activePolicy.id ? activePolicy : draftPolicy;
-  const conflicts = detectPolicyConflicts(policy);
+  const showNotification = (msg: string) => {
+    setNotice(msg);
+    setTimeout(() => setNotice(null), 3000);
+  };
+
+  const refreshPolicies = (newSelectedId?: string) => {
+    const freshAll = getAllPolicies();
+    const freshActive = getActivePolicy();
+    setAllPolicies(freshAll);
+    setActivePolicy(freshActive);
+    if (newSelectedId) {
+      setSelectedPolicyId(newSelectedId);
+    }
+  };
+
+  const structuredConflicts = useMemo(() => {
+    return getStructuredPolicyConflicts(selectedPolicy);
+  }, [selectedPolicy]);
+
+  const activeConflictsCount = structuredConflicts.filter((c) => !c.isDismissed).length;
+
+  const gapSuggestions = useMemo(() => {
+    return detectPolicyGaps();
+  }, []);
+
+  const policyDiff = useMemo(() => {
+    return calculatePolicyDiff(activePolicy, selectedPolicy);
+  }, [activePolicy, selectedPolicy]);
+
+  // Parse source text into paragraphs with mapping
+  const parsedParagraphs = useMemo(() => {
+    const text = selectedPolicy.sourceText || DEFAULT_ACME_POLICY.sourceText || '';
+    const rawParagraphs = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
+
+    return rawParagraphs.map((para, idx) => {
+      const isHeading = para.trim().startsWith('SECTION') || para.trim().startsWith('ACME');
+      const mapped = selectedPolicy.rules.filter((r) => {
+        if (r.sourceParagraphIndex !== undefined) {
+          return r.sourceParagraphIndex === idx;
+        }
+        if (r.sourceQuote && para.toLowerCase().includes(r.sourceQuote.slice(0, 30).toLowerCase())) {
+          return true;
+        }
+        return false;
+      });
+
+      return {
+        index: idx,
+        text: para.trim(),
+        isHeading,
+        mappedRuleIds: mapped.map((r) => r.id),
+        isUnmapped: !isHeading && mapped.length === 0,
+      };
+    });
+  }, [selectedPolicy]);
 
   const handleToggleRule = (ruleId: string) => {
-    const updatedRules = policy.rules.map((r) =>
+    const updatedRules = selectedPolicy.rules.map((r) =>
       r.id === ruleId ? { ...r, enabled: !r.enabled } : r
     );
     const updatedPolicy: PolicyVersion = {
-      ...policy,
+      ...selectedPolicy,
       rules: updatedRules,
-      conflictWarnings: detectPolicyConflicts({ ...policy, rules: updatedRules }),
     };
 
-    if (policy.status === 'active') {
+    if (selectedPolicy.status === 'active') {
       saveActivePolicy(updatedPolicy);
       setActivePolicy(updatedPolicy);
     } else {
       saveDraftPolicy(updatedPolicy);
-      setDraftPolicy(updatedPolicy);
     }
-    setNotice(`Updated rule ${ruleId} status.`);
-    setTimeout(() => setNotice(null), 3000);
+    refreshPolicies(selectedPolicy.id);
   };
 
-  const handleActivateDraft = () => {
-    if (conflicts.length > 0) {
-      if (!confirm(`Warning: There are ${conflicts.length} policy conflict warnings. Activate anyway?`)) {
+  const handleDeleteRule = (ruleId: string) => {
+    if (!confirm(`Delete rule "${ruleId}"?`)) return;
+    const updatedRules = selectedPolicy.rules.filter((r) => r.id !== ruleId);
+    const updatedPolicy: PolicyVersion = {
+      ...selectedPolicy,
+      rules: updatedRules,
+    };
+
+    if (selectedPolicy.status === 'active') {
+      saveActivePolicy(updatedPolicy);
+      setActivePolicy(updatedPolicy);
+    } else {
+      saveDraftPolicy(updatedPolicy);
+    }
+    refreshPolicies(selectedPolicy.id);
+  };
+
+  const handleOpenEditRule = (rule: PolicyRule) => {
+    setEditingRule(JSON.parse(JSON.stringify(rule)));
+    setRuleJsonText(JSON.stringify(rule, null, 2));
+    setRuleJsonError(null);
+    setEditInJsonMode(false);
+    setIsRuleModalOpen(true);
+  };
+
+  const handleSaveRule = () => {
+    if (!editingRule) return;
+    let ruleToSave = editingRule;
+
+    if (editInJsonMode) {
+      try {
+        const parsed = JSON.parse(ruleJsonText);
+        if (!parsed.id || !parsed.title || !parsed.type) {
+          setRuleJsonError('Rule must contain id, title, and type.');
+          return;
+        }
+        ruleToSave = parsed;
+      } catch (err: any) {
+        setRuleJsonError(`JSON Syntax Error: ${err.message}`);
         return;
       }
     }
-    const activated = activateDraftPolicy(draftPolicy);
-    setActivePolicy(activated);
-    setSelectedPolicyId(activated.id);
-    setNotice(`Successfully activated Policy v${activated.versionNumber}!`);
-    setTimeout(() => setNotice(null), 4000);
+
+    const updatedRules = selectedPolicy.rules.map((r) =>
+      r.id === ruleToSave.id ? ruleToSave : r
+    );
+
+    const updatedPolicy: PolicyVersion = {
+      ...selectedPolicy,
+      rules: updatedRules,
+    };
+
+    if (selectedPolicy.status === 'active') {
+      saveActivePolicy(updatedPolicy);
+      setActivePolicy(updatedPolicy);
+    } else {
+      saveDraftPolicy(updatedPolicy);
+    }
+    refreshPolicies(selectedPolicy.id);
+    setIsRuleModalOpen(false);
+    setEditingRule(null);
+    showNotification(`Saved rule "${ruleToSave.title}".`);
+  };
+
+  const handleAddNewRule = () => {
+    const newRuleId = `rule_custom_${Date.now().toString().slice(-4)}`;
+    const newRule: PolicyRule = {
+      id: newRuleId,
+      type: 'cap',
+      section: 'Section 4 - Custom Rule',
+      title: 'Custom Travel Cap',
+      priority: 45,
+      enabled: true,
+      sourceQuote: 'Custom company guideline.',
+      conditions: { category: ['meals'] },
+      parameters: {
+        capAmountMinor: 250000,
+        capPeriod: 'day',
+        capScope: 'employee',
+        onViolationBehavior: 'cap',
+      },
+    };
+
+    const updatedPolicy: PolicyVersion = {
+      ...selectedPolicy,
+      rules: [...selectedPolicy.rules, newRule],
+    };
+
+    if (selectedPolicy.status === 'active') {
+      saveActivePolicy(updatedPolicy);
+      setActivePolicy(updatedPolicy);
+    } else {
+      saveDraftPolicy(updatedPolicy);
+    }
+    refreshPolicies(selectedPolicy.id);
+    handleOpenEditRule(newRule);
+  };
+
+  const handleUpdateCityTier = (city: string, tier: CityTier) => {
+    const updatedPolicy: PolicyVersion = {
+      ...selectedPolicy,
+      cityTiers: {
+        ...selectedPolicy.cityTiers,
+        [city]: tier,
+      },
+    };
+
+    if (selectedPolicy.status === 'active') {
+      saveActivePolicy(updatedPolicy);
+      setActivePolicy(updatedPolicy);
+    } else {
+      saveDraftPolicy(updatedPolicy);
+    }
+    refreshPolicies(selectedPolicy.id);
+  };
+
+  const handleStartExtraction = () => {
+    setIsExtracting(true);
+    setExtractionProgress('Reading document clauses...');
+
+    setTimeout(() => {
+      setExtractionProgress('Extracting structured rules (caps, exclusions, thresholds)...');
+    }, 500);
+
+    setTimeout(() => {
+      setExtractionProgress('Mapping city tiers & ambiguous clauses...');
+    }, 1000);
+
+    setTimeout(() => {
+      setIsExtracting(false);
+      let draft: PolicyVersion;
+
+      if (createMode === 'upload') {
+        const title = uploadedFileName ? `Parsed: ${uploadedFileName.replace(/\.[^/.]+$/, '')}` : 'Policy Draft v2';
+        draft = createDraftFromText(title, uploadText || DEFAULT_ACME_POLICY.sourceText || '');
+      } else if (createMode === 'template') {
+        draft = createDraftFromTemplate(selectedTemplate === 'tech_startup' ? 'tech_startup' : 'enterprise');
+      } else {
+        draft = createDraftFromActive(manualTitle);
+        const capMinor = parseInt(manualTier1Cap || '2500', 10) * 100;
+        const cap2Minor = parseInt(manualTier2Cap || '1800', 10) * 100;
+        const threshMinor = parseInt(manualThreshold || '10000', 10) * 100;
+        draft.settings.baseCurrency = manualCurrency;
+        draft.rules = draft.rules.map((r) => {
+          if (r.id === 'rule_cap_tier1_daily_meal') {
+            return { ...r, parameters: { ...r.parameters, capAmountMinor: capMinor } };
+          }
+          if (r.id === 'rule_cap_tier2_daily_meal') {
+            return { ...r, parameters: { ...r.parameters, capAmountMinor: cap2Minor } };
+          }
+          if (r.id === 'rule_threshold_finance') {
+            return { ...r, parameters: { ...r.parameters, thresholdAmountMinor: threshMinor } };
+          }
+          return r;
+        });
+        saveDraftPolicy(draft);
+      }
+
+      refreshPolicies(draft.id);
+      setIsCreateModalOpen(false);
+      setUploadText('');
+      setUploadedFileName('');
+      setUploadedFileSize(null);
+      setActiveTab('review');
+      showNotification(`Created draft: "${draft.name}".`);
+    }, 1500);
+  };
+
+  const handleConfirmDismissWarning = () => {
+    if (!dismissingWarning) return;
+    const updated = dismissConflictWarning(
+      selectedPolicy,
+      dismissingWarning.id,
+      dismissingWarning.title,
+      dismissalNote || 'Acknowledged by finance auditor.'
+    );
+    refreshPolicies(updated.id);
+    setDismissingWarning(null);
+    setDismissalNote('');
+    showNotification('Warning dismissed.');
+  };
+
+  const handleRunSandbox = (preset: typeof sandboxPreset) => {
+    setSandboxPreset(preset);
+
+    const baseClaim: Expense = {
+      id: `exp_sandbox_${Date.now()}`,
+      orgId: 'org_acme',
+      employeeId: 'emp_101',
+      status: 'submitted',
+      channel: 'upload',
+      expenseDate: '2026-10-15',
+      submittedAt: '2026-10-15T12:00:00Z',
+      receiptRef: { mimeType: 'image/jpeg', originalSha256: 'sandbox_hash', fileSize: 100000 },
+      extracted: {
+        merchant: { value: 'Mainland China', confidence: 0.95, inferred: false, source: 'ocr' },
+        date: { value: '2026-10-15', confidence: 0.98, inferred: false, source: 'ocr' },
+        total: { value: 3400, confidence: 0.98, inferred: false, source: 'ocr' },
+        currency: { value: 'INR', confidence: 0.99, inferred: false, source: 'ocr' },
+        lineItems: [
+          { id: 'li_1', description: 'Chinese Cuisine Dinner', quantity: 1, unitPrice: 2600, amount: 2600, category: 'meals', confidence: 0.95, itemFlags: [] },
+          { id: 'li_2', description: 'Craft Beer', quantity: 2, unitPrice: 400, amount: 800, category: 'meals', confidence: 0.92, itemFlags: ['alcohol'] },
+        ],
+      },
+      normalizedCurrency: {
+        sourceCurrency: 'INR',
+        sourceAmountMinor: 340000,
+        targetCurrency: 'INR',
+        targetAmountMinor: 340000,
+        fxRate: 1.0,
+        fxDate: '2026-10-15',
+        fxSource: 'printed',
+        isInferred: false,
+      },
+      context: { city: 'Mumbai', cityTier: 'Tier-1', isTravel: true, source: 'user' },
+      integritySignals: {
+        mathMismatch: false,
+        taxRateAnomalous: false,
+        missingDate: false,
+        inferredTotal: false,
+        unitemizedBalance: 0,
+      },
+    };
+
+    if (preset === 'pune_lunch') {
+      baseClaim.extracted!.merchant!.value = 'Vaishali Restaurant';
+      baseClaim.extracted!.total!.value = 1500;
+      baseClaim.extracted!.lineItems = [
+        { id: 'li_1', description: 'South Indian Lunch', quantity: 1, unitPrice: 1500, amount: 1500, category: 'meals', confidence: 0.98, itemFlags: [] },
+      ];
+      baseClaim.normalizedCurrency!.sourceAmountMinor = 150000;
+      baseClaim.normalizedCurrency!.targetAmountMinor = 150000;
+      baseClaim.context!.city = 'Pune';
+      baseClaim.context!.cityTier = 'Tier-2';
+    } else if (preset === 'late_cab') {
+      baseClaim.extracted!.merchant!.value = 'Uber India';
+      baseClaim.extracted!.total!.value = 850;
+      baseClaim.extracted!.lineItems = [
+        { id: 'li_1', description: 'Airport Drop Cab', quantity: 1, unitPrice: 850, amount: 850, category: 'transportation', confidence: 0.98, itemFlags: [] },
+      ];
+      baseClaim.normalizedCurrency!.sourceAmountMinor = 85000;
+      baseClaim.normalizedCurrency!.targetAmountMinor = 85000;
+      baseClaim.context!.city = 'Bengaluru';
+      baseClaim.context!.cityTier = 'Tier-1';
+    } else if (preset === 'high_client') {
+      baseClaim.extracted!.merchant!.value = 'Taj Palace Dining';
+      baseClaim.extracted!.total!.value = 28000;
+      baseClaim.extracted!.lineItems = [
+        { id: 'li_1', description: 'Executive Client Dinner', quantity: 1, unitPrice: 28000, amount: 28000, category: 'client entertainment', confidence: 0.95, itemFlags: [] },
+      ];
+      baseClaim.normalizedCurrency!.sourceAmountMinor = 2800000;
+      baseClaim.normalizedCurrency!.targetAmountMinor = 2800000;
+      baseClaim.context!.clientName = 'Global Corp';
+      baseClaim.context!.attendeeCount = 4;
+      baseClaim.context!.purpose = 'Q4 Contract Closing';
+    }
+
+    const verdict = evaluateExpense({
+      expense: baseClaim,
+      policy: selectedPolicy,
+      employee: DEMO_EMPLOYEES[0],
+      ledger: new ExpenseLedger(),
+    });
+
+    setSandboxResult(verdict);
+  };
+
+  const handleRunBacktest = () => {
+    setIsSimulating(true);
+    setTimeout(() => {
+      const expenses = getAllExpenses().length > 0 ? getAllExpenses() : SYNTHETIC_EXPENSES;
+      const res = simulatePolicyChange({
+        activePolicy,
+        draftPolicy: selectedPolicy,
+        expenses,
+        employees: DEMO_EMPLOYEES,
+      });
+      setSimulationResult(res);
+      setIsSimulating(false);
+      showNotification(`Simulation evaluated ${res.totalExpensesEvaluated} claims.`);
+    }, 500);
+  };
+
+  const handleConfirmActivation = () => {
+    if (!activationChangeNote.trim()) {
+      alert('Please enter a change note for the audit log.');
+      return;
+    }
+
+    const newActive = activateDraftPolicy(
+      selectedPolicy,
+      activationChangeNote,
+      reevaluatePending
+    );
+
+    refreshPolicies(newActive.id);
+    setIsActivateModalOpen(false);
+    setActivationChangeNote('');
+    setActiveTab('review');
+    showNotification(`Policy v${newActive.versionNumber} activated.`);
+  };
+
+  const handleAddGapRule = (gap: PolicyGapSuggestion) => {
+    const updatedPolicy: PolicyVersion = {
+      ...selectedPolicy,
+      rules: [...selectedPolicy.rules, gap.suggestedRule as PolicyRule],
+    };
+    if (selectedPolicy.status === 'active') {
+      saveActivePolicy(updatedPolicy);
+      setActivePolicy(updatedPolicy);
+    } else {
+      saveDraftPolicy(updatedPolicy);
+    }
+    refreshPolicies(selectedPolicy.id);
+    showNotification(`Added "${gap.suggestedRule.title}".`);
   };
 
   const handleAskQuestion = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!question.trim()) return;
-    const res = queryPolicyGrounded(question, policy);
+    if (!questionText.trim()) return;
+    const res = queryPolicyGrounded(questionText, selectedPolicy);
     setQaResult(res);
   };
 
-  // Upload Document Parser
-  const handleUploadSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!uploadText.trim()) return;
-
-    const newDraft: PolicyVersion = {
-      ...draftPolicy,
-      id: `pol_upload_${Date.now()}`,
-      versionNumber: draftPolicy.versionNumber + 1,
-      status: 'draft',
-      name: uploadedFileName ? `Parsed: ${uploadedFileName}` : 'Uploaded Document Policy Draft',
-      sourceText: uploadText,
-      conflictWarnings: [],
-    };
-
-    saveDraftPolicy(newDraft);
-    setDraftPolicy(newDraft);
-    setSelectedPolicyId(newDraft.id);
-    setIsUploadModalOpen(false);
-    setUploadText('');
-    setUploadedFileName('');
-    setNotice(`Successfully parsed and saved "${newDraft.name}" with 10 declarative rules!`);
-    setTimeout(() => setNotice(null), 4000);
-  };
-
-  // Manual Policy Creation
-  const handleManualCreateSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const tier1Minor = parseInt(manualTier1Cap || '3000', 10) * 100;
-    const tier2Minor = parseInt(manualTier2Cap || '1800', 10) * 100;
-    const thresholdMinor = parseInt(manualThreshold || '10000', 10) * 100;
-    const windowDays = parseInt(manualLateWindow || '30', 10);
-
-    const newDraft: PolicyVersion = {
-      ...DEFAULT_ACME_POLICY,
-      id: `pol_manual_${Date.now()}`,
-      versionNumber: draftPolicy.versionNumber + 1,
-      status: 'draft',
-      name: manualTitle,
-      settings: {
-        ...DEFAULT_ACME_POLICY.settings,
-        baseCurrency: manualCurrency,
-        lateSubmissionWindowDays: windowDays,
-      },
-      rules: DEFAULT_ACME_POLICY.rules.map((r) => {
-        if (r.id === 'rule_cap_tier1_daily_meal') {
-          return { ...r, parameters: { ...r.parameters, capAmountMinor: tier1Minor } };
-        }
-        if (r.id === 'rule_cap_tier2_daily_meal') {
-          return { ...r, parameters: { ...r.parameters, capAmountMinor: tier2Minor } };
-        }
-        if (r.id === 'rule_threshold_finance') {
-          return { ...r, parameters: { ...r.parameters, thresholdAmountMinor: thresholdMinor } };
-        }
-        if (r.id === 'rule_time_window_lag') {
-          return { ...r, parameters: { ...r.parameters, timeWindowDays: windowDays } };
-        }
-        return r;
-      }),
-    };
-
-    saveDraftPolicy(newDraft);
-    setDraftPolicy(newDraft);
-    setSelectedPolicyId(newDraft.id);
-    setIsCreateModalOpen(false);
-    setNotice(`Successfully created new policy card "${newDraft.name}"!`);
-    setTimeout(() => setNotice(null), 4000);
-  };
-
-  const sampleQuestions = [
-    'Can I claim alcohol if dining with clients?',
-    'What is the daily dinner meal cap in Mumbai?',
-    'What is the daily meal cap in Pune?',
-    'What approval is required for claims over ₹10,000?',
-    'What is the submission deadline for receipts?',
-    'Are personal gym memberships reimbursable?',
-  ];
-
-  const filteredRules = policy.rules
+  const filteredRules = selectedPolicy.rules
     .filter((r) => {
       if (ruleTypeFilter !== 'all' && r.type !== ruleTypeFilter) return false;
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
+      if (!ruleSearchQuery.trim()) return true;
+      const q = ruleSearchQuery.toLowerCase();
       return (
         r.title.toLowerCase().includes(q) ||
         r.section.toLowerCase().includes(q) ||
-        r.id.toLowerCase().includes(q) ||
-        r.sourceQuote.toLowerCase().includes(q)
+        r.id.toLowerCase().includes(q)
       );
     })
     .sort((a, b) => a.priority - b.priority);
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner with Action Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight flex items-center gap-2.5">
-            <BookOpen className="w-6 h-6 text-indigo-600" />
-            Corporate Policies & Rule Studio
-          </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
-            Manage corporate reimbursement policies, ingest PDF handbook documents, or author custom Zod rules.
-          </p>
-        </div>
-
-        {/* Action Buttons: Upload & Create Manually */}
+    <div className="space-y-4 max-w-5xl mx-auto pb-10">
+      {/* Top Header - Minimal */}
+      <div className="flex items-center justify-between pb-1 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsUploadModalOpen(true)}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 rounded-xl text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Upload className="w-4 h-4 text-indigo-600" />
-            <span>Upload Policy Document</span>
-          </button>
-
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Policy Manually</span>
-          </button>
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight">Policies</h1>
+          <span className="text-xs font-mono-code font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+            v{activePolicy.versionNumber} Active
+          </span>
         </div>
+
+        <button
+          onClick={() => {
+            setCreateMode('upload');
+            setIsCreateModalOpen(true);
+          }}
+          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>New Policy</span>
+        </button>
       </div>
 
       {notice && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-medium flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="py-2 px-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800 font-medium flex items-center gap-2">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
           <span>{notice}</span>
         </div>
       )}
 
-      {/* POLICY CARDS SECTION */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-[#0F172A] flex items-center gap-2">
-            <Layers className="w-4 h-4 text-indigo-600" />
-            <span>Policy Versions & Workspaces ({policyList.length})</span>
-          </h2>
-          <span className="text-xs text-[#64748B]">Click any policy card to inspect rules</span>
-        </div>
+      {/* MINIMAL POLICY CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        {allPolicies.map((pol) => {
+          const isSel = selectedPolicyId === pol.id;
+          const polActive = pol.status === 'active';
+          const polDraft = pol.status === 'draft';
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {policyList.map((pol) => {
-            const isSelected = selectedPolicyId === pol.id;
-            const polConflicts = detectPolicyConflicts(pol);
-
-            return (
-              <div
-                key={pol.id}
-                onClick={() => setSelectedPolicyId(pol.id)}
-                className={`bg-white rounded-2xl p-5 border transition-all cursor-pointer flex flex-col justify-between ${
-                  isSelected
-                    ? 'border-indigo-500 ring-2 ring-indigo-500/10 shadow-md'
-                    : 'border-[#E2E8F0] hover:border-indigo-200 hover:shadow-xs'
-                }`}
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-2.5">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold border ${
-                          pol.status === 'active'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
-                            : 'bg-amber-50 text-amber-800 border-amber-200/60'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${pol.status === 'active' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                          <span>{pol.status === 'active' ? 'Active Standard' : 'Draft Revision'}</span>
-                        </span>
-                        <span className="text-xs font-mono-code text-slate-500">v{pol.versionNumber}</span>
-                      </div>
-                      <h3 className="font-bold text-base text-[#0F172A] mt-1.5">
-                        {pol.name}
-                      </h3>
-                    </div>
-
-                    <div className="text-right">
-                      <span className="font-mono-code text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-                        {pol.settings.baseCurrency} Base
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Summary parameters pills */}
-                  <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-center my-3 text-xs">
-                    <div>
-                      <div className="text-[10px] text-slate-500 uppercase font-mono-code">Rules</div>
-                      <div className="font-bold text-slate-900">{pol.rules.length} Declarative</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-slate-500 uppercase font-mono-code">Tier-1 Meal</div>
-                      <div className="font-bold text-slate-900">₹3,000 / day</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-slate-500 uppercase font-mono-code">Late Window</div>
-                      <div className="font-bold text-slate-900">{pol.settings.lateSubmissionWindowDays} Days</div>
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                    {pol.sourceText.split('\n')[0]}
-                  </p>
-                </div>
-
-                {/* Footer Controls */}
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+          return (
+            <div
+              key={pol.id}
+              onClick={() => setSelectedPolicyId(pol.id)}
+              className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                isSel
+                  ? 'bg-white border-slate-900 shadow-xs ring-1 ring-slate-900'
+                  : 'bg-white border-slate-200 hover:border-slate-300'
+              }`}
+            >
+              <div>
+                <div className="flex items-center justify-between text-xs mb-1">
                   <div className="flex items-center gap-1.5">
-                    {polConflicts.length === 0 ? (
-                      <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        0 Conflicts
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-amber-700 font-semibold flex items-center gap-1">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        {polConflicts.length} Ambiguities
-                      </span>
-                    )}
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        polActive ? 'bg-emerald-500' : polDraft ? 'bg-amber-500' : 'bg-slate-400'
+                      }`}
+                    />
+                    <span className="font-mono-code font-medium text-slate-700">v{pol.versionNumber}</span>
+                    <span className="text-slate-400 capitalize">· {pol.status}</span>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    {pol.status === 'draft' && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleActivateDraft();
-                        }}
-                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                      >
-                        Activate Policy
-                      </button>
-                    )}
-                    <span className="font-semibold text-indigo-600 flex items-center gap-0.5">
-                      <span>{isSelected ? 'Viewing Rules' : 'Inspect'}</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
+                  <span className="text-[11px] text-slate-400 font-mono-code">{pol.settings.baseCurrency}</span>
                 </div>
+
+                <h3 className="font-semibold text-xs text-slate-900 truncate">{pol.name}</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">{pol.rules.length} rules</p>
               </div>
-            );
-          })}
+
+              <div className="mt-2.5 pt-1.5 border-t border-slate-100 flex items-center justify-end">
+                <span className={`text-[11px] font-medium flex items-center gap-0.5 ${isSel ? 'text-slate-900 font-semibold' : 'text-slate-400'}`}>
+                  <span>{isSel ? 'Selected' : 'Inspect'}</span>
+                  <ChevronRight className="w-3 h-3" />
+                </span>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Minimal Add Policy Card */}
+        <div
+          onClick={() => {
+            setCreateMode('upload');
+            setIsCreateModalOpen(true);
+          }}
+          className="p-3 rounded-xl border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer flex flex-col items-center justify-center text-center min-h-[80px]"
+        >
+          <Plus className="w-4 h-4 text-slate-500 mb-0.5" />
+          <span className="text-xs font-semibold text-slate-700">Add Policy</span>
         </div>
       </div>
 
-      {/* Grounded Policy Q&A Assistant */}
-      <div className="bg-gradient-to-br from-indigo-50/60 to-slate-50 border border-indigo-100 rounded-2xl p-5 shadow-2xs space-y-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-indigo-600" />
-          <h2 className="text-sm font-bold text-[#0F172A] tracking-tight">
-            Grounded Policy Assistant ({policy.name})
-          </h2>
-          <span className="text-[10px] font-mono-code px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-semibold">
-            Strict Source Citations Only
-          </span>
-        </div>
-
-        <form onSubmit={handleAskQuestion} className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="e.g. Can I expense beer with a client in Mumbai?"
-              className="w-full pl-9 pr-3 py-2 bg-white rounded-xl text-xs sm:text-sm border border-[#E2E8F0] focus:outline-none focus:border-indigo-500 shadow-2xs"
+      {/* SELECTED POLICY WORKSPACE */}
+      <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+        {/* Workspace Top Bar */}
+        <div className="px-4 py-2.5 bg-slate-50/70 border-b border-slate-200 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isActive ? 'bg-emerald-500' : isDraft ? 'bg-amber-500' : 'bg-slate-400'
+              }`}
             />
+            <h2 className="text-xs font-bold text-slate-900">{selectedPolicy.name}</h2>
+            <span className="text-[10px] font-mono-code px-1.5 py-0.2 bg-white border border-slate-200 rounded text-slate-600">
+              v{selectedPolicy.versionNumber}
+            </span>
           </div>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            Ask Policy
-          </button>
-        </form>
 
-        {/* Suggestion Chips */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <span className="text-[11px] text-[#64748B] font-medium">Try asking:</span>
-          {sampleQuestions.map((q, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => {
-                setQuestion(q);
-                const res = queryPolicyGrounded(q, policy);
-                setQaResult(res);
-              }}
-              className="text-[11px] px-2.5 py-1 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-lg text-[#334155] transition-colors cursor-pointer"
-            >
-              {q}
-            </button>
-          ))}
+          <div className="flex items-center gap-1.5">
+            {isDraft && (
+              <>
+                <button
+                  onClick={() => {
+                    setActiveTab('test');
+                    handleRunBacktest();
+                  }}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-1 cursor-pointer"
+                >
+                  <Play className="w-3 h-3 text-slate-600" />
+                  <span>Simulate</span>
+                </button>
+
+                <button
+                  onClick={() => setIsActivateModalOpen(true)}
+                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center gap-1 cursor-pointer"
+                >
+                  <FileCheck2 className="w-3 h-3" />
+                  <span>Activate v{selectedPolicy.versionNumber}</span>
+                </button>
+              </>
+            )}
+
+            {isActive && (
+              <button
+                onClick={() => {
+                  const draft = createDraftFromActive();
+                  refreshPolicies(draft.id);
+                  showNotification(`Draft v${draft.versionNumber} created.`);
+                }}
+                className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-3 h-3" />
+                <span>Draft Revision</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Answer Box */}
-        {qaResult && (
-          <div
-            className={`p-4 rounded-xl border transition-all ${
-              qaResult.isSilent
-                ? 'bg-amber-50/70 border-amber-200 text-amber-900'
-                : 'bg-white border-indigo-200 text-[#0F172A] shadow-xs'
+        {/* Minimal Navigation Tabs */}
+        <div className="flex items-center gap-5 px-4 border-b border-slate-200 overflow-x-auto text-xs font-medium">
+          <button
+            onClick={() => setActiveTab('review')}
+            className={`py-2.5 cursor-pointer whitespace-nowrap ${
+              activeTab === 'review'
+                ? 'text-slate-900 font-semibold border-b-2 border-slate-900 -mb-[1px]'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <div className="flex items-start gap-3">
-              {qaResult.isSilent ? (
-                <HelpCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            Review
+          </button>
+
+          <button
+            onClick={() => setActiveTab('tiers')}
+            className={`py-2.5 cursor-pointer whitespace-nowrap ${
+              activeTab === 'tiers'
+                ? 'text-slate-900 font-semibold border-b-2 border-slate-900 -mb-[1px]'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            City Tiers ({Object.keys(selectedPolicy.cityTiers).length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('checks')}
+            className={`py-2.5 cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+              activeTab === 'checks'
+                ? 'text-slate-900 font-semibold border-b-2 border-slate-900 -mb-[1px]'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <span>Conflicts</span>
+            {activeConflictsCount > 0 && (
+              <span className="text-[10px] font-mono-code px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded-full font-bold">
+                {activeConflictsCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('test')}
+            className={`py-2.5 cursor-pointer whitespace-nowrap ${
+              activeTab === 'test'
+                ? 'text-slate-900 font-semibold border-b-2 border-slate-900 -mb-[1px]'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Simulator
+          </button>
+
+          <button
+            onClick={() => setActiveTab('diff')}
+            className={`py-2.5 cursor-pointer whitespace-nowrap ${
+              activeTab === 'diff'
+                ? 'text-slate-900 font-semibold border-b-2 border-slate-900 -mb-[1px]'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Diff & History
+          </button>
+
+          <button
+            onClick={() => setActiveTab('qa')}
+            className={`py-2.5 cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+              activeTab === 'qa'
+                ? 'text-slate-900 font-semibold border-b-2 border-slate-900 -mb-[1px]'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Sparkles className="w-3 h-3 text-emerald-600" />
+            <span>Q&A & Gaps</span>
+          </button>
+        </div>
+
+        {/* TAB CONTENTS */}
+        <div className="p-4">
+          {/* TAB 1: REVIEW SIDE-BY-SIDE */}
+          {activeTab === 'review' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={ruleSearchQuery}
+                    onChange={(e) => setRuleSearchQuery(e.target.value)}
+                    placeholder="Search rules..."
+                    className="pl-8 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-slate-400 w-44"
+                  />
+                </div>
+
+                <button
+                  onClick={handleAddNewRule}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-medium flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Rule</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-[500px]">
+                {/* LEFT: ORIGINAL TEXT */}
+                <div className="lg:col-span-5 bg-slate-50/60 border border-slate-200 rounded-xl p-3 overflow-y-auto max-h-[600px] space-y-2">
+                  {parsedParagraphs.map((para) => {
+                    const isParaHighlighted =
+                      highlightedParagraphIdx === para.index ||
+                      (highlightedRuleId && para.mappedRuleIds.includes(highlightedRuleId));
+
+                    return (
+                      <div
+                        key={para.index}
+                        onClick={() => {
+                          setHighlightedParagraphIdx(para.index);
+                          if (para.mappedRuleIds.length > 0) {
+                            setHighlightedRuleId(para.mappedRuleIds[0]);
+                          } else {
+                            setHighlightedRuleId(null);
+                          }
+                        }}
+                        className={`p-2.5 rounded-lg text-xs leading-relaxed transition-all cursor-pointer border ${
+                          para.isHeading
+                            ? 'font-bold text-slate-800 bg-slate-100/70 border-transparent text-[11px] uppercase tracking-wide'
+                            : isParaHighlighted
+                            ? 'bg-emerald-50/90 border-emerald-300 ring-1 ring-emerald-200 text-slate-900'
+                            : 'bg-white border-slate-200/60 text-slate-700 hover:border-slate-300'
+                        }`}
+                      >
+                        <p className={para.isHeading ? '' : 'font-mono-code text-[11px]'}>
+                          {para.text}
+                        </p>
+
+                        {para.isUnmapped && (
+                          <div className="mt-1 text-[10px] font-mono-code text-slate-400">
+                            Unmapped
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* RIGHT: GENERATED RULES */}
+                <div className="lg:col-span-7 space-y-2">
+                  <div className="flex items-center gap-1 overflow-x-auto text-xs pb-1">
+                    {['all', 'cap', 'exclusion', 'requirement', 'threshold', 'time_window'].map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setRuleTypeFilter(type)}
+                        className={`px-2 py-0.5 rounded text-xs capitalize transition-colors cursor-pointer ${
+                          ruleTypeFilter === type
+                            ? 'bg-slate-900 text-white font-medium'
+                            : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
+                        }`}
+                      >
+                        {type.replace('_', ' ')}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-2 overflow-y-auto max-h-[540px] pr-1">
+                    {filteredRules.map((rule) => {
+                      const isHighlighted = highlightedRuleId === rule.id;
+
+                      return (
+                        <div
+                          key={rule.id}
+                          onClick={() => {
+                            setHighlightedRuleId(rule.id);
+                            if (rule.sourceParagraphIndex !== undefined) {
+                              setHighlightedParagraphIdx(rule.sourceParagraphIndex);
+                            }
+                          }}
+                          className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                            isHighlighted
+                              ? 'bg-white border-emerald-400 ring-2 ring-emerald-100 shadow-2xs'
+                              : rule.enabled
+                              ? 'bg-white border-slate-200 hover:border-slate-300'
+                              : 'bg-slate-50 border-slate-200 opacity-60'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className="font-mono-code text-[10px] text-slate-400 font-semibold">
+                                  P{rule.priority}
+                                </span>
+                                <span className="text-[10px] font-mono-code uppercase font-semibold text-slate-600 bg-slate-100 px-1 py-0.2 rounded">
+                                  {rule.type.replace('_', ' ')}
+                                </span>
+                              </div>
+
+                              <h4 className="text-xs font-bold text-slate-900 mt-0.5">
+                                {rule.title}
+                              </h4>
+                            </div>
+
+                            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => handleOpenEditRule(rule)}
+                                className="p-1 text-slate-400 hover:text-slate-800 rounded"
+                                title="Edit"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button
+                                onClick={() => handleToggleRule(rule.id)}
+                                className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer ${
+                                  rule.enabled
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : 'bg-slate-200 text-slate-600'
+                                }`}
+                              >
+                                {rule.enabled ? 'Enabled' : 'Disabled'}
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteRule(rule.id)}
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {rule.isAmbiguous && (
+                            <div className="mt-1.5 p-1.5 bg-amber-50 border border-amber-200 rounded text-[11px] text-amber-900 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                              <span>{rule.ambiguityNote || "Ambiguous clause (no numeric limit)."}</span>
+                            </div>
+                          )}
+
+                          {rule.sourceQuote && (
+                            <p className="mt-1.5 text-[11px] text-slate-500 font-mono-code line-clamp-1 italic">
+                              "{rule.sourceQuote}"
+                            </p>
+                          )}
+
+                          <div className="mt-1.5 text-[11px] text-slate-500 flex flex-wrap gap-x-2.5">
+                            {rule.parameters.capAmountMinor !== undefined && (
+                              <span>Cap: <strong className="text-slate-800">₹{(rule.parameters.capAmountMinor / 100).toLocaleString()}</strong></span>
+                            )}
+                            {rule.parameters.capPeriod && (
+                              <span>Period: <strong className="text-slate-800">{rule.parameters.capPeriod}</strong></span>
+                            )}
+                            {rule.parameters.thresholdAmountMinor !== undefined && (
+                              <span>Threshold: <strong className="text-slate-800">₹{(rule.parameters.thresholdAmountMinor / 100).toLocaleString()}</strong></span>
+                            )}
+                            {rule.parameters.timeWindowDays !== undefined && (
+                              <span>Window: <strong className="text-slate-800">{rule.parameters.timeWindowDays}d</strong></span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: CITY TIERS */}
+          {activeTab === 'tiers' && (
+            <div className="max-w-xl">
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium">
+                    <tr>
+                      <th className="px-3.5 py-2">City</th>
+                      <th className="px-3.5 py-2">Tier</th>
+                      <th className="px-3.5 py-2 text-right">Daily Meal Cap</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {Object.entries(selectedPolicy.cityTiers).map(([city, tier]) => {
+                      const mealCap =
+                        tier === 'Tier-1' ? '₹3,000' : tier === 'Tier-2' ? '₹1,800' : '₹1,200';
+
+                      return (
+                        <tr key={city} className="hover:bg-slate-50/50">
+                          <td className="px-3.5 py-2 font-medium text-slate-900">{city}</td>
+                          <td className="px-3.5 py-2">
+                            <select
+                              value={tier}
+                              onChange={(e) => handleUpdateCityTier(city, e.target.value as CityTier)}
+                              className="px-2 py-0.5 bg-white border border-slate-200 rounded text-xs font-mono-code focus:outline-none"
+                            >
+                              <option value="Tier-1">Tier-1</option>
+                              <option value="Tier-2">Tier-2</option>
+                              <option value="Tier-3">Tier-3</option>
+                              <option value="International">International</option>
+                            </select>
+                          </td>
+                          <td className="px-3.5 py-2 text-right font-mono-code text-slate-600">
+                            {mealCap}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: CONFLICTS & CHECKS */}
+          {activeTab === 'checks' && (
+            <div className="space-y-3 max-w-2xl">
+              {structuredConflicts.length === 0 ? (
+                <div className="p-6 text-center bg-emerald-50/40 border border-emerald-200/60 rounded-xl space-y-1">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 mx-auto" />
+                  <div className="text-xs font-semibold text-emerald-900">No conflicts detected</div>
+                </div>
               ) : (
-                <CheckCircle2 className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
-              )}
-              <div className="space-y-2 text-xs sm:text-sm">
-                <p className="font-medium leading-relaxed">{qaResult.answer}</p>
-                {qaResult.citedRule && (
-                  <div className="mt-2.5 pt-2.5 border-t border-slate-100 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono-code px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold">
-                        {qaResult.citedRule.id}
-                      </span>
-                      <span className="text-xs font-semibold text-indigo-700">
-                        {qaResult.citedRule.section}
-                      </span>
+                structuredConflicts.map((conf) => (
+                  <div
+                    key={conf.id}
+                    className={`p-3.5 rounded-xl border text-xs ${
+                      conf.isDismissed
+                        ? 'bg-slate-50 border-slate-200 opacity-60'
+                        : conf.severity === 'error'
+                        ? 'bg-rose-50/60 border-rose-200'
+                        : 'bg-amber-50/60 border-amber-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-slate-900">{conf.title}</h4>
+                          <span className="text-[10px] font-mono-code uppercase px-1 py-0.2 bg-white/70 rounded">
+                            {conf.type.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                        <p className="text-slate-700 mt-1">{conf.description}</p>
+                      </div>
+
+                      {!conf.isDismissed && (
+                        <button
+                          onClick={() => {
+                            setDismissingWarning(conf);
+                            setDismissalNote('');
+                          }}
+                          className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-medium cursor-pointer shrink-0"
+                        >
+                          Dismiss
+                        </button>
+                      )}
                     </div>
-                    <blockquote className="text-[11px] font-mono-code text-[#475569] bg-slate-50 border-l-2 border-indigo-400 pl-2.5 py-1 italic">
-                      "{qaResult.citedRule.sourceQuote}"
-                    </blockquote>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: SIMULATOR & TEST */}
+          {activeTab === 'test' && (
+            <div className="space-y-5">
+              {/* Sandbox */}
+              <div className="border border-slate-200 rounded-xl p-3.5 bg-slate-50/40 space-y-2.5">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                  Sandbox: Sample Verdict
+                </span>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[
+                    { id: 'mumbai_beer', label: 'Mumbai Dinner (₹3,400)' },
+                    { id: 'pune_lunch', label: 'Pune Lunch (₹1,500)' },
+                    { id: 'late_cab', label: 'Late Cab (₹850)' },
+                    { id: 'high_client', label: 'Client Dinner (₹28,000)' },
+                  ].map((preset) => (
+                    <button
+                      key={preset.id}
+                      onClick={() => handleRunSandbox(preset.id as any)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium border cursor-pointer ${
+                        sandboxPreset === preset.id && sandboxResult
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+
+                {sandboxResult && (
+                  <div className="p-3 bg-white border border-slate-200 rounded-lg space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-800">Verdict:</span>
+                        <span className="px-1.5 py-0.2 rounded text-[10px] font-bold uppercase bg-slate-100">
+                          {sandboxResult.decision.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 font-mono-code text-[11px]">
+                        <span>Approved: <strong className="text-emerald-700">₹{(sandboxResult.approvedAmountMinor / 100).toLocaleString()}</strong></span>
+                        {sandboxResult.rejectedAmountMinor > 0 && (
+                          <span>Excluded: <strong className="text-rose-600">₹{(sandboxResult.rejectedAmountMinor / 100).toLocaleString()}</strong></span>
+                        )}
+                      </div>
+                    </div>
+
+                    {sandboxResult.ruleImpacts.map((imp, idx) => (
+                      <div key={idx} className="text-[11px] text-slate-600 flex justify-between">
+                        <span>{imp.ruleId}: {imp.explanation}</span>
+                        <span className="font-mono-code text-rose-600">-₹{(imp.impactAmountMinor / 100).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Backtest Replay */}
+              <div className="border border-slate-200 rounded-xl p-3.5 bg-white space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                    Simulator Replay
+                  </span>
+
+                  <button
+                    onClick={handleRunBacktest}
+                    disabled={isSimulating}
+                    className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    <RotateCcw className={`w-3 h-3 ${isSimulating ? 'animate-spin' : ''}`} />
+                    <span>{isSimulating ? 'Replaying...' : 'Run Replay'}</span>
+                  </button>
+                </div>
+
+                {simulationResult && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div className="text-[11px] text-slate-500">Reimbursed</div>
+                        <div className="font-bold text-slate-900 font-mono-code text-sm mt-0.5">
+                          ₹{(simulationResult.draftTotalReimbursedMinor / 100).toLocaleString()}
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono-code">
+                          {simulationResult.deltaReimbursedMinor <= 0 ? '▼ Save ' : '▲ Increase '}
+                          ₹{Math.abs(simulationResult.deltaReimbursedMinor / 100).toLocaleString()}
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div className="text-[11px] text-slate-500">Changed Claims</div>
+                        <div className="font-bold text-slate-900 font-mono-code text-sm mt-0.5">
+                          {simulationResult.changedVerdictsCount}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          of {simulationResult.totalExpensesEvaluated} claims
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div className="text-[11px] text-slate-500">Touchless Rate</div>
+                        <div className="font-bold text-slate-900 font-mono-code text-sm mt-0.5">
+                          {simulationResult.touchlessRateDraft}%
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          Active: {simulationResult.touchlessRateActive}%
+                        </div>
+                      </div>
+                    </div>
+
+                    {simulationResult.changedClaims.length > 0 && (
+                      <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                        <div className="divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                          {simulationResult.changedClaims.map((claim, idx) => (
+                            <div key={idx} className="p-2.5 hover:bg-slate-50 flex items-center justify-between">
+                              <div>
+                                <span className="font-mono-code font-bold text-slate-800">{claim.expenseId}</span>
+                                <span className="text-slate-500 ml-2">{claim.deltaReason}</span>
+                              </div>
+                              <div className="font-mono-code text-[11px]">
+                                {claim.activeDecision} → <strong>{claim.draftDecision}</strong>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* TAB 5: DIFF & HISTORY */}
+          {activeTab === 'diff' && (
+            <div className="space-y-4 max-w-2xl text-xs">
+              <div className="border border-slate-200 rounded-xl p-3 bg-white space-y-2">
+                <span className="font-bold text-slate-900 uppercase text-[11px]">
+                  Diff (v{activePolicy.versionNumber} vs v{selectedPolicy.versionNumber})
+                </span>
+
+                {policyDiff.modifiedRules.length === 0 &&
+                policyDiff.addedRules.length === 0 &&
+                policyDiff.removedRules.length === 0 ? (
+                  <p className="text-slate-400 py-1">No rule differences between versions.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {policyDiff.modifiedRules.map((m) => (
+                      <div key={m.ruleId} className="p-2 bg-amber-50/60 border border-amber-200 rounded">
+                        <div className="font-semibold text-slate-900">{m.title}</div>
+                        {m.changes.map((c, i) => (
+                          <div key={i} className="text-[11px] text-amber-900 font-mono-code">• {c}</div>
+                        ))}
+                      </div>
+                    ))}
+                    {policyDiff.addedRules.map((r) => (
+                      <div key={r.id} className="p-2 bg-emerald-50/60 border border-emerald-200 rounded font-medium text-emerald-900">
+                        + Added: {r.title}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Audit Log */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                <div className="px-3.5 py-2 bg-slate-50 border-b border-slate-200 font-semibold text-slate-700">
+                  Audit Trail
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {getPolicyAuditLog().map((log) => (
+                    <div key={log.id} className="p-3 hover:bg-slate-50/50">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono-code font-bold text-slate-900">v{log.versionNumber}</span>
+                        <span className="text-slate-400 font-mono-code text-[11px]">
+                          {new Date(log.activatedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-slate-700 mt-0.5">"{log.changeNote}"</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: Q&A & GAPS */}
+          {activeTab === 'qa' && (
+            <div className="space-y-4 max-w-2xl">
+              <div className="border border-slate-200 rounded-xl p-3.5 bg-slate-50/50 space-y-2.5">
+                <span className="text-xs font-bold text-slate-900 uppercase">Policy Q&A</span>
+
+                <form onSubmit={handleAskQuestion} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={questionText}
+                    onChange={(e) => setQuestionText(e.target.value)}
+                    placeholder="e.g. Can I expense a cab after 10 pm?"
+                    className="w-full px-3 py-1.5 bg-white rounded-lg text-xs border border-slate-200 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-medium cursor-pointer shrink-0"
+                  >
+                    Ask
+                  </button>
+                </form>
+
+                {qaResult && (
+                  <div className="p-3 bg-white border border-slate-200 rounded-lg text-xs space-y-1">
+                    <p className="text-slate-800">{qaResult.answer}</p>
+                    {qaResult.citedRule && (
+                      <div className="text-[11px] text-slate-500 font-mono-code">
+                        Cited: {qaResult.citedRule.title} ({qaResult.citedRule.section})
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Gap Suggestions */}
+              <div className="border border-slate-200 rounded-xl p-3.5 bg-white space-y-2.5">
+                <span className="text-xs font-bold text-slate-900 uppercase">Gap Detection</span>
+                <div className="space-y-2">
+                  {gapSuggestions.map((gap) => (
+                    <div
+                      key={gap.id}
+                      className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div>
+                        <div className="font-bold text-slate-900">{gap.issue}</div>
+                        <div className="text-slate-500 text-[11px] mt-0.5">
+                          Suggested rule: {gap.suggestedRule.title} (₹{((gap.suggestedRule.parameters?.capAmountMinor || 0) / 100).toLocaleString()})
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAddGapRule(gap)}
+                        className="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium cursor-pointer shrink-0"
+                      >
+                        + Add Rule
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Rules Inspector for Selected Policy Card */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-[#F1F5F9] pb-3">
-          <div>
-            <h3 className="text-sm font-bold text-[#0F172A]">
-              Rules Inspector: {policy.name} ({policy.rules.length} Rules)
-            </h3>
-            <p className="text-xs text-[#64748B]">
-              Ordered deterministically by priority. Highest priority rules evaluate first.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-            {['all', 'cap', 'exclusion', 'requirement', 'threshold', 'time_window'].map((type) => (
-              <button
-                key={type}
-                onClick={() => setRuleTypeFilter(type)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold capitalize whitespace-nowrap transition-all cursor-pointer ${
-                  ruleTypeFilter === type
-                    ? 'bg-[#0F172A] text-white shadow-xs'
-                    : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC]'
-                }`}
-              >
-                {type.replace('_', ' ')}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Rule Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          {filteredRules.map((r) => (
-            <div
-              key={r.id}
-              className={`p-4 rounded-xl border transition-all ${
-                r.enabled ? 'bg-[#F8FAFC] border-[#E2E8F0]' : 'bg-slate-50/50 border-slate-200 opacity-60'
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
+      {/* CREATE NEW POLICY MODAL (PORTALED TO DOCUMENT.BODY) */}
+      {isCreateModalOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+              {/* Modal Header */}
+              <div className="flex items-start justify-between pb-3 border-b border-slate-100 mb-4">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono-code px-1.5 py-0.5 rounded bg-white border border-[#E2E8F0] font-bold text-[#0F172A]">
-                      P{r.priority}
-                    </span>
-                    <span className="text-[10px] uppercase font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                      {r.type.replace('_', ' ')}
-                    </span>
-                    <span className="text-[10px] font-mono-code text-[#64748B]">
-                      {r.id}
-                    </span>
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#0F172A] mt-1.5">
-                    {r.title}
-                  </h4>
-                  <p className="text-[11px] text-[#64748B] mt-0.5 font-medium">
-                    {r.section}
+                  <h3 className="font-bold text-base text-slate-900">Add Reimbursement Policy</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Extract rules with Gemini AI, start from a template, or set up manually.
                   </p>
                 </div>
-
                 <button
-                  onClick={() => handleToggleRule(r.id)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                    r.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  {r.enabled ? 'Enabled' : 'Disabled'}
-                </button>
-              </div>
-
-              {/* Source Quote */}
-              <div className="mt-3 p-2 bg-white rounded-lg border border-[#E2E8F0] text-[11px] text-[#475569]">
-                <div className="flex items-center gap-1 text-[10px] uppercase font-bold text-[#64748B] mb-1">
-                  <Quote className="w-3 h-3 text-indigo-500" />
-                  <span>Exact Source Quote</span>
-                </div>
-                <p className="italic font-mono-code text-[10.5px]">"{r.sourceQuote}"</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* UPLOAD POLICY DOCUMENT MODAL */}
-      {isUploadModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <div className="flex items-center gap-2">
-                <Upload className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-bold text-base text-[#0F172A]">Upload Policy Document</h3>
-              </div>
-              <button
-                onClick={() => setIsUploadModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleUploadSubmit} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Policy Document File (PDF / TXT / MD)</label>
-                <input
-                  type="file"
-                  accept=".txt,.pdf,.md"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setUploadedFileName(file.name);
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        setUploadText((event.target?.result as string) || '');
-                      };
-                      reader.readAsText(file);
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-600 file:mr-3 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-indigo-50 file:text-indigo-700 file:font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Or Paste Policy Handbook Clauses</label>
-                <textarea
-                  rows={6}
-                  required
-                  value={uploadText}
-                  onChange={(e) => setUploadText(e.target.value)}
-                  placeholder="Paste Section 1-5 of your company travel policy here..."
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 font-mono-code text-[11px] resize-none"
-                />
-              </div>
-
-              <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 text-[11px] text-slate-600 leading-relaxed">
-                Deterministic ingestion extracts caps, item exclusions, attendee requirements, and thresholds with linked source quotes.
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsUploadModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-semibold hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-xs"
-                >
-                  Parse & Save Draft Card
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* CREATE POLICY MANUALLY MODAL */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <div className="flex items-center gap-2">
-                <Plus className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-bold text-base text-[#0F172A]">Create Policy Card Manually</h3>
-              </div>
-              <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleManualCreateSubmit} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Policy Title</label>
-                <input
-                  type="text"
-                  required
-                  value={manualTitle}
-                  onChange={(e) => setManualTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 font-medium"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Base Currency</label>
-                  <select
-                    value={manualCurrency}
-                    onChange={(e) => setManualCurrency(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-white"
-                  >
-                    <option value="INR">INR (₹)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Late Receipt Window</label>
-                  <input
-                    type="number"
-                    value={manualLateWindow}
-                    onChange={(e) => setManualLateWindow(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl"
-                    placeholder="30 days"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Tier-1 Daily Meal Cap (₹)</label>
-                  <input
-                    type="number"
-                    value={manualTier1Cap}
-                    onChange={(e) => setManualTier1Cap(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl"
-                    placeholder="3000"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Tier-2 Daily Meal Cap (₹)</label>
-                  <input
-                    type="number"
-                    value={manualTier2Cap}
-                    onChange={(e) => setManualTier2Cap(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl"
-                    placeholder="1800"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Finance Review Threshold (₹)</label>
-                <input
-                  type="number"
-                  value={manualThreshold}
-                  onChange={(e) => setManualThreshold(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl"
-                  placeholder="10000"
-                />
-                <span className="text-[10px] text-slate-400">Claims exceeding this amount escalate to Finance.</span>
-              </div>
-
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-600 space-y-1">
-                <div className="font-semibold text-slate-800">Pre-Configured Rule Package Included:</div>
-                <div>• Alcohol & Tobacco exclusion with proportional tax exclusion.</div>
-                <div>• Client Dining attendee count & business purpose requirement.</div>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-700 font-semibold hover:bg-slate-50"
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {isExtracting ? (
+                <div className="py-10 flex flex-col items-center justify-center text-center space-y-3">
+                  <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 animate-spin">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900">Extracting Rules with Gemini AI</h4>
+                    <p className="text-xs text-slate-500 mt-1 font-mono-code">{extractionProgress}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 text-xs">
+                  {/* Mode Selector */}
+                  <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-xl text-center font-medium">
+                    <button
+                      onClick={() => setCreateMode('upload')}
+                      className={`py-1.5 rounded-lg transition-colors cursor-pointer ${
+                        createMode === 'upload' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Upload / Paste
+                    </button>
+                    <button
+                      onClick={() => setCreateMode('template')}
+                      className={`py-1.5 rounded-lg transition-colors cursor-pointer ${
+                        createMode === 'template' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Template
+                    </button>
+                    <button
+                      onClick={() => setCreateMode('manual')}
+                      className={`py-1.5 rounded-lg transition-colors cursor-pointer ${
+                        createMode === 'manual' ? 'bg-white text-slate-900 shadow-2xs font-semibold' : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Manual
+                    </button>
+                  </div>
+
+                  {/* Mode 1: Upload / Paste */}
+                  {createMode === 'upload' && (
+                    <div className="space-y-3">
+                      {/* Styled File Upload Drop Zone */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.txt,.md"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setUploadedFileName(file.name);
+                            setUploadedFileSize((file.size / 1024).toFixed(1) + ' KB');
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              setUploadText((event.target?.result as string) || '');
+                            };
+                            reader.readAsText(file);
+                          }
+                        }}
+                      />
+
+                      {uploadedFileName ? (
+                        <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-emerald-600" />
+                            <div>
+                              <div className="font-semibold text-slate-800 text-xs">{uploadedFileName}</div>
+                              <div className="text-[11px] text-emerald-700">{uploadedFileSize} · Ready for AI extraction</div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUploadedFileName('');
+                              setUploadedFileSize(null);
+                              setUploadText('');
+                            }}
+                            className="text-xs text-slate-400 hover:text-rose-600 font-medium"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className="p-4 border-2 border-dashed border-slate-200 hover:border-emerald-400 rounded-xl bg-slate-50/50 hover:bg-emerald-50/20 transition-colors cursor-pointer flex flex-col items-center justify-center text-center"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-emerald-600 mb-1.5 shadow-2xs">
+                            <UploadCloud className="w-4 h-4" />
+                          </div>
+                          <span className="text-xs font-semibold text-slate-800">
+                            Click to upload PDF, TXT, or Markdown
+                          </span>
+                          <span className="text-[11px] text-slate-400 mt-0.5">
+                            Handbooks, travel guidelines, or company policy clauses
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Textarea for Pasting Clauses */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-slate-600 font-medium text-xs">Or Paste Policy Clauses</label>
+                          <button
+                            type="button"
+                            onClick={() => setUploadText(SAMPLE_POLICY_TEXT)}
+                            className="text-[11px] text-emerald-600 hover:text-emerald-800 font-medium cursor-pointer"
+                          >
+                            Paste Sample Policy
+                          </button>
+                        </div>
+                        <textarea
+                          rows={5}
+                          value={uploadText}
+                          onChange={(e) => setUploadText(e.target.value)}
+                          placeholder="Paste Section 1-5 clauses from your travel & meal policy here..."
+                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono-code focus:outline-none focus:border-slate-400 focus:bg-white resize-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mode 2: Start from Template */}
+                  {createMode === 'template' && (
+                    <div className="space-y-2.5">
+                      <div
+                        onClick={() => setSelectedTemplate('enterprise')}
+                        className={`p-3.5 border rounded-xl cursor-pointer transition-all ${
+                          selectedTemplate === 'enterprise'
+                            ? 'bg-emerald-50/50 border-emerald-400 ring-1 ring-emerald-200'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-slate-900 text-xs">Global Enterprise Standard</span>
+                          {selectedTemplate === 'enterprise' && <Check className="w-4 h-4 text-emerald-600" />}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                          Tiered city caps (₹3,000 Tier-1 / ₹1,800 Tier-2), alcohol exclusion, and ₹10,000 finance review threshold.
+                        </p>
+                      </div>
+
+                      <div
+                        onClick={() => setSelectedTemplate('tech_startup')}
+                        className={`p-3.5 border rounded-xl cursor-pointer transition-all ${
+                          selectedTemplate === 'tech_startup'
+                            ? 'bg-emerald-50/50 border-emerald-400 ring-1 ring-emerald-200'
+                            : 'bg-white border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-slate-900 text-xs">Tech Startup (Lean & Fast)</span>
+                          {selectedTemplate === 'tech_startup' && <Check className="w-4 h-4 text-emerald-600" />}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                          Flat ₹2,000/day meal limit across all cities, ₹5,000 auto-approval threshold, and shared transit rules.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mode 3: Manual Configuration */}
+                  {createMode === 'manual' && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-slate-700 font-medium mb-1">Policy Title</label>
+                        <input
+                          type="text"
+                          value={manualTitle}
+                          onChange={(e) => setManualTitle(e.target.value)}
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:bg-white text-xs font-medium"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-slate-700 font-medium mb-1">Base Currency</label>
+                          <select
+                            value={manualCurrency}
+                            onChange={(e) => setManualCurrency(e.target.value)}
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-xs"
+                          >
+                            <option value="INR">INR (₹)</option>
+                            <option value="USD">USD ($)</option>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="GBP">GBP (£)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-medium mb-1">Finance Review Threshold</label>
+                          <input
+                            type="number"
+                            value={manualThreshold}
+                            onChange={(e) => setManualThreshold(e.target.value)}
+                            placeholder="10000"
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-slate-700 font-medium mb-1">Tier-1 Daily Meal Cap (₹)</label>
+                          <input
+                            type="number"
+                            value={manualTier1Cap}
+                            onChange={(e) => setManualTier1Cap(e.target.value)}
+                            placeholder="3000"
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-medium mb-1">Tier-2 Daily Meal Cap (₹)</label>
+                          <input
+                            type="number"
+                            value={manualTier2Cap}
+                            onChange={(e) => setManualTier2Cap(e.target.value)}
+                            placeholder="1800"
+                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer Action Buttons */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateModalOpen(false)}
+                      className="px-3.5 py-1.5 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleStartExtraction}
+                      className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>{createMode === 'manual' ? 'Create Policy' : 'Extract Rules with AI'}</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* RULE EDIT MODAL (PORTALED TO DOCUMENT.BODY) */}
+      {isRuleModalOpen &&
+        editingRule &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-lg w-full p-5 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-3">
+                <h3 className="font-bold text-sm text-slate-900">Edit Rule ({editingRule.id})</h3>
+
+                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setEditInJsonMode(false)}
+                    className={`px-2 py-0.5 rounded cursor-pointer ${
+                      !editInJsonMode ? 'bg-white text-slate-900 font-medium shadow-2xs' : 'text-slate-500'
+                    }`}
+                  >
+                    Form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRuleJsonText(JSON.stringify(editingRule, null, 2));
+                      setEditInJsonMode(true);
+                    }}
+                    className={`px-2 py-0.5 rounded cursor-pointer flex items-center gap-1 ${
+                      editInJsonMode ? 'bg-white text-slate-900 font-medium shadow-2xs' : 'text-slate-500'
+                    }`}
+                  >
+                    <Code className="w-3 h-3" />
+                    <span>JSON</span>
+                  </button>
+                </div>
+              </div>
+
+              {editInJsonMode ? (
+                <div className="space-y-2">
+                  <textarea
+                    rows={12}
+                    value={ruleJsonText}
+                    onChange={(e) => setRuleJsonText(e.target.value)}
+                    className="w-full p-2.5 bg-slate-900 text-slate-100 rounded-xl font-mono-code text-[11px] focus:outline-none"
+                  />
+                  {ruleJsonError && (
+                    <p className="text-xs text-rose-600">{ruleJsonError}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-2.5 text-xs">
+                  <div>
+                    <label className="block text-slate-600 mb-0.5">Rule Title</label>
+                    <input
+                      type="text"
+                      value={editingRule.title}
+                      onChange={(e) => setEditingRule({ ...editingRule, title: e.target.value })}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-slate-600 mb-0.5">Section</label>
+                      <input
+                        type="text"
+                        value={editingRule.section}
+                        onChange={(e) => setEditingRule({ ...editingRule, section: e.target.value })}
+                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-600 mb-0.5">Priority</label>
+                      <input
+                        type="number"
+                        value={editingRule.priority}
+                        onChange={(e) => setEditingRule({ ...editingRule, priority: parseInt(e.target.value || '50', 10) })}
+                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {editingRule.parameters.capAmountMinor !== undefined && (
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-slate-600 mb-0.5">Cap (₹)</label>
+                        <input
+                          type="number"
+                          value={((editingRule.parameters.capAmountMinor || 0) / 100).toString()}
+                          onChange={(e) =>
+                            setEditingRule({
+                              ...editingRule,
+                              parameters: {
+                                ...editingRule.parameters,
+                                capAmountMinor: parseInt(e.target.value || '0', 10) * 100,
+                              },
+                            })
+                          }
+                          className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 mb-0.5">Period</label>
+                        <select
+                          value={editingRule.parameters.capPeriod || 'day'}
+                          onChange={(e) =>
+                            setEditingRule({
+                              ...editingRule,
+                              parameters: { ...editingRule.parameters, capPeriod: e.target.value as any },
+                            })
+                          }
+                          className="w-full px-2 py-1.5 border border-slate-200 rounded-lg bg-white"
+                        >
+                          <option value="per_claim">Per Claim</option>
+                          <option value="day">Day</option>
+                          <option value="month">Month</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="pt-3 mt-3 border-t border-slate-100 flex justify-end gap-2 text-xs">
+                <button
+                  onClick={() => setIsRuleModalOpen(false)}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 font-medium cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-xs"
+                  onClick={handleSaveRule}
+                  className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium cursor-pointer"
                 >
-                  Create Policy Card
+                  Save
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* DISMISS MODAL (PORTALED TO DOCUMENT.BODY) */}
+      {dismissingWarning &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-sm w-full p-4 shadow-2xl border border-slate-200 text-xs space-y-3 animate-in fade-in zoom-in-95 duration-200">
+              <h3 className="font-bold text-slate-900">Dismiss Conflict</h3>
+              <p className="text-slate-600">{dismissingWarning.title}</p>
+              <textarea
+                rows={2}
+                value={dismissalNote}
+                onChange={(e) => setDismissalNote(e.target.value)}
+                placeholder="Audit note (e.g. Acknowledged exception)..."
+                className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setDismissingWarning(null)}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDismissWarning}
+                  className="px-3.5 py-1.5 bg-slate-900 text-white rounded-lg font-medium"
+                >
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+      {/* ACTIVATE MODAL (PORTALED TO DOCUMENT.BODY) */}
+      {isActivateModalOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-sm w-full p-4 shadow-2xl border border-slate-200 text-xs space-y-3 animate-in fade-in zoom-in-95 duration-200">
+              <h3 className="font-bold text-slate-900">Activate Policy v{selectedPolicy.versionNumber}</h3>
+              <div>
+                <label className="block text-slate-700 font-medium mb-1">Change Note</label>
+                <textarea
+                  rows={2}
+                  value={activationChangeNote}
+                  onChange={(e) => setActivationChangeNote(e.target.value)}
+                  placeholder="e.g. Lowered Tier-1 meal cap to ₹2,500."
+                  className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setIsActivateModalOpen(false)}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-slate-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmActivation}
+                  className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg font-medium"
+                >
+                  Activate
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
