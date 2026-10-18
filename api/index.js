@@ -2017,33 +2017,373 @@ function cleanExtractedPdfText(rawText) {
   text = text.replace(/\n{3,}/g, "\n\n");
   return text.trim();
 }
+function decodePdfString(str) {
+  return str.replace(/\\([()\\])/g, "$1").replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "	").replace(/\\([0-7]{1,3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+}
+function extractTextFromPdfRawStreams(arrayBuffer) {
+  if (!arrayBuffer || arrayBuffer.byteLength === 0) return "";
+  try {
+    const bytes = new Uint8Array(arrayBuffer);
+    const latin1Decoder = new TextDecoder("latin1");
+    const rawPdf = latin1Decoder.decode(bytes);
+    const extractedChunks = [];
+    const tjPattern = /\(((?:[^()\\]|\\.)*)\)\s*(?:Tj|'|")/g;
+    let match;
+    while ((match = tjPattern.exec(rawPdf)) !== null) {
+      if (match[1] && match[1].length > 0) {
+        extractedChunks.push(decodePdfString(match[1]));
+      }
+    }
+    const tjArrayPattern = /\[((?:[^\]\\]|\\.)*)\]\s*TJ/g;
+    while ((match = tjArrayPattern.exec(rawPdf)) !== null) {
+      const inner = match[1];
+      const stringMatches = inner.match(/\(((?:[^()\\]|\\.)*)\)/g);
+      if (stringMatches && stringMatches.length > 0) {
+        const line = stringMatches.map((s) => decodePdfString(s.slice(1, -1))).join("");
+        if (line.trim().length > 0) {
+          extractedChunks.push(line);
+        }
+      }
+    }
+    const metaPattern = /\/(?:Title|Subject|Keywords)\s*\(((?:[^()\\]|\\.)*)\)/g;
+    while ((match = metaPattern.exec(rawPdf)) !== null) {
+      if (match[1]) {
+        extractedChunks.push(decodePdfString(match[1]));
+      }
+    }
+    const joined = extractedChunks.join("\n").replace(/[^\x20-\x7E\xA0-\xFF\n\r\t]/g, " ").replace(/ {2,}/g, " ").trim();
+    return joined;
+  } catch (e) {
+    console.warn("extractTextFromPdfRawStreams encountered an error:", e);
+    return "";
+  }
+}
 async function extractTextFromPdfBuffer(buffer) {
   if (!buffer || buffer.length === 0) {
     throw new Error("Provided PDF buffer is empty.");
   }
-  const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: buffer });
-  const result = await parser.getText();
-  const info = await parser.getInfo({ parsePageInfo: true }).catch(() => ({}));
-  const cleanedText = cleanExtractedPdfText(result.text || "");
-  const wordCount = cleanedText ? cleanedText.split(/\s+/).filter(Boolean).length : 0;
-  const characterCount = cleanedText.length;
-  const pageCount = info?.total || info?.numPages || 1;
-  return {
-    text: cleanedText,
-    pageCount,
-    wordCount,
-    characterCount,
-    info
-  };
+  try {
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: buffer });
+    const result = await parser.getText();
+    const info = await parser.getInfo({ parsePageInfo: true }).catch(() => ({}));
+    const cleanedText = cleanExtractedPdfText(result.text || "");
+    const wordCount = cleanedText ? cleanedText.split(/\s+/).filter(Boolean).length : 0;
+    const characterCount = cleanedText.length;
+    const pageCount = info?.total || info?.numPages || 1;
+    return {
+      text: cleanedText,
+      pageCount,
+      wordCount,
+      characterCount,
+      info
+    };
+  } catch (err) {
+    const rawBuffer = buffer instanceof Uint8Array ? buffer.buffer : buffer.buffer;
+    if (rawBuffer instanceof ArrayBuffer) {
+      const rawText = extractTextFromPdfRawStreams(rawBuffer);
+      if (rawText && rawText.trim().length > 0) {
+        const cleanedText = cleanExtractedPdfText(rawText);
+        return {
+          text: cleanedText,
+          pageCount: 1,
+          wordCount: cleanedText.split(/\s+/).filter(Boolean).length,
+          characterCount: cleanedText.length
+        };
+      }
+    }
+    throw err;
+  }
 }
 async function extractTextFromPdfBase64(base64Data) {
   if (!base64Data) {
     throw new Error("Base64 PDF string is empty.");
   }
-  const cleanBase64 = base64Data.replace(/^data:.*?;base64,/i, "").trim();
-  const buffer = Buffer.from(cleanBase64, "base64");
+  const cleanBase64 = base64Data.replace(/^data:.*?;base64,/i, "").replace(/\s+/g, "");
+  let buffer;
+  if (typeof Buffer !== "undefined") {
+    buffer = Buffer.from(cleanBase64, "base64");
+  } else if (typeof atob === "function") {
+    const binary = atob(cleanBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    buffer = bytes;
+  } else {
+    throw new Error("No base64 decoder available in runtime.");
+  }
   return extractTextFromPdfBuffer(buffer);
+}
+
+// src/utils/geminiKeyManager.ts
+import "dotenv/config";
+import dotenv from "dotenv";
+import { GoogleGenAI } from "@google/genai";
+dotenv.config();
+var DEFAULT_GEMINI_KEYS = [];
+function maskKey(key) {
+  if (!key || key.length <= 12) return "***";
+  return `${key.slice(0, 9)}...${key.slice(-7)}`;
+}
+function isQuotaOrRateLimitError(err) {
+  if (!err) return false;
+  const status = err.status || err.code || err.statusCode;
+  const errString = String(err?.message || err?.error || err || "");
+  return status === 429 || status === 503 || /429|resource_exhausted|quota|exceeded|rate limit|too many requests|capacity|overloaded|unavailable/i.test(
+    errString
+  );
+}
+function isAuthOrInvalidKeyError(err) {
+  if (!err) return false;
+  const status = err.status || err.code || err.statusCode;
+  const errString = String(err?.message || err?.error || err || "");
+  return status === 400 || status === 401 || status === 403 || /api_key_invalid|invalid api key|unauthenticated|permission_denied|api key not valid|key expired|forbidden/i.test(
+    errString
+  );
+}
+var GeminiKeyManager = class {
+  // 10 min cooldown for invalid keys
+  constructor(customKeys) {
+    this.keys = [];
+    this.activeIndex = 0;
+    this.clients = /* @__PURE__ */ new Map();
+    this.primaryModel = "gemini-3.8-flash";
+    this.fallbackModel = "gemini-3.6-flash";
+    this.defaultCooldownMs = 60 * 1e3;
+    // 60s cooldown for quota/rate-limits
+    this.authCooldownMs = 10 * 60 * 1e3;
+    this.initKeys(customKeys);
+  }
+  /**
+   * Initialize and deduplicate keys from environment variables and defaults
+   */
+  initKeys(customKeys) {
+    const rawKeys = [];
+    if (customKeys && customKeys.length > 0) {
+      rawKeys.push(...customKeys);
+    } else {
+      if (process.env.GEMINI_API_KEYS) {
+        const splitKeys = process.env.GEMINI_API_KEYS.split(",").map((k) => k.trim());
+        rawKeys.push(...splitKeys);
+      }
+      if (process.env.GEMINI_API_KEY) {
+        rawKeys.push(process.env.GEMINI_API_KEY.trim());
+      }
+      if (process.env.GEMINI_API_KEY_FALLBACK) {
+        rawKeys.push(process.env.GEMINI_API_KEY_FALLBACK.trim());
+      }
+      if (process.env.GEMINI_API_KEY_2) {
+        rawKeys.push(process.env.GEMINI_API_KEY_2.trim());
+      }
+      if (process.env.GEMINI_API_KEY_3) {
+        rawKeys.push(process.env.GEMINI_API_KEY_3.trim());
+      }
+      if (process.env.VITE_GEMINI_API_KEY) {
+        rawKeys.push(process.env.VITE_GEMINI_API_KEY.trim());
+      }
+      rawKeys.push(...DEFAULT_GEMINI_KEYS);
+    }
+    const seen = /* @__PURE__ */ new Set();
+    const uniqueKeys = [];
+    for (const k of rawKeys) {
+      if (k && k.length > 5 && !seen.has(k)) {
+        seen.add(k);
+        uniqueKeys.push(k);
+      }
+    }
+    this.keys = uniqueKeys.map((key) => ({
+      key,
+      masked: maskKey(key),
+      lastUsed: 0,
+      failureCount: 0,
+      cooldownUntil: 0
+    }));
+    this.activeIndex = 0;
+    this.clients.clear();
+  }
+  /**
+   * Total number of configured keys
+   */
+  getKeyCount() {
+    if (this.keys.length === 0) this.initKeys();
+    return this.keys.length;
+  }
+  /**
+   * Get active key entry
+   */
+  getActiveKeyEntry() {
+    if (this.keys.length === 0) this.initKeys();
+    if (this.keys.length === 0) return null;
+    return this.keys[this.activeIndex] || this.keys[0];
+  }
+  /**
+   * Get a GoogleGenAI SDK client instance for a specific key
+   */
+  getClient(key) {
+    let client = this.clients.get(key);
+    if (!client) {
+      client = new GoogleGenAI({
+        apiKey: key,
+        httpOptions: {
+          headers: {
+            "User-Agent": "aistudio-build"
+          }
+        }
+      });
+      this.clients.set(key, client);
+    }
+    return client;
+  }
+  /**
+   * Get GoogleGenAI instance for the currently active key
+   */
+  getAI() {
+    if (this.keys.length === 0) this.initKeys();
+    const entry = this.getActiveKeyEntry();
+    if (!entry) return null;
+    return this.getClient(entry.key);
+  }
+  /**
+   * Mark a key as cooling down due to error
+   */
+  markCooldown(keyIndex, cooldownMs, reason) {
+    if (keyIndex >= 0 && keyIndex < this.keys.length) {
+      const entry = this.keys[keyIndex];
+      entry.cooldownUntil = Date.now() + cooldownMs;
+      entry.failureCount += 1;
+      entry.lastError = reason;
+      console.warn(
+        `[GeminiKeyManager] Key #${keyIndex + 1} (${entry.masked}) placed on cooldown for ${Math.round(
+          cooldownMs / 1e3
+        )}s. Reason: ${reason}`
+      );
+    }
+  }
+  /**
+   * Order keys to try: healthy keys first starting from activeIndex, followed by least-delayed cooling keys
+   */
+  getCandidateKeyIndices() {
+    const now = Date.now();
+    const healthy = [];
+    const inCooldown = [];
+    for (let i = 0; i < this.keys.length; i++) {
+      const idx = (this.activeIndex + i) % this.keys.length;
+      const entry = this.keys[idx];
+      if (entry.cooldownUntil <= now) {
+        healthy.push(idx);
+      } else {
+        inCooldown.push({ index: idx, remaining: entry.cooldownUntil - now });
+      }
+    }
+    if (healthy.length > 0) {
+      return healthy;
+    }
+    inCooldown.sort((a, b) => a.remaining - b.remaining);
+    return inCooldown.map((item) => item.index);
+  }
+  /**
+   * Main execution engine: executes content generation with automatic key failover and model downgrade
+   */
+  async generateContent(params) {
+    if (this.keys.length === 0) this.initKeys();
+    if (this.keys.length === 0) {
+      throw new Error("NO_API_KEYS_CONFIGURED");
+    }
+    const models = params.models && params.models.length > 0 ? params.models : [this.primaryModel, this.fallbackModel, "gemini-3.1-flash-lite"];
+    let lastError = null;
+    for (const model of models) {
+      const candidateIndices = this.getCandidateKeyIndices();
+      for (const keyIndex of candidateIndices) {
+        const entry = this.keys[keyIndex];
+        const client = this.getClient(entry.key);
+        try {
+          console.log(`[Gemini AI] \u{1F680} Calling Gemini API (model: "${model}") with Key #${keyIndex + 1} [${entry.masked}]...`);
+          const startTime = Date.now();
+          const res = await client.models.generateContent({
+            model,
+            contents: params.contents,
+            config: params.config
+          });
+          const elapsed = Date.now() - startTime;
+          console.log(`[Gemini AI] \u2728 Model "${model}" responded successfully in ${elapsed}ms!`);
+          entry.failureCount = 0;
+          entry.cooldownUntil = 0;
+          entry.lastUsed = Date.now();
+          entry.lastError = void 0;
+          this.activeIndex = keyIndex;
+          return res;
+        } catch (err) {
+          lastError = err;
+          const errMsg = String(err?.message || err?.error || err || "");
+          const isQuota = isQuotaOrRateLimitError(err);
+          const isAuth = isAuthOrInvalidKeyError(err);
+          console.warn(
+            `[GeminiKeyManager] \u26A0\uFE0F Call failed on model "${model}" with Key #${keyIndex + 1} (${entry.masked}): ${errMsg}`
+          );
+          if (isQuota || isAuth) {
+            const cooldown = isAuth ? this.authCooldownMs : this.defaultCooldownMs;
+            this.markCooldown(keyIndex, cooldown, errMsg);
+            const remainingCandidates = candidateIndices.filter((idx) => idx !== keyIndex);
+            if (remainingCandidates.length > 0) {
+              const nextIndex = remainingCandidates[0];
+              console.log(
+                `[GeminiKeyManager] \u{1F504} Switching active key to Key #${nextIndex + 1} (${this.keys[nextIndex].masked}) and retrying...`
+              );
+              this.activeIndex = nextIndex;
+            }
+          }
+        }
+      }
+      console.warn(`[GeminiKeyManager] \u26A0\uFE0F All configured keys failed for model "${model}". Trying next fallback model if available...`);
+    }
+    if (isQuotaOrRateLimitError(lastError)) {
+      console.warn("[GeminiKeyManager] \u26A0\uFE0F All Gemini keys and models quota exhausted. Engaging smart heuristic fallback.");
+      throw new Error("QUOTA_EXHAUSTED");
+    }
+    throw lastError || new Error("GEMINI_CALL_FAILED");
+  }
+  /**
+   * Diagnostic pool status report (used by /api/health and admin logs)
+   */
+  getKeyPoolStatus() {
+    if (this.keys.length === 0) this.initKeys();
+    const now = Date.now();
+    const activeEntry = this.getActiveKeyEntry();
+    return {
+      totalKeys: this.keys.length,
+      activeKeyIndex: this.activeIndex,
+      activeKeyMasked: activeEntry ? activeEntry.masked : "none",
+      keys: this.keys.map((entry, index) => {
+        const remainingMs = Math.max(0, entry.cooldownUntil - now);
+        return {
+          index,
+          maskedKey: entry.masked,
+          isHealthy: remainingMs === 0,
+          cooldownRemainingSeconds: Math.ceil(remainingMs / 1e3),
+          failureCount: entry.failureCount,
+          lastError: entry.lastError
+        };
+      })
+    };
+  }
+  /**
+   * Reset cooldowns for all keys (useful for manual retry or tests)
+   */
+  resetCooldowns() {
+    for (const k of this.keys) {
+      k.cooldownUntil = 0;
+      k.failureCount = 0;
+      k.lastError = void 0;
+    }
+  }
+};
+var geminiKeyManager = new GeminiKeyManager();
+function getAI() {
+  return geminiKeyManager.getAI();
+}
+async function generateContentWithQuotaFallback(_ai, params) {
+  return geminiKeyManager.generateContent(params);
 }
 
 // src/services/policyService.ts
@@ -2880,7 +3220,42 @@ router.post("/api/policy/extract-pdf", async (req, res) => {
     if (!pdfBase64) {
       return res.status(400).json({ ok: false, error: "pdfBase64 is required" });
     }
-    const result = await extractTextFromPdfBase64(pdfBase64);
+    let result = await extractTextFromPdfBase64(pdfBase64);
+    if ((!result.text || result.text.trim().length < 20) && geminiKeyManager.getKeyPoolStatus().totalKeys > 0) {
+      try {
+        const cleanBase64 = pdfBase64.replace(/^data:.*?;base64,/i, "").replace(/\s+/g, "");
+        console.log("[Policy PDF Ingestion] Minimal text found via pdf-parse. Engaging Gemini OCR fallback...");
+        const aiResponse = await geminiKeyManager.generateContent({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: "application/pdf",
+                    data: cleanBase64
+                  }
+                },
+                {
+                  text: "Extract all readable policy clauses, headings, section numbers, spending limits, per diems, and rules from this document. Output the full text cleanly."
+                }
+              ]
+            }
+          ]
+        });
+        const geminiText = aiResponse?.text || aiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (geminiText && geminiText.trim().length > 20) {
+          result = {
+            text: cleanExtractedPdfText(geminiText),
+            pageCount: result.pageCount || 1,
+            wordCount: geminiText.split(/\s+/).filter(Boolean).length,
+            characterCount: geminiText.length
+          };
+        }
+      } catch (aiErr) {
+        console.warn("[Policy PDF Ingestion] Gemini OCR fallback failed, proceeding with extracted result:", aiErr);
+      }
+    }
     return res.json({
       ok: true,
       text: result.text,
@@ -2901,9 +3276,39 @@ router.post("/api/policy/ingest", async (req, res) => {
     if (pdfBase64 && (!text || text.trim().length === 0)) {
       extractedPdfInfo = await extractTextFromPdfBase64(pdfBase64);
       text = extractedPdfInfo.text;
+      if ((!text || text.trim().length < 20) && geminiKeyManager.getKeyPoolStatus().totalKeys > 0) {
+        try {
+          const cleanBase64 = pdfBase64.replace(/^data:.*?;base64,/i, "").replace(/\s+/g, "");
+          const aiResponse = await geminiKeyManager.generateContent({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: "application/pdf",
+                      data: cleanBase64
+                    }
+                  },
+                  {
+                    text: "Extract all readable policy clauses, headings, section numbers, spending limits, per diems, and rules from this document. Output the full text cleanly."
+                  }
+                ]
+              }
+            ]
+          });
+          const geminiText = aiResponse?.text || aiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (geminiText && geminiText.trim().length > 20) {
+            text = cleanExtractedPdfText(geminiText);
+            if (extractedPdfInfo) extractedPdfInfo.text = text;
+          }
+        } catch (aiErr) {
+          console.warn("[Policy Ingest] Gemini OCR fallback failed:", aiErr);
+        }
+      }
     }
     if (!text || text.trim().length === 0) {
-      return res.status(400).json({ ok: false, error: "No text or PDF content provided for policy ingestion" });
+      return res.status(400).json({ ok: false, error: "No selectable text found in this PDF (it may be a scanned image or non-searchable). You can type or paste policy clauses manually." });
     }
     const ingestion = parsePolicyFromText(text, {
       policyName: policyName || (fileName ? `Parsed: ${fileName.replace(/\.[^/.]+$/, "")}` : void 0),
@@ -3190,276 +3595,6 @@ function convertReceiptToInr(receipt, customRates) {
     ...convertedMeals ? { mealsContext: convertedMeals } : {},
     conversionMetrics
   };
-}
-
-// src/utils/geminiKeyManager.ts
-import "dotenv/config";
-import dotenv from "dotenv";
-import { GoogleGenAI } from "@google/genai";
-dotenv.config();
-var DEFAULT_GEMINI_KEYS = [];
-function maskKey(key) {
-  if (!key || key.length <= 12) return "***";
-  return `${key.slice(0, 9)}...${key.slice(-7)}`;
-}
-function isQuotaOrRateLimitError(err) {
-  if (!err) return false;
-  const status = err.status || err.code || err.statusCode;
-  const errString = String(err?.message || err?.error || err || "");
-  return status === 429 || status === 503 || /429|resource_exhausted|quota|exceeded|rate limit|too many requests|capacity|overloaded|unavailable/i.test(
-    errString
-  );
-}
-function isAuthOrInvalidKeyError(err) {
-  if (!err) return false;
-  const status = err.status || err.code || err.statusCode;
-  const errString = String(err?.message || err?.error || err || "");
-  return status === 400 || status === 401 || status === 403 || /api_key_invalid|invalid api key|unauthenticated|permission_denied|api key not valid|key expired|forbidden/i.test(
-    errString
-  );
-}
-var GeminiKeyManager = class {
-  // 10 min cooldown for invalid keys
-  constructor(customKeys) {
-    this.keys = [];
-    this.activeIndex = 0;
-    this.clients = /* @__PURE__ */ new Map();
-    this.primaryModel = "gemini-3.8-flash";
-    this.fallbackModel = "gemini-3.6-flash";
-    this.defaultCooldownMs = 60 * 1e3;
-    // 60s cooldown for quota/rate-limits
-    this.authCooldownMs = 10 * 60 * 1e3;
-    this.initKeys(customKeys);
-  }
-  /**
-   * Initialize and deduplicate keys from environment variables and defaults
-   */
-  initKeys(customKeys) {
-    const rawKeys = [];
-    if (customKeys && customKeys.length > 0) {
-      rawKeys.push(...customKeys);
-    } else {
-      if (process.env.GEMINI_API_KEYS) {
-        const splitKeys = process.env.GEMINI_API_KEYS.split(",").map((k) => k.trim());
-        rawKeys.push(...splitKeys);
-      }
-      if (process.env.GEMINI_API_KEY) {
-        rawKeys.push(process.env.GEMINI_API_KEY.trim());
-      }
-      if (process.env.GEMINI_API_KEY_FALLBACK) {
-        rawKeys.push(process.env.GEMINI_API_KEY_FALLBACK.trim());
-      }
-      if (process.env.GEMINI_API_KEY_2) {
-        rawKeys.push(process.env.GEMINI_API_KEY_2.trim());
-      }
-      if (process.env.GEMINI_API_KEY_3) {
-        rawKeys.push(process.env.GEMINI_API_KEY_3.trim());
-      }
-      if (process.env.VITE_GEMINI_API_KEY) {
-        rawKeys.push(process.env.VITE_GEMINI_API_KEY.trim());
-      }
-      rawKeys.push(...DEFAULT_GEMINI_KEYS);
-    }
-    const seen = /* @__PURE__ */ new Set();
-    const uniqueKeys = [];
-    for (const k of rawKeys) {
-      if (k && k.length > 5 && !seen.has(k)) {
-        seen.add(k);
-        uniqueKeys.push(k);
-      }
-    }
-    this.keys = uniqueKeys.map((key) => ({
-      key,
-      masked: maskKey(key),
-      lastUsed: 0,
-      failureCount: 0,
-      cooldownUntil: 0
-    }));
-    this.activeIndex = 0;
-    this.clients.clear();
-  }
-  /**
-   * Total number of configured keys
-   */
-  getKeyCount() {
-    if (this.keys.length === 0) this.initKeys();
-    return this.keys.length;
-  }
-  /**
-   * Get active key entry
-   */
-  getActiveKeyEntry() {
-    if (this.keys.length === 0) this.initKeys();
-    if (this.keys.length === 0) return null;
-    return this.keys[this.activeIndex] || this.keys[0];
-  }
-  /**
-   * Get a GoogleGenAI SDK client instance for a specific key
-   */
-  getClient(key) {
-    let client = this.clients.get(key);
-    if (!client) {
-      client = new GoogleGenAI({
-        apiKey: key,
-        httpOptions: {
-          headers: {
-            "User-Agent": "aistudio-build"
-          }
-        }
-      });
-      this.clients.set(key, client);
-    }
-    return client;
-  }
-  /**
-   * Get GoogleGenAI instance for the currently active key
-   */
-  getAI() {
-    if (this.keys.length === 0) this.initKeys();
-    const entry = this.getActiveKeyEntry();
-    if (!entry) return null;
-    return this.getClient(entry.key);
-  }
-  /**
-   * Mark a key as cooling down due to error
-   */
-  markCooldown(keyIndex, cooldownMs, reason) {
-    if (keyIndex >= 0 && keyIndex < this.keys.length) {
-      const entry = this.keys[keyIndex];
-      entry.cooldownUntil = Date.now() + cooldownMs;
-      entry.failureCount += 1;
-      entry.lastError = reason;
-      console.warn(
-        `[GeminiKeyManager] Key #${keyIndex + 1} (${entry.masked}) placed on cooldown for ${Math.round(
-          cooldownMs / 1e3
-        )}s. Reason: ${reason}`
-      );
-    }
-  }
-  /**
-   * Order keys to try: healthy keys first starting from activeIndex, followed by least-delayed cooling keys
-   */
-  getCandidateKeyIndices() {
-    const now = Date.now();
-    const healthy = [];
-    const inCooldown = [];
-    for (let i = 0; i < this.keys.length; i++) {
-      const idx = (this.activeIndex + i) % this.keys.length;
-      const entry = this.keys[idx];
-      if (entry.cooldownUntil <= now) {
-        healthy.push(idx);
-      } else {
-        inCooldown.push({ index: idx, remaining: entry.cooldownUntil - now });
-      }
-    }
-    if (healthy.length > 0) {
-      return healthy;
-    }
-    inCooldown.sort((a, b) => a.remaining - b.remaining);
-    return inCooldown.map((item) => item.index);
-  }
-  /**
-   * Main execution engine: executes content generation with automatic key failover and model downgrade
-   */
-  async generateContent(params) {
-    if (this.keys.length === 0) this.initKeys();
-    if (this.keys.length === 0) {
-      throw new Error("NO_API_KEYS_CONFIGURED");
-    }
-    const models = params.models && params.models.length > 0 ? params.models : [this.primaryModel, this.fallbackModel, "gemini-3.1-flash-lite"];
-    let lastError = null;
-    for (const model of models) {
-      const candidateIndices = this.getCandidateKeyIndices();
-      for (const keyIndex of candidateIndices) {
-        const entry = this.keys[keyIndex];
-        const client = this.getClient(entry.key);
-        try {
-          console.log(`[Gemini AI] \u{1F680} Calling Gemini API (model: "${model}") with Key #${keyIndex + 1} [${entry.masked}]...`);
-          const startTime = Date.now();
-          const res = await client.models.generateContent({
-            model,
-            contents: params.contents,
-            config: params.config
-          });
-          const elapsed = Date.now() - startTime;
-          console.log(`[Gemini AI] \u2728 Model "${model}" responded successfully in ${elapsed}ms!`);
-          entry.failureCount = 0;
-          entry.cooldownUntil = 0;
-          entry.lastUsed = Date.now();
-          entry.lastError = void 0;
-          this.activeIndex = keyIndex;
-          return res;
-        } catch (err) {
-          lastError = err;
-          const errMsg = String(err?.message || err?.error || err || "");
-          const isQuota = isQuotaOrRateLimitError(err);
-          const isAuth = isAuthOrInvalidKeyError(err);
-          console.warn(
-            `[GeminiKeyManager] \u26A0\uFE0F Call failed on model "${model}" with Key #${keyIndex + 1} (${entry.masked}): ${errMsg}`
-          );
-          if (isQuota || isAuth) {
-            const cooldown = isAuth ? this.authCooldownMs : this.defaultCooldownMs;
-            this.markCooldown(keyIndex, cooldown, errMsg);
-            const remainingCandidates = candidateIndices.filter((idx) => idx !== keyIndex);
-            if (remainingCandidates.length > 0) {
-              const nextIndex = remainingCandidates[0];
-              console.log(
-                `[GeminiKeyManager] \u{1F504} Switching active key to Key #${nextIndex + 1} (${this.keys[nextIndex].masked}) and retrying...`
-              );
-              this.activeIndex = nextIndex;
-            }
-          }
-        }
-      }
-      console.warn(`[GeminiKeyManager] \u26A0\uFE0F All configured keys failed for model "${model}". Trying next fallback model if available...`);
-    }
-    if (isQuotaOrRateLimitError(lastError)) {
-      console.warn("[GeminiKeyManager] \u26A0\uFE0F All Gemini keys and models quota exhausted. Engaging smart heuristic fallback.");
-      throw new Error("QUOTA_EXHAUSTED");
-    }
-    throw lastError || new Error("GEMINI_CALL_FAILED");
-  }
-  /**
-   * Diagnostic pool status report (used by /api/health and admin logs)
-   */
-  getKeyPoolStatus() {
-    if (this.keys.length === 0) this.initKeys();
-    const now = Date.now();
-    const activeEntry = this.getActiveKeyEntry();
-    return {
-      totalKeys: this.keys.length,
-      activeKeyIndex: this.activeIndex,
-      activeKeyMasked: activeEntry ? activeEntry.masked : "none",
-      keys: this.keys.map((entry, index) => {
-        const remainingMs = Math.max(0, entry.cooldownUntil - now);
-        return {
-          index,
-          maskedKey: entry.masked,
-          isHealthy: remainingMs === 0,
-          cooldownRemainingSeconds: Math.ceil(remainingMs / 1e3),
-          failureCount: entry.failureCount,
-          lastError: entry.lastError
-        };
-      })
-    };
-  }
-  /**
-   * Reset cooldowns for all keys (useful for manual retry or tests)
-   */
-  resetCooldowns() {
-    for (const k of this.keys) {
-      k.cooldownUntil = 0;
-      k.failureCount = 0;
-      k.lastError = void 0;
-    }
-  }
-};
-var geminiKeyManager = new GeminiKeyManager();
-function getAI() {
-  return geminiKeyManager.getAI();
-}
-async function generateContentWithQuotaFallback(_ai, params) {
-  return geminiKeyManager.generateContent(params);
 }
 
 // src/services/warrantyEmailService.ts

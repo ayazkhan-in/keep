@@ -13,7 +13,8 @@ import {
   PolicyVersionSchema,
   parsePolicyFromText,
 } from '../engine';
-import { extractTextFromPdfBase64 } from './pdfExtractor';
+import { extractTextFromPdfBase64, cleanExtractedPdfText } from './pdfExtractor';
+import { geminiKeyManager } from '../utils/geminiKeyManager';
 import { getActivePolicy, queryPolicyGrounded } from '../services/policyService';
 import { DEMO_EMPLOYEES } from '../services/employeeService';
 import { Expense, PolicyVersion } from '../types/expense';
@@ -329,7 +330,47 @@ router.post('/api/policy/extract-pdf', async (req: Request, res: Response) => {
     if (!pdfBase64) {
       return res.status(400).json({ ok: false, error: 'pdfBase64 is required' });
     }
-    const result = await extractTextFromPdfBase64(pdfBase64);
+    let result = await extractTextFromPdfBase64(pdfBase64);
+
+    // If PDF text is minimal or absent (e.g. scanned policy handbook or image PDF)
+    // and Gemini is available, run multimodal OCR on the PDF document
+    if ((!result.text || result.text.trim().length < 20) && geminiKeyManager.getKeyPoolStatus().totalKeys > 0) {
+      try {
+        const cleanBase64 = pdfBase64.replace(/^data:.*?;base64,/i, '').replace(/\s+/g, '');
+        console.log('[Policy PDF Ingestion] Minimal text found via pdf-parse. Engaging Gemini OCR fallback...');
+        const aiResponse = await geminiKeyManager.generateContent({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: 'application/pdf',
+                    data: cleanBase64,
+                  },
+                },
+                {
+                  text: 'Extract all readable policy clauses, headings, section numbers, spending limits, per diems, and rules from this document. Output the full text cleanly.',
+                },
+              ],
+            },
+          ],
+        });
+
+        const geminiText = aiResponse?.text || aiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (geminiText && geminiText.trim().length > 20) {
+          result = {
+            text: cleanExtractedPdfText(geminiText),
+            pageCount: result.pageCount || 1,
+            wordCount: geminiText.split(/\s+/).filter(Boolean).length,
+            characterCount: geminiText.length,
+          };
+        }
+      } catch (aiErr) {
+        console.warn('[Policy PDF Ingestion] Gemini OCR fallback failed, proceeding with extracted result:', aiErr);
+      }
+    }
+
     return res.json({
       ok: true,
       text: result.text,
@@ -347,16 +388,46 @@ router.post('/api/policy/extract-pdf', async (req: Request, res: Response) => {
 router.post('/api/policy/ingest', async (req: Request, res: Response) => {
   try {
     let { text, pdfBase64, fileName, policyName } = req.body;
-
     let extractedPdfInfo: any = null;
-    // 1. If pdfBase64 is provided and text is missing or short, extract text from PDF
+
     if (pdfBase64 && (!text || text.trim().length === 0)) {
       extractedPdfInfo = await extractTextFromPdfBase64(pdfBase64);
       text = extractedPdfInfo.text;
+
+      if ((!text || text.trim().length < 20) && geminiKeyManager.getKeyPoolStatus().totalKeys > 0) {
+        try {
+          const cleanBase64 = pdfBase64.replace(/^data:.*?;base64,/i, '').replace(/\s+/g, '');
+          const aiResponse = await geminiKeyManager.generateContent({
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: 'application/pdf',
+                      data: cleanBase64,
+                    },
+                  },
+                  {
+                    text: 'Extract all readable policy clauses, headings, section numbers, spending limits, per diems, and rules from this document. Output the full text cleanly.',
+                  },
+                ],
+              },
+            ],
+          });
+          const geminiText = aiResponse?.text || aiResponse?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (geminiText && geminiText.trim().length > 20) {
+            text = cleanExtractedPdfText(geminiText);
+            if (extractedPdfInfo) extractedPdfInfo.text = text;
+          }
+        } catch (aiErr) {
+          console.warn('[Policy Ingest] Gemini OCR fallback failed:', aiErr);
+        }
+      }
     }
 
     if (!text || text.trim().length === 0) {
-      return res.status(400).json({ ok: false, error: 'No text or PDF content provided for policy ingestion' });
+      return res.status(400).json({ ok: false, error: 'No selectable text found in this PDF (it may be a scanned image or non-searchable). You can type or paste policy clauses manually.' });
     }
 
     // 2. Synthesize structured policy rules using deterministic engine

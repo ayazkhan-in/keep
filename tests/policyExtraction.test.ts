@@ -4,6 +4,7 @@ import {
   extractTextFromPdfBuffer,
   extractTextFromPdfBase64,
   cleanExtractedPdfText,
+  extractTextFromPdfRawStreams,
 } from '../src/server/pdfExtractor';
 import {
   parsePolicyFromText,
@@ -120,6 +121,38 @@ SECTION 5. APPROVAL THRESHOLDS
       const result = await extractPdfText(dataUri, 'policy_test.pdf', arrayBuffer);
       expect(result.text).toContain('Cab reimbursement capped at 1500 INR.');
       expect(result.pageCount).toBe(1);
+    });
+
+    it('extracts text from Uint8Array directly without requiring Node Buffer', async () => {
+      const doc = new jsPDF();
+      doc.text('Direct Uint8Array Browser Compatibility Test: Meals capped at 2500 INR.', 10, 10);
+      const arrayBuffer = doc.output('arraybuffer');
+      const uint8Array = new Uint8Array(arrayBuffer);
+
+      const result = await extractTextFromPdfBuffer(uint8Array);
+      expect(result.text).toContain('Meals capped at 2500 INR.');
+      expect(result.pageCount).toBe(1);
+    });
+
+    it('extracts text using extractTextFromPdfRawStreams directly from raw PDF byte chunks', () => {
+      const doc = new jsPDF({ compress: false });
+      doc.text('Raw Stream Test Clause: Maximum hotel allowance is 8000 INR per night.', 10, 10);
+      const arrayBuffer = doc.output('arraybuffer');
+
+      const rawExtracted = extractTextFromPdfRawStreams(arrayBuffer);
+      expect(rawExtracted).toContain('Raw Stream Test Clause');
+      expect(rawExtracted).toContain('8000 INR');
+    });
+
+    it('handles empty or non-text PDF gracefully without throwing unhandled exceptions', async () => {
+      const doc = new jsPDF();
+      // Empty document with no text
+      const arrayBuffer = doc.output('arraybuffer');
+
+      const clientResult = await extractTextFromPdfArrayBuffer(arrayBuffer);
+      expect(clientResult).toBeDefined();
+      expect(clientResult.text).toBe('');
+      expect(clientResult.wordCount).toBe(0);
     });
   });
 

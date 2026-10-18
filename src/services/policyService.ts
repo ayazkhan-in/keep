@@ -656,37 +656,48 @@ export async function extractPdfText(
   fileName?: string,
   arrayBuffer?: ArrayBuffer
 ): Promise<{ text: string; pageCount: number; wordCount: number; characterCount: number }> {
-  // 1. Try server endpoint first if available
-  try {
-    const endpoint = typeof window !== 'undefined' ? '/api/policy/extract-pdf' : 'http://localhost:3000/api/policy/extract-pdf';
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pdfBase64, fileName }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.ok && typeof data.text === 'string' && data.text.trim().length > 0) {
-        return {
-          text: data.text,
-          pageCount: data.pageCount || 1,
-          wordCount: data.wordCount || (data.text ? data.text.split(/\s+/).filter(Boolean).length : 0),
-          characterCount: data.characterCount || data.text.length,
-        };
+  // 1. Try server endpoint first if available and within Vercel's payload body limit (4.5MB)
+  const isWithinPayloadLimit = !pdfBase64 || pdfBase64.length <= 4 * 1024 * 1024;
+  if (isWithinPayloadLimit && pdfBase64) {
+    try {
+      const endpoint = typeof window !== 'undefined' ? '/api/policy/extract-pdf' : 'http://localhost:3000/api/policy/extract-pdf';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdfBase64, fileName }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok && typeof data.text === 'string') {
+          return {
+            text: data.text,
+            pageCount: data.pageCount || 1,
+            wordCount: data.wordCount || (data.text ? data.text.split(/\s+/).filter(Boolean).length : 0),
+            characterCount: data.characterCount || data.text.length,
+          };
+        }
+      } else {
+        console.warn(`Server PDF extraction endpoint responded with status ${res.status}`);
       }
+    } catch (err) {
+      console.warn('Backend /api/policy/extract-pdf call failed, switching to client extraction:', err);
     }
-  } catch (err) {
-    // Expected when server endpoint is unavailable
   }
 
-  // 2. Direct extraction fallback using pdf-parse (safe in all runtimes)
+  // 2. Direct client-side extraction fallback (safe across browser and server runtimes)
   try {
     const buf = arrayBuffer || (pdfBase64 ? base64ToArrayBuffer(pdfBase64) : undefined);
     if (buf) {
-      return await extractTextFromPdfArrayBuffer(buf);
+      const clientResult = await extractTextFromPdfArrayBuffer(buf);
+      return {
+        text: clientResult.text || '',
+        pageCount: clientResult.pageCount || 1,
+        wordCount: clientResult.wordCount || 0,
+        characterCount: clientResult.characterCount || 0,
+      };
     }
   } catch (clientErr) {
-    console.error('PDF fallback extraction failed:', clientErr);
+    console.error('PDF client fallback extraction failed:', clientErr);
   }
 
   throw new Error('Could not extract text from PDF. Please check the document format or ensure the server is running.');
