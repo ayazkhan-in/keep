@@ -127,18 +127,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     },
     {
-      label: 'View Warranties & Protection',
+      label: 'View Review Queue (Compliance)',
       icon: ShieldCheck,
       action: () => {
-        setActiveView('warranties');
+        setActiveView('review-queue');
         onClose();
       },
     },
     {
-      label: 'View Return Deadlines',
-      icon: RotateCcw,
+      label: 'View Policy Studio',
+      icon: FileSpreadsheet,
       action: () => {
-        setActiveView('returns');
+        setActiveView('policy-studio');
         onClose();
       },
     },
@@ -187,7 +187,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a query (e.g. 'workstation electronics' or 'expiring warranties')..."
+            placeholder="Type a query (e.g. 'client dinners' or 'non-compliant expenses')..."
             autoFocus
             className="flex-1 text-[13px] text-[#0F172A] bg-transparent focus:outline-none placeholder:text-[#94A3B8]"
           />
