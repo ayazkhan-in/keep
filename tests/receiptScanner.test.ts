@@ -253,5 +253,166 @@ describe('Receipt Scanner Versatility & Quality Issues Suite', () => {
       expect(anchorIssue.isDuplicate).toBe(true);
     });
   });
+
+  describe('Receipt Hash Storage Exclusivity & Error Handling', () => {
+    it('does NOT store hash if receipt has blur or unreadable flag (UNREADABLE_BLURRY)', async () => {
+      const {
+        registerReceipt,
+        checkRawImageDuplicate,
+        checkAnchorJsonDuplicate,
+        clearReceiptRegistry,
+      } = await import('../src/utils/receiptDuplicateDetector');
+
+      clearReceiptRegistry();
+
+      const rawHash = 'blurry-receipt-image-hash-1111';
+      const anchorHash = 'blurry-receipt-anchor-hash-1111';
+
+      // Attempt to register a blurry receipt
+      registerReceipt({
+        id: 'rec-blurry-1',
+        title: 'Unreadable Blurry Receipt',
+        vendor: 'Unknown Merchant',
+        date: '2026-10-18',
+        amount: 0,
+        rawImageHash: rawHash,
+        anchorJsonHash: anchorHash,
+        hasIssue: true,
+        isReadable: false,
+        primaryIssue: {
+          code: 'UNREADABLE_BLURRY',
+          severity: 'error',
+          title: 'Receipt Is Severely Blurry & Unreadable',
+          message: 'The receipt is blurry and numbers cannot be read.',
+        },
+      });
+
+      // Verification: Neither the raw image hash nor the anchor json hash should be stored in registry
+      const rawCheck = checkRawImageDuplicate(rawHash);
+      expect(rawCheck.isDuplicate).toBe(false);
+
+      const anchorCheck = checkAnchorJsonDuplicate(anchorHash);
+      expect(anchorCheck.isDuplicate).toBe(false);
+    });
+
+    it('does NOT store hash if receipt is cropped / trimmed (CUT_OFF_DOCUMENT)', async () => {
+      const {
+        registerReceipt,
+        checkRawImageDuplicate,
+        checkAnchorJsonDuplicate,
+        clearReceiptRegistry,
+      } = await import('../src/utils/receiptDuplicateDetector');
+
+      clearReceiptRegistry();
+
+      const rawHash = 'trimmed-receipt-image-hash-2222';
+      const anchorHash = 'trimmed-receipt-anchor-hash-2222';
+
+      // Attempt to register a trimmed receipt
+      registerReceipt({
+        id: 'rec-trimmed-1',
+        title: 'Cut Off Document',
+        vendor: 'Cafe Metro',
+        date: '2026-10-18',
+        amount: 19.0,
+        rawImageHash: rawHash,
+        anchorJsonHash: anchorHash,
+        hasIssue: true,
+        isReadable: false,
+        primaryIssue: {
+          code: 'CUT_OFF_DOCUMENT',
+          severity: 'error',
+          title: 'Document Is Cropped / Trimmed',
+          message: 'Receipt is cut off at the bottom and missing total amount.',
+        },
+      });
+
+      expect(checkRawImageDuplicate(rawHash).isDuplicate).toBe(false);
+      expect(checkAnchorJsonDuplicate(anchorHash).isDuplicate).toBe(false);
+    });
+
+    it('does NOT store hash if hasEncounteredError flag is true', async () => {
+      const {
+        registerReceipt,
+        checkRawImageDuplicate,
+        checkAnchorJsonDuplicate,
+        clearReceiptRegistry,
+      } = await import('../src/utils/receiptDuplicateDetector');
+
+      clearReceiptRegistry();
+
+      const rawHash = 'encountered-error-hash-3333';
+      const anchorHash = 'encountered-error-anchor-3333';
+
+      registerReceipt({
+        id: 'rec-err-1',
+        title: 'Receipt With Scan Interruption',
+        vendor: 'Some Vendor',
+        date: '2026-10-18',
+        amount: 50.0,
+        rawImageHash: rawHash,
+        anchorJsonHash: anchorHash,
+        hasEncounteredError: true,
+      });
+
+      expect(checkRawImageDuplicate(rawHash).isDuplicate).toBe(false);
+      expect(checkAnchorJsonDuplicate(anchorHash).isDuplicate).toBe(false);
+    });
+
+    it('stores hash ONLY when receipt is fully submitted without errors', async () => {
+      const {
+        registerReceipt,
+        checkRawImageDuplicate,
+        checkAnchorJsonDuplicate,
+        clearReceiptRegistry,
+      } = await import('../src/utils/receiptDuplicateDetector');
+
+      clearReceiptRegistry();
+
+      const rawHash = 'clean-valid-image-hash-4444';
+      const anchorHash = 'clean-valid-anchor-hash-4444';
+
+      // Register clean, error-free receipt upon full submission
+      registerReceipt({
+        id: 'rec-clean-1',
+        title: 'Blue Bottle Coffee',
+        vendor: 'Blue Bottle Coffee',
+        date: '2026-10-18',
+        amount: 24.50,
+        rawImageHash: rawHash,
+        anchorJsonHash: anchorHash,
+        hasIssue: false,
+        isReadable: true,
+        hasError: false,
+        hasEncounteredError: false,
+      });
+
+      // Now it IS stored and catches duplicates
+      expect(checkRawImageDuplicate(rawHash).isDuplicate).toBe(true);
+      expect(checkAnchorJsonDuplicate(anchorHash).isDuplicate).toBe(true);
+    });
+
+    it('serverReceiptRegistry does NOT store hashes during scan/ingestion fallback', async () => {
+      const { serverReceiptRegistry, clearServerReceiptRegistry, getReceiptFallback } = await import('../server');
+
+      clearServerReceiptRegistry();
+
+      // Simulate a scan of blurry receipt
+      const fallbackBlurry = getReceiptFallback('blurry smudged unreadable receipt');
+      expect(fallbackBlurry.hasIssue).toBe(true);
+
+      // Verify server registry is empty
+      expect(serverReceiptRegistry.rawImageHashes.size).toBe(0);
+      expect(serverReceiptRegistry.anchorJsonHashes.size).toBe(0);
+
+      // Simulate a scan of valid receipt
+      const fallbackValid = getReceiptFallback('Toit Brewpub Indiranagar Craft Beer Pizza Dinner');
+      expect(fallbackValid.hasIssue).toBe(false);
+
+      // Even valid receipts must NOT be stored at scan time
+      expect(serverReceiptRegistry.rawImageHashes.size).toBe(0);
+      expect(serverReceiptRegistry.anchorJsonHashes.size).toBe(0);
+    });
+  });
 });
 

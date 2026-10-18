@@ -310,7 +310,8 @@ export function checkAnchorJsonDuplicate(anchorJsonHash: string, currentAnchor?:
 }
 
 /**
- * Register a newly confirmed receipt in the duplicate registry
+ * Register a newly confirmed receipt in the duplicate registry.
+ * Strictly enforces that receipts with any issues (blur, trimmed, unreadable) are rejected.
  */
 export function registerReceipt(params: {
   id: string;
@@ -320,7 +321,26 @@ export function registerReceipt(params: {
   amount: number;
   rawImageHash?: string;
   anchorJsonHash?: string;
+  hasIssue?: boolean;
+  hasError?: boolean;
+  hasEncounteredError?: boolean;
+  isReadable?: boolean;
+  issues?: any[];
+  primaryIssue?: any;
 }) {
+  // CRITICAL REQUIREMENT:
+  // Never store hash if receipt has any error (blur, trimmed, unreadable, etc.)
+  if (
+    params.hasIssue ||
+    params.hasError ||
+    params.hasEncounteredError ||
+    params.isReadable === false ||
+    params.primaryIssue ||
+    (params.issues && params.issues.length > 0)
+  ) {
+    return;
+  }
+
   const meta: StoredRecordMeta = {
     id: params.id,
     title: params.title,
@@ -349,6 +369,7 @@ export async function syncRegistryWithItems(
   expenses: Array<{ id: string; expenseDate: string; extracted?: any; receiptRef?: any; anchorJsonHash?: string }>
 ) {
   for (const p of purchases) {
+    if ((p as any).hasIssue || (p as any).isReadable === false) continue;
     const anchor = createAnchorJson({
       purchaseDate: p.purchaseDate,
       price: p.price,
@@ -369,6 +390,7 @@ export async function syncRegistryWithItems(
   }
 
   for (const e of expenses) {
+    if ((e as any).hasIssue || (e as any).extracted?.isReadable === false) continue;
     const rawSha = e.receiptRef?.originalSha256;
     const vendor = e.extracted?.merchant?.value || '';
     const date = e.expenseDate;

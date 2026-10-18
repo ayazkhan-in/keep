@@ -156,6 +156,49 @@ app.get('/api/receipts/registry', (req, res) => {
   });
 });
 
+// Endpoint to register a fully submitted receipt's hashes (ONLY called on final save/submit)
+app.post('/api/receipts/register', (req, res) => {
+  const { id, title, vendor, date, amount, currency, rawImageHash, anchorJsonHash, hasIssue, isReadable, issues, primaryIssue, hasError, hasEncounteredError } = req.body;
+
+  // Guard: Never store hash if receipt encountered any error (blur, trimmed, unreadable, etc.)
+  if (
+    hasIssue ||
+    hasError ||
+    hasEncounteredError ||
+    isReadable === false ||
+    primaryIssue ||
+    (issues && issues.length > 0)
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: 'Refusing to store hash for receipt with errors (blur, trimmed, or unreadable)',
+    });
+  }
+
+  const recordMeta: ScannedReceiptRecord = {
+    id: id || `rec-${Date.now()}`,
+    vendor: vendor || '',
+    date: date || '',
+    amount: Number(amount) || 0,
+    currency: currency || 'USD',
+    timestamp: Date.now(),
+    rawImageHash,
+    anchorJsonHash,
+  };
+
+  if (rawImageHash) {
+    serverReceiptRegistry.rawImageHashes.set(rawImageHash, recordMeta);
+  }
+  if (anchorJsonHash) {
+    serverReceiptRegistry.anchorJsonHashes.set(anchorJsonHash, recordMeta);
+  }
+
+  return res.json({
+    success: true,
+    message: 'Submitted receipt hash registered in duplicate registry',
+  });
+});
+
 // Helper for Heuristic Receipt Fallback when API key or quota is exhausted or for demo scenarios
 export function getReceiptFallback(textContext?: string, imageBase64?: string): any {
   const text = (textContext || '').toLowerCase();
@@ -658,21 +701,6 @@ app.post('/api/gemini/scan-receipt', async (req, res) => {
         }
       }
 
-      if (fallback.isReceipt && !fallback.hasIssue) {
-        const recMeta: ScannedReceiptRecord = {
-          id: `rec-${Date.now()}`,
-          vendor: fallback.vendor,
-          date: fallback.purchaseDate,
-          amount: fallback.price,
-          currency: fallback.currency || 'USD',
-          timestamp: Date.now(),
-          rawImageHash,
-          anchorJsonHash,
-        };
-        if (rawImageHash) serverReceiptRegistry.rawImageHashes.set(rawImageHash, recMeta);
-        if (anchorJsonHash) serverReceiptRegistry.anchorJsonHashes.set(anchorJsonHash, recMeta);
-      }
-
       return res.json({
         success: true,
         extracted: fallback,
@@ -915,26 +943,6 @@ Carefully examine the physical and digital condition of the receipt:
         }
       }
 
-      // If valid and not a duplicate, register in server registry
-      if (parsed.isReceipt && !parsed.hasIssue && !parsed.primaryIssue) {
-        const recordMeta: ScannedReceiptRecord = {
-          id: `rec-${Date.now()}`,
-          vendor: parsed.vendor,
-          date: parsed.purchaseDate,
-          amount: parsed.price,
-          currency: parsed.currency || 'USD',
-          timestamp: Date.now(),
-          rawImageHash,
-          anchorJsonHash,
-        };
-        if (rawImageHash) {
-          serverReceiptRegistry.rawImageHashes.set(rawImageHash, recordMeta);
-        }
-        if (anchorJsonHash) {
-          serverReceiptRegistry.anchorJsonHashes.set(anchorJsonHash, recordMeta);
-        }
-      }
-
       return res.json({
         success: true,
         duplicate: false,
@@ -979,21 +987,6 @@ Carefully examine the physical and digital condition of the receipt:
             quotaExhausted: true,
           });
         }
-      }
-
-      if (fallback.isReceipt && !fallback.hasIssue) {
-        const recMeta: ScannedReceiptRecord = {
-          id: `rec-${Date.now()}`,
-          vendor: fallback.vendor,
-          date: fallback.purchaseDate,
-          amount: fallback.price,
-          currency: fallback.currency || 'USD',
-          timestamp: Date.now(),
-          rawImageHash,
-          anchorJsonHash,
-        };
-        if (rawImageHash) serverReceiptRegistry.rawImageHashes.set(rawImageHash, recMeta);
-        if (anchorJsonHash) serverReceiptRegistry.anchorJsonHashes.set(anchorJsonHash, recMeta);
       }
 
       return res.json({

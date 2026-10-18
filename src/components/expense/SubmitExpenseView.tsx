@@ -108,6 +108,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractingStep, setExtractingStep] = useState('');
   const [receiptIssue, setReceiptIssue] = useState<ReceiptIssue | null>(null);
+  const [hasEncounteredError, setHasEncounteredError] = useState(false);
 
   // Form Fields
   const [vendor, setVendor] = useState('Toit Brewpub Indiranagar');
@@ -483,6 +484,11 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       | 'duplicate_anchor'
   ) => {
     setReceiptIssue(null);
+    if (type === 'blurry_issue' || type === 'duplicate_raw' || type === 'duplicate_anchor') {
+      setHasEncounteredError(true);
+    } else {
+      setHasEncounteredError(false);
+    }
     if (type === 'meal_alcohol') {
       setVendor('Toit Brewpub Indiranagar');
       setDate('2026-10-22');
@@ -718,6 +724,8 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
   const handleIngestFile = async (base64OrFile: string | File, fileName?: string, mimeType = 'image/jpeg') => {
     setIsExtracting(true);
     setExtractingStep('Preprocessing receipt image & hashing...');
+    setReceiptIssue(null);
+    setHasEncounteredError(false);
 
     try {
       let imageBase64 = '';
@@ -743,6 +751,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       if (sha256) {
         const rawDupCheck = checkRawImageDuplicate(sha256);
         if (rawDupCheck.isDuplicate) {
+          setHasEncounteredError(true);
           setReceiptIssue(createDuplicateRejectionIssue(rawDupCheck));
           setIsExtracting(false);
           setExtractingStep('');
@@ -768,6 +777,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
 
         // Check if server rejected as duplicate
         if (data.duplicate || ext.isDuplicate) {
+          setHasEncounteredError(true);
           setReceiptIssue(
             ext.primaryIssue ||
               createDuplicateRejectionIssue({
@@ -792,6 +802,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
         const anchorHash = ext.anchorJsonHash || (await computeAnchorJsonHash(anchor));
         const anchorDupCheck = checkAnchorJsonDuplicate(anchorHash, anchor);
         if (anchorDupCheck.isDuplicate) {
+          setHasEncounteredError(true);
           setReceiptIssue(createDuplicateRejectionIssue(anchorDupCheck));
           setIsExtracting(false);
           setExtractingStep('');
@@ -801,10 +812,13 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
 
         // Check for receipt legibility / validation issues
         if (ext.primaryIssue) {
+          setHasEncounteredError(true);
           setReceiptIssue(ext.primaryIssue);
         } else if (ext.issues && ext.issues.length > 0) {
+          setHasEncounteredError(true);
           setReceiptIssue(ext.issues[0]);
         } else if (ext.hasIssue || ext.isReadable === false) {
+          setHasEncounteredError(true);
           setReceiptIssue({
             code: 'unreadable',
             message: ext.readableReason || 'The receipt image has quality issues or is difficult to read.',
@@ -898,6 +912,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       setCurrentStep(2);
     } catch (err) {
       console.warn('AI Ingestion notice, continuing with fallback:', err);
+      setHasEncounteredError(true);
       setReceiptIssue({
         code: 'unreadable',
         message: 'Could not process receipt image due to network or format error.',
@@ -917,6 +932,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
     setIsExtracting(true);
     setExtractingStep('Extracting structured expense items from text...');
     setReceiptIssue(null);
+    setHasEncounteredError(false);
 
     try {
       const res = await fetch('/api/gemini/scan-receipt', {
@@ -931,9 +947,13 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       if (data && data.extracted) {
         const ext = data.extracted;
         if (ext.primaryIssue) {
+          setHasEncounteredError(true);
           setReceiptIssue(ext.primaryIssue);
         } else if (ext.issues && ext.issues.length > 0) {
+          setHasEncounteredError(true);
           setReceiptIssue(ext.issues[0]);
+        } else if (ext.hasIssue || ext.isReadable === false) {
+          setHasEncounteredError(true);
         }
         if (ext.vendor) setVendor(ext.vendor);
         if (ext.purchaseDate) setDate(ext.purchaseDate);
@@ -967,6 +987,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       setCurrentStep(2);
     } catch (err) {
       console.warn('Paste extraction fallback:', err);
+      setHasEncounteredError(true);
       setCurrentStep(2);
     } finally {
       setIsExtracting(false);
@@ -1043,6 +1064,58 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       setFinalVerdict(result.verdict);
       localStorage.removeItem(STORAGE_KEY_DRAFT);
       setCurrentStep(5);
+
+      // Only store hash information if receipt is fully submitted AND encountered no errors (no blur, trimmed, unreadable, etc.)
+      const hasAnyError = Boolean(
+        hasEncounteredError ||
+        receiptIssue ||
+        integrity.signals.lowResolution ||
+        integrity.signals.tamperingSuspected ||
+        (duplicateInfo && duplicateInfo.candidates && duplicateInfo.candidates.length > 0)
+      );
+
+      if (!hasAnyError) {
+        const anchor = createAnchorJson({
+          date: submittedExpense.expenseDate,
+          total: parsedTotal,
+          merchant: vendor,
+          currency,
+        });
+        computeAnchorJsonHash(anchor).then((anchorHash) => {
+          registerReceipt({
+            id: result.expense.id,
+            title: vendor || 'Corporate Expense Claim',
+            vendor,
+            date: submittedExpense.expenseDate,
+            amount: parsedTotal,
+            rawImageHash: receiptSha256,
+            anchorJsonHash: anchorHash,
+            hasIssue: false,
+            hasError: false,
+            hasEncounteredError: false,
+            isReadable: true,
+          });
+
+          fetch('/api/receipts/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: result.expense.id,
+              title: vendor || 'Corporate Expense Claim',
+              vendor,
+              date: submittedExpense.expenseDate,
+              amount: parsedTotal,
+              currency,
+              rawImageHash: receiptSha256,
+              anchorJsonHash: anchorHash,
+              hasIssue: false,
+              hasError: false,
+              hasEncounteredError: false,
+              isReadable: true,
+            }),
+          }).catch(() => {});
+        }).catch(() => {});
+      }
     } catch (err) {
       console.error('Submit error:', err);
     } finally {

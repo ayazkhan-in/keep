@@ -62,6 +62,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
   const [scanStep, setScanStep] = useState<string>('');
   const [extractedData, setExtractedData] = useState<any>(null);
   const [activeIssue, setActiveIssue] = useState<ReceiptIssue | null>(null);
+  const [hasEncounteredError, setHasEncounteredError] = useState<boolean>(false);
   const [showRawInspector, setShowRawInspector] = useState<boolean>(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -75,6 +76,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
   const resetState = () => {
     setExtractedData(null);
     setActiveIssue(null);
+    setHasEncounteredError(false);
     setPreviewBase64(null);
     setSelectedFile(null);
     setPastedText('');
@@ -152,6 +154,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
         if (dupCheck.isDuplicate) {
           const issue = createDuplicateRejectionIssue(dupCheck);
           setActiveIssue(issue);
+          setHasEncounteredError(true);
           setIsScanning(false);
           return;
         }
@@ -175,6 +178,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
   const processFile = async (file: File) => {
     setSelectedFile(file);
     setActiveIssue(null);
+    setHasEncounteredError(false);
     setExtractedData(null);
 
     // STAGE 1: Raw Image Hashing Check BEFORE Gemini API Call
@@ -186,6 +190,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
         // Discard / reject before calling Gemini API
         const issue = createDuplicateRejectionIssue(dupCheck);
         setActiveIssue(issue);
+        setHasEncounteredError(true);
         setIsScanning(false);
         const reader = new FileReader();
         reader.onload = (e) => setPreviewBase64(e.target?.result as string);
@@ -236,6 +241,12 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
   ) => {
     let mockContext = '';
     let mockPhoto = '';
+
+    if (type === 'toit' || type === 'bluebottle' || type === 'delta' || type === 'uber' || type === 'wework' || type === 'staples' || type === 'apple' || type === 'herman') {
+      setHasEncounteredError(false);
+    } else {
+      setHasEncounteredError(true);
+    }
 
     if (type === 'toit') {
       mockPhoto = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80';
@@ -442,6 +453,7 @@ This file contains no financial transactions, prices, dates, or vendor informati
         // Check if server rejected as duplicate before advancing to review form
         if (data.duplicate || data.extracted.isDuplicate) {
           setExtractedData(null);
+          setHasEncounteredError(true);
           setActiveIssue(
             data.extracted.primaryIssue ||
               createDuplicateRejectionIssue({
@@ -470,6 +482,7 @@ This file contains no financial transactions, prices, dates, or vendor informati
         if (anchorDupCheck.isDuplicate) {
           // Reject as duplicate anchor - process ends here with duplicate card
           setExtractedData(null);
+          setHasEncounteredError(true);
           const issue = createDuplicateRejectionIssue(anchorDupCheck);
           setActiveIssue(issue);
           setIsScanning(false);
@@ -481,9 +494,12 @@ This file contains no financial transactions, prices, dates, or vendor informati
         // Check if there are readability or quality issues to show in the top overlay card
         if (data.extracted.primaryIssue) {
           setActiveIssue(data.extracted.primaryIssue);
+          setHasEncounteredError(true);
         } else if (data.extracted.hasIssue && data.extracted.issues?.[0]) {
           setActiveIssue(data.extracted.issues[0]);
-        } else if (!data.extracted.isReadable) {
+          setHasEncounteredError(true);
+        } else if (!data.extracted.isReadable || data.extracted.hasIssue) {
+          setHasEncounteredError(true);
           setActiveIssue({
             code: 'UNREADABLE_IMAGE',
             severity: 'error',
@@ -504,6 +520,7 @@ This file contains no financial transactions, prices, dates, or vendor informati
       }
     } catch (err) {
       console.error('Scan error:', err);
+      setHasEncounteredError(true);
       setActiveIssue({
         code: 'NETWORK_ERROR',
         severity: 'warning',
@@ -587,16 +604,50 @@ This file contains no financial transactions, prices, dates, or vendor informati
       anchorJsonHash: extractedData.anchorJsonHash,
     };
 
-    // Register confirmed purchase into duplicate registry
-    registerReceipt({
-      id: newPurchase.id,
-      title: newPurchase.name,
-      vendor: newPurchase.vendor,
-      date: newPurchase.purchaseDate,
-      amount: newPurchase.price,
-      rawImageHash: newPurchase.rawImageHash,
-      anchorJsonHash: newPurchase.anchorJsonHash,
-    });
+    // Register confirmed purchase into duplicate registry ONLY if it has no errors (no blur, trimmed, etc.)
+    const hasAnyError = Boolean(
+      hasEncounteredError ||
+      extractedData.hasIssue ||
+      activeIssue ||
+      extractedData.isReadable === false ||
+      extractedData.primaryIssue ||
+      (extractedData.issues && extractedData.issues.length > 0)
+    );
+
+    if (!hasAnyError) {
+      registerReceipt({
+        id: newPurchase.id,
+        title: newPurchase.name,
+        vendor: newPurchase.vendor,
+        date: newPurchase.purchaseDate,
+        amount: newPurchase.price,
+        rawImageHash: newPurchase.rawImageHash,
+        anchorJsonHash: newPurchase.anchorJsonHash,
+        hasIssue: false,
+        hasError: false,
+        hasEncounteredError: false,
+        isReadable: true,
+      });
+
+      fetch('/api/receipts/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: newPurchase.id,
+          title: newPurchase.name,
+          vendor: newPurchase.vendor,
+          date: newPurchase.purchaseDate,
+          amount: newPurchase.price,
+          currency: newPurchase.currency,
+          rawImageHash: newPurchase.rawImageHash,
+          anchorJsonHash: newPurchase.anchorJsonHash,
+          hasIssue: false,
+          hasError: false,
+          hasEncounteredError: false,
+          isReadable: true,
+        }),
+      }).catch(() => {});
+    }
 
     onSavePurchase(newPurchase);
     resetState();
