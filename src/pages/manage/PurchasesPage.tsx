@@ -8,8 +8,6 @@ export const PurchasesPage: React.FC = () => {
     setIsScannerOpen,
     setSelectedPurchase,
     handleDeletePurchase,
-    handleTriggerClaim,
-    handleTriggerReturn,
   } = useWorkspace();
 
   return (
@@ -18,8 +16,6 @@ export const PurchasesPage: React.FC = () => {
       openScanner={() => setIsScannerOpen(true)}
       onSelectPurchase={(item) => setSelectedPurchase(item)}
       onDeletePurchase={handleDeletePurchase}
-      onTriggerClaim={handleTriggerClaim}
-      onTriggerReturn={handleTriggerReturn}
     />
   );
 };

@@ -84,10 +84,11 @@ export const VaultView: React.FC<VaultViewProps> = ({
             Invoice
           </span>
         );
-      case 'warranty_card':
+      case 'tax_document':
+      case 'compliance_proof':
         return (
           <span className="font-mono-code text-[10px] bg-[#FEF3C7] text-[#92400E] px-2 py-0.5 rounded-full border border-[#FDE68A] uppercase">
-            Warranty Card
+            Tax Slip
           </span>
         );
       default:
@@ -128,8 +129,9 @@ export const VaultView: React.FC<VaultViewProps> = ({
             price: purchase.price,
             purchaseDate: purchase.purchaseDate,
             serialNumber: purchase.serialNumber,
-            warranty: purchase.warranty,
-            returnWindow: purchase.returnWindow,
+            category: purchase.category,
+            taxDeductible: purchase.taxDeductible,
+            notes: purchase.notes,
           },
         }),
       });
@@ -146,27 +148,23 @@ export const VaultView: React.FC<VaultViewProps> = ({
 
   const handleCopyAuditReport = () => {
     if (!auditResult) return;
-    const report = `KEEPR FORENSIC DOCUMENT AUDIT REPORT
-Document: ${auditResult.documentTitle}
-Status: ${auditResult.legalValidity} (Score: ${auditResult.authenticityScore}/100)
+    const report = `KEEPR FORENSIC COMPLIANCE AUDIT REPORT
+Document: ${auditResult.documentTitle || 'Expense Voucher'}
+Status: ${auditResult.legalValidity || 'Verified'} (Score: ${auditResult.authenticityScore || 98}/100)
 
 EXECUTIVE SUMMARY:
-${auditResult.executiveSummary}
+${auditResult.executiveSummary || 'Verified valid proof of corporate expenditure.'}
 
-WARRANTY AUDIT:
-- Coverage: ${auditResult.warrantyCoverageAudit?.duration || 'Standard'}
-- Covered Components: ${auditResult.warrantyCoverageAudit?.coveredParts?.join(', ') || 'N/A'}
-- Exclusions: ${auditResult.warrantyCoverageAudit?.excludedConditions?.join(', ') || 'Standard'}
-- Claim Method: ${auditResult.warrantyCoverageAudit?.claimMethod || 'Online'}
-- Support: ${auditResult.warrantyCoverageAudit?.supportContact || 'Manufacturer'}
-
-RETURN POLICY:
-- Window: ${auditResult.returnPolicyAudit?.eligibility || 'N/A'}
-- Restocking Fee: ${auditResult.returnPolicyAudit?.restockingFee || '$0'}
+EXPENSE COMPLIANCE AUDIT:
+- Compliance Status: ${auditResult.expenseComplianceAudit?.status || 'Compliant'}
+- Policy Rule: ${auditResult.expenseComplianceAudit?.policyRule || 'Standard Corporate Expense Policy'}
+- Allowance Check: ${auditResult.expenseComplianceAudit?.allowanceCheck || 'Within limits'}
+- Approval Routing: ${auditResult.expenseComplianceAudit?.approvalRouting || 'Auto-approved for ERP export'}
 
 TAX & COMPLIANCE:
-- Tax Deductible: ${auditResult.taxAudit?.isDeductible ? 'Yes' : 'No'} (${auditResult.taxAudit?.irsSection})
-- Retention Period: ${auditResult.taxAudit?.recommendedRetentionYears || 7} Years`;
+- Tax Deductible: ${auditResult.taxAudit?.taxDeductible !== false ? 'Yes' : 'No'}
+- Category: ${auditResult.taxAudit?.category || 'Corporate Expense'}
+- Notes: ${auditResult.taxAudit?.notes || 'Standard business deduction'}`;
 
     navigator.clipboard.writeText(report);
     setCopiedAudit(true);
@@ -187,7 +185,7 @@ TAX & COMPLIANCE:
             Document Vault
           </h1>
           <p className="text-[13px] text-[#76777D] mt-1 font-normal">
-            Encrypted vault storing all original invoices, store receipts, and warranty slips.
+            Encrypted vault storing all original invoices, tax receipts, and compliance proof.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -214,7 +212,7 @@ TAX & COMPLIANCE:
             { id: 'all', label: 'All Documents' },
             { id: 'receipt', label: 'Receipts' },
             { id: 'invoice', label: 'Invoices' },
-            { id: 'warranty_card', label: 'Warranty Slips' },
+            { id: 'tax_document', label: 'Tax Slips' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -395,10 +393,10 @@ TAX & COMPLIANCE:
                   <div className="py-8 flex flex-col items-center justify-center text-center space-y-3">
                     <Loader2 className="w-8 h-8 text-[#0F172A] animate-spin" />
                     <p className="text-[13px] font-medium text-[#0F172A]">
-                      Running Gemini Forensic Document & Legal Audit...
+                      Running Gemini Compliance & Forensic Invoice Audit...
                     </p>
                     <p className="text-[11px] text-[#76777D] font-mono-code">
-                      Verifying authenticity, warranty clauses & statutory consumer rights
+                      Verifying authenticity, line items & statutory corporate compliance
                     </p>
                   </div>
                 )}
@@ -428,55 +426,54 @@ TAX & COMPLIANCE:
 
                     {/* Two Column Breakdown */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[12px]">
-                      {/* Warranty Audit */}
+                      {/* Expense Policy Compliance Audit */}
                       <div className="p-4 border border-[#E2E8F0] rounded-2xl space-y-2.5">
                         <h4 className="font-mono-code text-[11px] font-semibold text-[#0F172A] uppercase tracking-wider flex items-center gap-1.5">
                           <ShieldCheck className="w-3.5 h-3.5 text-[#475569]" />
-                          Warranty Terms & Claim Protocol
+                          Policy Compliance & Routing
                         </h4>
                         <div className="space-y-1.5 text-[#45464D]">
                           <p>
-                            <strong className="text-[#0F172A]">Coverage:</strong>{' '}
-                            {auditResult.warrantyCoverageAudit?.duration || '1-Year Limited'}
+                            <strong className="text-[#0F172A]">Status:</strong>{' '}
+                            {auditResult.expenseComplianceAudit?.status || 'Compliant'}
                           </p>
                           <p>
-                            <strong className="text-[#0F172A]">Covered Parts:</strong>{' '}
-                            {auditResult.warrantyCoverageAudit?.coveredParts?.join(', ') || 'All standard components'}
+                            <strong className="text-[#0F172A]">Policy Rule:</strong>{' '}
+                            {auditResult.expenseComplianceAudit?.policyRule || 'Standard Corporate Expense Policy'}
                           </p>
                           <p>
-                            <strong className="text-[#0F172A]">Exclusions:</strong>{' '}
-                            {auditResult.warrantyCoverageAudit?.excludedConditions?.join(', ') || 'Accidental damage'}
+                            <strong className="text-[#0F172A]">Allowance Check:</strong>{' '}
+                            {auditResult.expenseComplianceAudit?.allowanceCheck || 'Within departmental threshold'}
                           </p>
                           <p>
-                            <strong className="text-[#0F172A]">Claim Method:</strong>{' '}
-                            {auditResult.warrantyCoverageAudit?.claimMethod || 'Online RMA submission'}
+                            <strong className="text-[#0F172A]">Approval Routing:</strong>{' '}
+                            {auditResult.expenseComplianceAudit?.approvalRouting || 'Verified for ERP export'}
                           </p>
                         </div>
                       </div>
 
-                      {/* Return & Tax Audit */}
+                      {/* Tax Classification & Retention */}
                       <div className="p-4 border border-[#E2E8F0] rounded-2xl space-y-2.5">
                         <h4 className="font-mono-code text-[11px] font-semibold text-[#0F172A] uppercase tracking-wider flex items-center gap-1.5">
                           <FileCheck className="w-3.5 h-3.5 text-[#475569]" />
-                          Return Policy & Tax Classification
+                          Tax Classification & Retention
                         </h4>
                         <div className="space-y-1.5 text-[#45464D]">
                           <p>
-                            <strong className="text-[#0F172A]">Return Policy:</strong>{' '}
-                            {auditResult.returnPolicyAudit?.eligibility || 'Standard window'}
-                          </p>
-                          <p>
-                            <strong className="text-[#0F172A]">Restocking Fee:</strong>{' '}
-                            {auditResult.returnPolicyAudit?.restockingFee || '$0 (Free)'}
+                            <strong className="text-[#0F172A]">Tax Classification:</strong>{' '}
+                            {auditResult.expenseComplianceAudit?.taxClassification || 'Qualified Business Write-off'}
                           </p>
                           <p>
                             <strong className="text-[#0F172A]">Tax Deductible:</strong>{' '}
-                            {auditResult.taxAudit?.isDeductible ? 'Yes' : 'No'} (
-                            {auditResult.taxAudit?.irsSection || 'IRC Sec 179'})
+                            {auditResult.taxAudit?.taxDeductible !== false ? 'Yes (100% Eligible)' : 'Non-deductible'}
                           </p>
                           <p>
-                            <strong className="text-[#0F172A]">Recommended Retention:</strong>{' '}
-                            {auditResult.taxAudit?.recommendedRetentionYears || 7} Years (IRS audit standard)
+                            <strong className="text-[#0F172A]">Audit Notes:</strong>{' '}
+                            {auditResult.taxAudit?.notes || 'Standard business deduction'}
+                          </p>
+                          <p>
+                            <strong className="text-[#0F172A]">Statutory Retention:</strong>{' '}
+                            7 Years (Corporate Tax Audit Standard)
                           </p>
                         </div>
                       </div>

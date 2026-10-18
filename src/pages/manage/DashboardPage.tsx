@@ -9,8 +9,6 @@ export const DashboardPage: React.FC = () => {
     setActiveView,
     setIsScannerOpen,
     setSelectedPurchase,
-    handleTriggerClaim,
-    handleTriggerReturn,
   } = useWorkspace();
 
   return (
@@ -20,8 +18,6 @@ export const DashboardPage: React.FC = () => {
       setActiveView={setActiveView}
       openScanner={() => setIsScannerOpen(true)}
       onSelectPurchase={(item) => setSelectedPurchase(item)}
-      onTriggerClaim={handleTriggerClaim}
-      onTriggerReturn={handleTriggerReturn}
     />
   );
 };

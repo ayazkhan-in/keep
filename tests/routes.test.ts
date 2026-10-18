@@ -33,8 +33,8 @@ describe('Corporate Portal Routing & View Resolution', () => {
   it('correctly maps Manage routes under auditor tools to views', () => {
     expect(getPathToView('/auditor/manage/dashboard')).toBe('dashboard');
     expect(getPathToView('/auditor/manage/purchases')).toBe('purchases');
-    expect(getPathToView('/auditor/manage/warranties')).toBe('warranties');
-    expect(getPathToView('/auditor/manage/returns')).toBe('returns');
+    expect(getPathToView('/auditor/manage/warranties')).toBe('review-queue');
+    expect(getPathToView('/auditor/manage/returns')).toBe('review-queue');
     expect(getPathToView('/auditor/manage/vault')).toBe('vault');
     expect(getPathToView('/auditor/manage/analytics')).toBe('analytics');
     expect(getPathToView('/auditor/manage/timeline')).toBe('timeline');

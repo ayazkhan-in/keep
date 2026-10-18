@@ -13,7 +13,7 @@ import {
   normalizeCurrencyCode,
 } from '../utils/currencyConverter';
 import { geminiKeyManager, getAI, generateContentWithQuotaFallback } from '../utils/geminiKeyManager';
-import { sendWarrantyExpiryAlert } from '../services/warrantyEmailService';
+import { sendExpenseComplianceAlert } from '../services/warrantyEmailService';
 
 dotenv.config();
 
@@ -1203,79 +1203,7 @@ Additional Document Text: ${documentText || 'None provided'}`,
   }
 });
 
-// 3. AI Asset Depreciation & Resale Valuator
-app.post('/api/gemini/valuate-asset', async (req, res) => {
-  const getValuationFallback = (purchase: any) => {
-    const origPrice = Number(purchase?.price) || 1000;
-    const depRate = purchase?.category === 'Electronics' ? 0.025 : 0.015;
-    const pDate = new Date(purchase?.purchaseDate || Date.now());
-    const ageMonths = Math.max(0, Math.round((Date.now() - pDate.getTime()) / (1000 * 60 * 60 * 24 * 30.4)));
-    const currentVal = Math.max(origPrice * 0.25, origPrice * Math.pow(1 - depRate, ageMonths));
-
-    return {
-      originalPrice: origPrice,
-      estimatedCurrentValue: Math.round(currentVal),
-      depreciationPercentage: Math.round(((origPrice - currentVal) / origPrice) * 100),
-      assetAgeMonths: ageMonths,
-      conditionGrade: 'Excellent (A-)',
-      recommendedResaleWindow: 'Next 3-6 months for optimal yield before next model release',
-      marketTrend: 'Steady secondary market demand',
-      replacementCost: Math.round(origPrice * 1.05),
-      annualDepreciationRate: purchase?.category === 'Electronics' ? '24% / year' : '14% / year',
-      resaleAdvice: `Consider listing on peer-to-peer marketplaces with proof of purchase and original packaging to command a 10-15% premium.`,
-    };
-  };
-
-  try {
-    const { purchase } = req.body;
-    const ai = getAI();
-
-    if (!ai) {
-      return res.json({ success: true, valuation: getValuationFallback(purchase) });
-    }
-
-    try {
-      const response = await generateContentWithQuotaFallback(ai, {
-        contents: `Estimate the current fair market resale value, annual depreciation rate, and resale timing advice for this purchase:
-Product: ${purchase.name}
-Category: ${purchase.category}
-Original Price: $${purchase.price} ${purchase.currency || 'USD'}
-Purchase Date: ${purchase.purchaseDate}
-Vendor: ${purchase.vendor}`,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              originalPrice: { type: Type.NUMBER },
-              estimatedCurrentValue: { type: Type.NUMBER },
-              depreciationPercentage: { type: Type.NUMBER },
-              assetAgeMonths: { type: Type.NUMBER },
-              conditionGrade: { type: Type.STRING },
-              recommendedResaleWindow: { type: Type.STRING },
-              marketTrend: { type: Type.STRING },
-              replacementCost: { type: Type.NUMBER },
-              annualDepreciationRate: { type: Type.STRING },
-              resaleAdvice: { type: Type.STRING },
-            },
-            required: ['estimatedCurrentValue', 'depreciationPercentage', 'annualDepreciationRate', 'resaleAdvice'],
-          },
-        },
-      });
-
-      const parsed = JSON.parse(response.text || '{}');
-      return res.json({ success: true, valuation: parsed });
-    } catch (apiErr: any) {
-      console.warn('Valuation API quota fallback:', apiErr.message);
-      return res.json({ success: true, valuation: getValuationFallback(purchase), quotaExhausted: true });
-    }
-  } catch (error: any) {
-    console.error('Error valuating asset:', error);
-    return res.json({ success: true, valuation: getValuationFallback(req.body.purchase), quotaExhausted: true });
-  }
-});
-
-// 4. Ask Keepr Natural Language Assistant (Corporate Expense & Policy Intelligence)
+// 3. Ask Keepr Natural Language Assistant (Corporate Expense & Policy Intelligence)
 app.post('/api/gemini/chat', async (req, res) => {
   const getChatFallback = (message: string) => {
     const lower = (message || '').toLowerCase();
@@ -1305,11 +1233,11 @@ app.post('/api/gemini/chat', async (req, res) => {
     const systemInstruction = `You are Keepr AI, an enterprise corporate expense reimbursement and policy compliance assistant.
 
 STRICT CONSTRAINTS:
-1. DOMAIN RESTRICTION: Answer ONLY questions about corporate expenses, reimbursement policies, category spend caps, receipt verification rules, and expense audit workflows.
-2. STRICT REFUSAL: If asked about personal purchases, consumer warranties, return windows, code generation, general knowledge, or off-topic subjects, respond ONLY with: "I only assist with corporate expense reimbursements, spending limits, and company expense policies."
-3. CONCISENESS: Keep answers extremely brief (1 to 3 sentences or short bullet points). Provide zero conversational fluff or introductory chatter.
-4. POLICY INTEGRITY: Never invent or assume numbers, allowances, or policy rules. If a limit is not defined, explicitly instruct the user to seek manager approval.
-5. FORMAT: Use bold text for amounts and limits. State exact currency where applicable.`;
+1. SCOPE: ONLY answer questions about corporate expenses, reimbursement policies, category spend caps, receipt verification rules, and expense audit workflows.
+2. STRICT REFUSAL: For ANY question about personal purchases, consumer warranties, return windows, code generation, general knowledge, or off-topic subjects, respond ONLY with: "I only assist with corporate expense reimbursements, spending limits, and company expense policies."
+3. CONCISENESS: Answer in 1 to 2 direct sentences. Zero greetings, conversational filler, or introductory pleasantries.
+4. ACCURACY: Never hallucinate numbers, spend allowances, or unwritten rules. If a limit is not defined, explicitly instruct the user to seek manager approval.
+5. FORMATTING: Use bold text for all amounts, limits, and percentages. State exact currency where applicable.`;
 
     const formattedHistory = chatHistory.map((m: any) => ({
       role: m.sender === 'user' ? 'user' : 'model',
@@ -1511,11 +1439,11 @@ const handleSendAlert = async (req: any, res: any) => {
         documents: [],
       };
 
-      const result = await sendWarrantyExpiryAlert(sampleItem as any, recipientEmail, daysLeft);
+      const result = await sendExpenseComplianceAlert(sampleItem as any, recipientEmail, daysLeft);
       return res.json(result);
     }
 
-    const result = await sendWarrantyExpiryAlert(purchase, recipientEmail, daysLeft);
+    const result = await sendExpenseComplianceAlert(purchase, recipientEmail, daysLeft);
     return res.json(result);
   } catch (error: any) {
     console.error('Error in send-alert route:', error);

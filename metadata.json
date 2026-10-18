@@ -1,6 +1,6 @@
 {
   "name": "Keepr",
-  "description": "Minimal, AI-powered purchase intelligence, receipt scanner, warranty tracker, and return deadline manager.",
+  "description": "Minimal, AI-powered corporate expense reimbursement, receipt scanner, and policy compliance auditor.",
   "requestFramePermissions": [
     "camera"
   ],

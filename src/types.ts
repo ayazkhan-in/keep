@@ -59,11 +59,6 @@ export interface ExtractedReceiptData {
   orderNumber?: string;
   serialNumber?: string;
   paymentMethod?: string;
-  warrantyMonths?: number;
-  warrantyProvider?: string;
-  warrantyTerms?: string;
-  returnDays?: number;
-  returnPolicy?: string;
   notes?: string;
   taxDeductible?: boolean;
   taxCategory?: string;
@@ -115,31 +110,11 @@ export interface ExtractedReceiptData {
 export interface DocumentItem {
   id: string;
   name: string;
-  type: 'receipt' | 'invoice' | 'warranty_card' | 'manual';
+  type: 'receipt' | 'invoice' | 'tax_document' | 'compliance_proof' | 'manual';
   fileUrl: string;
   previewUrl?: string;
   uploadDate: string;
   fileSize: string;
-}
-
-export interface WarrantyInfo {
-  hasWarranty: boolean;
-  durationMonths: number;
-  startDate: string;
-  expiryDate: string;
-  provider: string;
-  terms: string;
-  claimInstructions?: string;
-  claimStatus?: 'none' | 'drafted' | 'submitted' | 'approved';
-}
-
-export interface ReturnWindowInfo {
-  hasReturn: boolean;
-  returnDays: number;
-  deadlineDate: string;
-  status: 'open' | 'expiring_soon' | 'closed';
-  policy: string;
-  restockingFee?: string;
 }
 
 export interface PurchaseItem {
@@ -153,8 +128,6 @@ export interface PurchaseItem {
   orderNumber?: string;
   serialNumber?: string;
   paymentMethod?: string;
-  warranty?: WarrantyInfo;
-  returnWindow?: ReturnWindowInfo;
   documents: DocumentItem[];
   tags: string[];
   notes?: string;
@@ -170,7 +143,7 @@ export interface PurchaseItem {
 
 export interface AIActionItem {
   id: string;
-  type: 'return_closing' | 'warranty_expiring' | 'receipt_sync' | 'warranty_claim' | 'policy_exception' | 'missing_info' | 'policy_audit';
+  type: 'receipt_sync' | 'policy_exception' | 'missing_info' | 'policy_audit';
   severity: 'critical' | 'warning' | 'info';
   title: string;
   description: string;
@@ -182,7 +155,7 @@ export interface SpendingInsight {
   id: string;
   title: string;
   description: string;
-  type: 'spending' | 'warranty' | 'subscription' | 'tax' | 'policy';
+  type: 'spending' | 'subscription' | 'tax' | 'policy';
   actionLabel: string;
 }
 
@@ -197,8 +170,6 @@ export interface ChatMessage {
 export type ActiveView =
   | 'dashboard'
   | 'purchases'
-  | 'warranties'
-  | 'returns'
   | 'vault'
   | 'analytics'
   | 'timeline'

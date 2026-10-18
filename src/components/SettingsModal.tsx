@@ -64,7 +64,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     setIsSendingTestEmail(true);
     setTestEmailStatus(null);
     try {
-      const res = await fetch('/api/warranty/send-alert', {
+      const res = await fetch('/api/expense/send-alert', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -175,7 +175,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   <div className="flex items-center justify-between p-3.5 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl">
                     <div>
                       <p className="font-medium text-[#0F172A]">Email & In-App Alerts</p>
-                      <p className="text-[12px] text-[#76777D]">Receive digests on closing return windows & warranty expiries</p>
+                      <p className="text-[12px] text-[#76777D]">Receive digests on policy exceptions & reimbursement cutoffs</p>
                     </div>
                     <input
                       type="checkbox"
@@ -187,7 +187,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
                   <div className="p-3.5 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl space-y-2">
                     <label className="block text-[#45464D] text-xs font-medium">
-                      Warranty & Return Expiry Alert Buffer
+                      Expense Audit & Reconciliation Reminder Buffer
                     </label>
                     <MinimalSelect
                       value={returnReminders}

@@ -35,8 +35,6 @@ export const ROUTES = {
     // Manage Tools
     MANAGE_DASHBOARD: '/auditor/manage/dashboard',
     MANAGE_PURCHASES: '/auditor/manage/purchases',
-    MANAGE_WARRANTIES: '/auditor/manage/warranties',
-    MANAGE_RETURNS: '/auditor/manage/returns',
     MANAGE_VAULT: '/auditor/manage/vault',
     MANAGE_ANALYTICS: '/auditor/manage/analytics',
     MANAGE_TIMELINE: '/auditor/manage/timeline',
@@ -68,8 +66,6 @@ export const VIEW_TO_PATH: Record<ActiveView, string> = {
   // Manage Views
   'dashboard': ROUTES.AUDITOR.MANAGE_DASHBOARD,
   'purchases': ROUTES.AUDITOR.MANAGE_PURCHASES,
-  'warranties': ROUTES.AUDITOR.MANAGE_WARRANTIES,
-  'returns': ROUTES.AUDITOR.MANAGE_RETURNS,
   'vault': ROUTES.AUDITOR.MANAGE_VAULT,
   'analytics': ROUTES.AUDITOR.MANAGE_ANALYTICS,
   'timeline': ROUTES.AUDITOR.MANAGE_TIMELINE,
@@ -101,8 +97,8 @@ export function getPathToView(pathname: string): ActiveView {
 
   if (cleanPath.startsWith('/auditor/manage/dashboard')) return 'dashboard';
   if (cleanPath.startsWith('/auditor/manage/purchases')) return 'purchases';
-  if (cleanPath.startsWith('/auditor/manage/warranties')) return 'warranties';
-  if (cleanPath.startsWith('/auditor/manage/returns')) return 'returns';
+  if (cleanPath.startsWith('/auditor/manage/warranties')) return 'review-queue';
+  if (cleanPath.startsWith('/auditor/manage/returns')) return 'review-queue';
   if (cleanPath.startsWith('/auditor/manage/vault')) return 'vault';
   if (cleanPath.startsWith('/auditor/manage/analytics')) return 'analytics';
   if (cleanPath.startsWith('/auditor/manage/timeline')) return 'timeline';

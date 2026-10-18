@@ -6,7 +6,6 @@ import { TopBar } from '../components/TopBar';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ReceiptScannerModal } from '../components/ReceiptScannerModal';
 import { PurchaseDetailModal } from '../components/PurchaseDetailModal';
-import { AIClaimModal } from '../components/AIClaimModal';
 import { CommandPalette } from '../components/CommandPalette';
 import { SettingsModal } from '../components/SettingsModal';
 import { AIChatDrawer } from '../components/AIChatDrawer';
@@ -40,8 +39,6 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ portal }) => {
     setIsAuthModalOpen,
     selectedPurchase,
     setSelectedPurchase,
-    claimModalState,
-    setClaimModalState,
     dbConnected,
     riskCount,
     currentRole,
@@ -50,8 +47,6 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ portal }) => {
     setActiveView,
     handleAddPurchase,
     handleDeletePurchase,
-    handleTriggerClaim,
-    handleTriggerReturn,
   } = useWorkspace();
 
   return (
@@ -125,17 +120,6 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ portal }) => {
         isOpen={Boolean(selectedPurchase)}
         onClose={() => setSelectedPurchase(null)}
         onDelete={handleDeletePurchase}
-        onTriggerClaim={handleTriggerClaim}
-        onTriggerReturn={handleTriggerReturn}
-      />
-
-      <AIClaimModal
-        isOpen={claimModalState.isOpen}
-        onClose={() =>
-          setClaimModalState({ isOpen: false, purchase: null, mode: 'warranty_claim' })
-        }
-        purchase={claimModalState.purchase}
-        mode={claimModalState.mode}
       />
 
       <CommandPalette
@@ -157,8 +141,6 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ portal }) => {
         onClose={() => setIsAIChatOpen(false)}
         purchases={purchases}
         onSelectPurchase={(item) => setSelectedPurchase(item)}
-        onTriggerClaim={handleTriggerClaim}
-        onTriggerReturn={handleTriggerReturn}
       />
 
       <AuthModal

@@ -1,5 +1,5 @@
 export interface FeatureFlags {
-  /** When true, shows legacy purchase, warranty and return tracking views */
+  /** When true, shows legacy views */
   legacyKeepr: boolean;
   /** When true, activates the corporate expense reimbursement auditor workspace */
   expenseAudit: boolean;

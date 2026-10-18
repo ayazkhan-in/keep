@@ -49,11 +49,11 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
 
               {/* Title & Description */}
               <h3 className="text-lg font-semibold text-slate-900 tracking-tight">
-                Delete Purchase Record?
+                Delete Expense Record?
               </h3>
               <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
                 Are you sure you want to permanently delete <strong className="text-slate-800 font-semibold">{itemName}</strong>?
-                This will remove the receipt, warranty details, return windows, and vault documents from your database.
+                This will remove the receipt, audit trail, tax classification, and vault documents from your database.
               </p>
 
               {/* Action Buttons */}

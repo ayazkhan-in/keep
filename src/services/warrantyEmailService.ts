@@ -55,7 +55,7 @@ Design & Email Structure Requirements:
 /**
  * Generate a custom HTML email via LangChain PromptTemplate & Google AI Studio, then send via Nodemailer SMTP.
  */
-export async function sendWarrantyExpiryAlert(
+export async function sendExpenseComplianceAlert(
   purchase: PurchaseItem,
   recipientEmail: string = 'khanasifshamshul@gmail.com',
   customDaysLeft?: number
@@ -146,3 +146,5 @@ export async function sendWarrantyExpiryAlert(
     };
   }
 }
+
+export const sendWarrantyExpiryAlert = sendExpenseComplianceAlert;

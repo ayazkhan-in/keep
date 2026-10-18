@@ -24,12 +24,6 @@ import { getActiveRole, setActiveRole } from '../services/employeeService';
 import { useAuth } from './AuthContext';
 import { getPathToView, VIEW_TO_PATH, ROUTES } from '../routes/routeConfig';
 
-interface ClaimModalState {
-  isOpen: boolean;
-  purchase: PurchaseItem | null;
-  mode: 'warranty_claim' | 'return_request';
-}
-
 interface WorkspaceContextType {
   // Purchases & Invoices
   purchases: PurchaseItem[];
@@ -60,8 +54,6 @@ interface WorkspaceContextType {
   setIsAuthModalOpen: (open: boolean) => void;
   selectedPurchase: PurchaseItem | null;
   setSelectedPurchase: (p: PurchaseItem | null) => void;
-  claimModalState: ClaimModalState;
-  setClaimModalState: React.Dispatch<React.SetStateAction<ClaimModalState>>;
 
   // Role & Navigation
   currentRole: UserRole;
@@ -72,8 +64,6 @@ interface WorkspaceContextType {
   // Domain Actions
   handleAddPurchase: (item: PurchaseItem) => Promise<void>;
   handleDeletePurchase: (id: string) => Promise<void>;
-  handleTriggerClaim: (item: PurchaseItem) => void;
-  handleTriggerReturn: (item: PurchaseItem) => void;
   handleSaveInvoice: (inv: Invoice) => Promise<void>;
   handleEditInvoice: (inv: Invoice) => void;
   handleDuplicateInvoice: (inv: Invoice) => void;
@@ -174,12 +164,6 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [selectedPurchase, setSelectedPurchase] = useState<PurchaseItem | null>(null);
   const [dbConnected, setDbConnected] = useState<boolean>(true);
 
-  const [claimModalState, setClaimModalState] = useState<ClaimModalState>({
-    isOpen: false,
-    purchase: null,
-    mode: 'warranty_claim',
-  });
-
   // Subscribe to real-time Firestore updates for purchases and invoices
   useEffect(() => {
     const userId = user?.uid;
@@ -249,33 +233,20 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       console.warn('Failed to sync new purchase to Firestore (using local state):', err);
     }
 
-    if (newPurchase.warranty?.hasWarranty || newPurchase.returnWindow?.hasReturn) {
+    if (newPurchase.notes?.includes('FLAGGED') || newPurchase.notes?.includes('EXCEEDED')) {
       try {
-        const expiryStr = newPurchase.warranty?.expiryDate || newPurchase.returnWindow?.deadlineDate;
-        let actualDaysLeft = 30;
-        if (expiryStr) {
-          const expiryDate = new Date(expiryStr);
-          const diffMs = expiryDate.getTime() - Date.now();
-          actualDaysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-        }
-
-        const savedBufferText = localStorage.getItem('keepr_reminder_buffer') || '30 days';
-        const bufferDays = parseInt(savedBufferText, 10) || 30;
-
-        if (actualDaysLeft <= bufferDays) {
-          const recipientEmail = user?.email || 'khanasifshamshul@gmail.com';
-          fetch('/api/warranty/send-alert', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              purchase: newPurchase,
-              recipientEmail: recipientEmail,
-              daysLeft: actualDaysLeft,
-            }),
-          }).catch((e) => console.warn('Instant warranty/return email alert notice:', e.message));
-        }
+        const recipientEmail = user?.email || 'khanasifshamshul@gmail.com';
+        fetch('/api/expense/send-alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            purchase: newPurchase,
+            recipientEmail: recipientEmail,
+            policyViolation: newPurchase.notes,
+          }),
+        }).catch((e) => console.warn('Instant expense policy violation alert notice:', e.message));
       } catch (e) {
-        console.warn('Failed to trigger instant email:', e);
+        console.warn('Failed to trigger instant expense email:', e);
       }
     }
   }, [user?.uid, user?.email]);
@@ -343,24 +314,8 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   }, [user?.uid]);
 
-  const handleTriggerClaim = useCallback((purchase: PurchaseItem) => {
-    setClaimModalState({
-      isOpen: true,
-      purchase,
-      mode: 'warranty_claim',
-    });
-  }, []);
-
-  const handleTriggerReturn = useCallback((purchase: PurchaseItem) => {
-    setClaimModalState({
-      isOpen: true,
-      purchase,
-      mode: 'return_request',
-    });
-  }, []);
-
   const riskCount = useMemo(() => purchases.filter(
-    (p) => p.returnWindow?.hasReturn && p.returnWindow?.status === 'expiring_soon'
+    (p) => p.notes?.includes('FLAGGED') || p.notes?.includes('EXCEEDED') || p.notes?.includes('ALERT')
   ).length, [purchases]);
 
   const contextValue = useMemo(() => ({
@@ -388,16 +343,12 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     setIsAuthModalOpen,
     selectedPurchase,
     setSelectedPurchase,
-    claimModalState,
-    setClaimModalState,
     currentRole,
     handleRoleChange,
     activeView,
     setActiveView,
     handleAddPurchase,
     handleDeletePurchase,
-    handleTriggerClaim,
-    handleTriggerReturn,
     handleSaveInvoice,
     handleEditInvoice,
     handleDuplicateInvoice,
@@ -417,15 +368,12 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     isAIChatOpen,
     isAuthModalOpen,
     selectedPurchase,
-    claimModalState,
     currentRole,
     handleRoleChange,
     activeView,
     setActiveView,
     handleAddPurchase,
     handleDeletePurchase,
-    handleTriggerClaim,
-    handleTriggerReturn,
     handleSaveInvoice,
     handleEditInvoice,
     handleDuplicateInvoice,

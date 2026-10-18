@@ -22,8 +22,6 @@ interface AIChatDrawerProps {
   onClose: () => void;
   purchases: PurchaseItem[];
   onSelectPurchase?: (item: PurchaseItem) => void;
-  onTriggerClaim?: (item: PurchaseItem) => void;
-  onTriggerReturn?: (item: PurchaseItem) => void;
 }
 
 export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
@@ -31,8 +29,6 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
   onClose,
   purchases,
   onSelectPurchase,
-  onTriggerClaim,
-  onTriggerReturn,
 }) => {
   const [messages, setMessages] = useState<Message[]>([
     {

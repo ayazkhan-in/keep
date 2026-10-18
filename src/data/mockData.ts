@@ -12,23 +12,6 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     orderNumber: 'W99281044',
     serialNumber: 'C02G8490MD6R',
     paymentMethod: 'Apple Card (•••• 8821)',
-    warranty: {
-      hasWarranty: true,
-      durationMonths: 12,
-      startDate: '2023-10-24',
-      expiryDate: '2024-10-24',
-      provider: 'AppleCare+ Limited 1-Year',
-      terms: 'Hardware repair coverage, 90 days technical support, accidental damage coverage with deductible.',
-      claimInstructions: 'Visit support.apple.com or book a Genius Bar appointment at any Apple Store.',
-      claimStatus: 'none',
-    },
-    returnWindow: {
-      hasReturn: true,
-      returnDays: 14,
-      deadlineDate: '2023-11-07', // 3 days left in mock reference timeline
-      status: 'expiring_soon',
-      policy: '14 calendar days from receipt of goods. Full refund to original payment method.',
-    },
     documents: [
       {
         id: 'doc-1',
@@ -66,24 +49,6 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     orderNumber: 'DWR-883912',
     serialNumber: 'HM-AER-2023-9941',
     paymentMethod: 'Chase Sapphire (•••• 4129)',
-    warranty: {
-      hasWarranty: true,
-      durationMonths: 144, // 12 years!
-      startDate: '2023-10-12',
-      expiryDate: '2035-10-12',
-      provider: 'Herman Miller 12-Year 3-Shift Warranty',
-      terms: 'Comprehensive 12-year warranty covering all components including pneumatic cylinders, casters, and PostureFit SL mechanism.',
-      claimInstructions: 'Contact DWR customer service or submit claim at hermanmiller.com/warranty with serial tag photo.',
-      claimStatus: 'none',
-    },
-    returnWindow: {
-      hasReturn: true,
-      returnDays: 30,
-      deadlineDate: '2023-11-11',
-      status: 'open',
-      policy: '30-day return policy subject to 10% restocking fee for opened furniture items.',
-      restockingFee: '10%',
-    },
     documents: [
       {
         id: 'doc-2',
@@ -112,23 +77,6 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     orderNumber: 'WS-994103',
     serialNumber: 'BES878BSS1BCA1',
     paymentMethod: 'Amex Platinum (•••• 1004)',
-    warranty: {
-      hasWarranty: true,
-      durationMonths: 24,
-      startDate: '2022-11-05',
-      expiryDate: '2024-11-05',
-      provider: 'Breville 2-Year Limited Manufacturer Warranty',
-      terms: 'Covers repair or replacement of defective thermojet heater, LCD display, and built-in conical burr grinder.',
-      claimInstructions: 'Submit RMA request through breville.com/us/en/support with proof of purchase.',
-      claimStatus: 'drafted',
-    },
-    returnWindow: {
-      hasReturn: false,
-      returnDays: 30,
-      deadlineDate: '2022-12-05',
-      status: 'closed',
-      policy: '30-day standard return window expired.',
-    },
     documents: [
       {
         id: 'doc-3',
@@ -157,23 +105,6 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     orderNumber: '112-9982410-4491023',
     serialNumber: 'S01-4499120-J',
     paymentMethod: 'Amazon Prime Card (•••• 7741)',
-    warranty: {
-      hasWarranty: true,
-      durationMonths: 12,
-      startDate: '2023-10-18',
-      expiryDate: '2024-10-18',
-      provider: 'Sony 1-Year Limited Manufacturer Warranty',
-      terms: 'Covers parts and labor for manufacturing defects in ANC microphones and drivers.',
-      claimInstructions: 'Contact Sony authorized service center or visit sony.com/electronics/support.',
-      claimStatus: 'none',
-    },
-    returnWindow: {
-      hasReturn: true,
-      returnDays: 30,
-      deadlineDate: '2023-11-17',
-      status: 'expiring_soon',
-      policy: 'Amazon 30-Day Hassle-Free Returns. Full refund upon carrier drop-off.',
-    },
     documents: [
       {
         id: 'doc-4',
@@ -202,23 +133,6 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     orderNumber: 'BBY01-88491029',
     serialNumber: '306RMCR89012',
     paymentMethod: 'Visa Signature (•••• 9012)',
-    warranty: {
-      hasWarranty: true,
-      durationMonths: 12,
-      startDate: '2023-06-20',
-      expiryDate: '2024-06-20',
-      provider: 'LG 1-Year Limited Parts & Labor',
-      terms: 'Full panel and internal electronics coverage for 12 months from original purchase invoice.',
-      claimInstructions: 'Call LG VIP Customer Support 1-800-243-0000 with Model and Serial.',
-      claimStatus: 'none',
-    },
-    returnWindow: {
-      hasReturn: false,
-      returnDays: 15,
-      deadlineDate: '2023-07-05',
-      status: 'closed',
-      policy: 'Best Buy My Best Buy Plus 60-day window expired.',
-    },
     documents: [
       {
         id: 'doc-5',
@@ -247,23 +161,6 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     orderNumber: 'BH-10492109',
     serialNumber: 'ILCE-7M4-3391024',
     paymentMethod: 'Chase Ink Business (•••• 9931)',
-    warranty: {
-      hasWarranty: true,
-      durationMonths: 12,
-      startDate: '2022-11-02',
-      expiryDate: '2023-11-02',
-      provider: 'Sony USA 1-Year Limited Warranty',
-      terms: 'Repair of shutter mechanism and sensor assembly defects.',
-      claimInstructions: 'Submit online at precisioncamera.com authorized Sony repair depot.',
-      claimStatus: 'none',
-    },
-    returnWindow: {
-      hasReturn: false,
-      returnDays: 30,
-      deadlineDate: '2022-12-02',
-      status: 'closed',
-      policy: '30-day return window expired.',
-    },
     documents: [
       {
         id: 'doc-6',
@@ -291,21 +188,6 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     currency: 'USD',
     orderNumber: 'FIG-INV-2023-10-881',
     paymentMethod: 'Corporate Mastercard (•••• 3302)',
-    warranty: {
-      hasWarranty: false,
-      durationMonths: 0,
-      startDate: '2023-10-01',
-      expiryDate: '2024-10-01',
-      provider: 'SaaS Subscription SLA',
-      terms: 'Standard 99.9% uptime Service Level Agreement.',
-    },
-    returnWindow: {
-      hasReturn: false,
-      returnDays: 0,
-      deadlineDate: '2023-10-01',
-      status: 'closed',
-      policy: 'Annual subscriptions non-refundable after billing cycle begins.',
-    },
     documents: [
       {
         id: 'doc-7',
@@ -334,23 +216,6 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     orderNumber: '114-0029182-5591024',
     serialNumber: 'EPS-ET4850-99014',
     paymentMethod: 'Amazon Card (•••• 7741)',
-    warranty: {
-      hasWarranty: true,
-      durationMonths: 24,
-      startDate: '2023-09-18',
-      expiryDate: '2025-09-18',
-      provider: 'Epson 2-Year Limited Extended Warranty',
-      terms: 'Full unit replacement with product registration.',
-      claimInstructions: 'Register at epson.com/support/et4850 within 30 days of purchase.',
-      claimStatus: 'none',
-    },
-    returnWindow: {
-      hasReturn: false,
-      returnDays: 30,
-      deadlineDate: '2023-10-18',
-      status: 'closed',
-      policy: '30-day Amazon return period expired.',
-    },
     documents: [
       {
         id: 'doc-8',
@@ -378,21 +243,6 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     currency: 'USD',
     orderNumber: 'STP-440912',
     paymentMethod: 'Visa Business (•••• 9931)',
-    warranty: {
-      hasWarranty: false,
-      durationMonths: 0,
-      startDate: '2023-10-20',
-      expiryDate: '2023-10-20',
-      provider: 'Consumables',
-      terms: 'No manufacturer warranty on consumables.',
-    },
-    returnWindow: {
-      hasReturn: true,
-      returnDays: 30,
-      deadlineDate: '2023-11-19',
-      status: 'open',
-      policy: 'Unopened office supplies returnable within 30 days with receipt.',
-    },
     documents: [
       {
         id: 'doc-9',

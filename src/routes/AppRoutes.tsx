@@ -34,8 +34,6 @@ const ScorecardPage = React.lazy(() => import('../pages/auditor/ScorecardPage').
 // Lazy-loaded Manage Pages
 const DashboardPage = React.lazy(() => import('../pages/manage/DashboardPage').then((m) => ({ default: m.DashboardPage })));
 const PurchasesPage = React.lazy(() => import('../pages/manage/PurchasesPage').then((m) => ({ default: m.PurchasesPage })));
-const WarrantiesPage = React.lazy(() => import('../pages/manage/WarrantiesPage').then((m) => ({ default: m.WarrantiesPage })));
-const ReturnsPage = React.lazy(() => import('../pages/manage/ReturnsPage').then((m) => ({ default: m.ReturnsPage })));
 const VaultPage = React.lazy(() => import('../pages/manage/VaultPage').then((m) => ({ default: m.VaultPage })));
 const AnalyticsPage = React.lazy(() => import('../pages/manage/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })));
 const TimelinePage = React.lazy(() => import('../pages/manage/TimelinePage').then((m) => ({ default: m.TimelinePage })));
@@ -143,11 +141,11 @@ export const AppRoutes: React.FC = () => {
           <Route path="scorecard" element={<ScorecardPage />} />
           <Route path="settings" element={<SettingsPage />} />
 
-          {/* Manage Tools (Personal asset vault, warranties, invoices) */}
+          {/* Manage Tools (Invoices, vault, analytics) */}
           <Route path="manage/dashboard" element={<DashboardPage />} />
           <Route path="manage/purchases" element={<PurchasesPage />} />
-          <Route path="manage/warranties" element={<WarrantiesPage />} />
-          <Route path="manage/returns" element={<ReturnsPage />} />
+          <Route path="manage/warranties" element={<Navigate to={ROUTES.AUDITOR.REVIEW_QUEUE} replace />} />
+          <Route path="manage/returns" element={<Navigate to={ROUTES.AUDITOR.REVIEW_QUEUE} replace />} />
           <Route path="manage/vault" element={<VaultPage />} />
           <Route path="manage/analytics" element={<AnalyticsPage />} />
           <Route path="manage/timeline" element={<TimelinePage />} />

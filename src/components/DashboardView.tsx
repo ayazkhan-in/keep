@@ -24,8 +24,6 @@ interface DashboardViewProps {
   setActiveView: (view: ActiveView) => void;
   openScanner: () => void;
   onSelectPurchase: (item: PurchaseItem) => void;
-  onTriggerClaim: (item: PurchaseItem) => void;
-  onTriggerReturn: (item: PurchaseItem) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -34,18 +32,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   setActiveView,
   openScanner,
   onSelectPurchase,
-  onTriggerClaim,
-  onTriggerReturn,
 }) => {
   const { formatPrice, formatCompact, currencySymbol } = useCurrency();
   const [spendingRange, setSpendingRange] = useState<'30days' | 'year'>('30days');
   const [hoveredBar, setHoveredBar] = useState<number | null>(3); // Default Thu active
 
-  // Calculate Money at Risk (purchases eligible for return in next 14 days)
-  const itemsEligibleForReturn = purchases.filter(
-    (p) => p.returnWindow.hasReturn && p.returnWindow.status !== 'closed'
+  // Calculate Flagged / Policy Exception Spend
+  const flaggedExpenses = purchases.filter(
+    (p) => p.notes?.includes('EXCEEDED') || p.notes?.includes('FLAGGED') || p.notes?.includes('ALERT')
   );
-  const capitalAtRisk = itemsEligibleForReturn.reduce((sum, item) => sum + item.price, 0);
+  const auditRiskSpend = flaggedExpenses.reduce((sum, item) => sum + item.price, 0);
 
   // Bar data dynamically using currency
   const barData = [
@@ -85,7 +81,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             Intelligence Overview
           </h1>
           <p className="text-[13px] text-[#76777D] mt-1 font-normal">
-            Here is the current state of your managed assets and expenditure.
+            Here is the current state of corporate expense compliance and expenditure.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -118,27 +114,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             <div className="space-y-2.5">
-              {/* Action Item 1: Return Closing */}
+              {/* Action Item 1: Policy Exception */}
               <div
-                onClick={() => {
-                  const item = purchases.find((p) => p.id === 'pur-1') || purchases[0];
-                  onTriggerReturn(item);
-                }}
+                onClick={() => setActiveView('review-queue')}
                 className="flex items-center justify-between p-3.5 border border-[#E2E8F0] rounded-xl hover:border-[#94A3B8] transition-all group cursor-pointer bg-[#F9F9FB] hover:bg-white"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full bg-[#DC2626] shrink-0" />
                   <div>
                     <p className="text-[13px] font-medium text-[#0F172A]">
-                      Return window closing for MacBook Pro
+                      Policy Exception: Weekend Flight Upgrade
                     </p>
                     <p className="text-[12px] text-[#76777D]">
-                      Deadline in 3 days. Initiate return now to secure {formatPrice(3499)}.
+                      Non-compliant timing detected. Requires auditor review.
                     </p>
                   </div>
                 </div>
                 <span className="text-[12px] font-medium text-[#0F172A] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  Review <ArrowRight className="w-3 h-3" />
+                  Audit <ArrowRight className="w-3 h-3" />
                 </span>
               </div>
 
@@ -154,7 +147,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       Scan new receipts or invoices
                     </p>
                     <p className="text-[12px] text-[#76777D]">
-                      Drop image or PDF to extract warranties, serial numbers & policies.
+                      Drop image or PDF to extract merchant, line-items & tax compliance.
                     </p>
                   </div>
                 </div>
@@ -163,27 +156,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
               </div>
 
-              {/* Action Item 3: Warranty claim ready */}
+              {/* Action Item 3: Missing Attendee Info */}
               <div
-                onClick={() => {
-                  const breville = purchases.find((p) => p.id === 'pur-3') || purchases[0];
-                  onTriggerClaim(breville);
-                }}
+                onClick={() => setActiveView('review-queue')}
                 className="flex items-center justify-between p-3.5 border border-[#E2E8F0] rounded-xl hover:border-[#94A3B8] transition-all group cursor-pointer bg-[#F9F9FB] hover:bg-white"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B] shrink-0" />
                   <div>
                     <p className="text-[13px] font-medium text-[#0F172A]">
-                      Breville Barista Pro Warranty Expiry (14 Days)
+                      Missing Attendee Roster (Client Dinner $340)
                     </p>
                     <p className="text-[12px] text-[#76777D]">
-                      AI drafted warranty claim available for review.
+                      Client entertainment requires itemized roster verification.
                     </p>
                   </div>
                 </div>
                 <span className="text-[12px] font-medium text-[#0F172A] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                  Review Claim <ArrowRight className="w-3 h-3" />
+                  Resolve <ArrowRight className="w-3 h-3" />
                 </span>
               </div>
             </div>
@@ -306,13 +296,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <p className="font-mono-code text-[13px] font-semibold text-[#0F172A]">
                       {formatPrice(p.price)}
                     </p>
-                    {p.warranty.hasWarranty ? (
-                      <span className="inline-block px-2 py-0.5 mt-1 bg-[#F1F5F9] text-[#475569] text-[10px] uppercase font-mono-code rounded-full border border-[#E2E8F0]">
-                        Warranty Active
+                    {p.notes?.includes('FLAGGED') || p.notes?.includes('EXCEEDED') ? (
+                      <span className="inline-block px-2 py-0.5 mt-1 bg-rose-50 text-rose-600 text-[10px] uppercase font-mono-code rounded-full border border-rose-200 font-semibold">
+                        Policy Flag
                       </span>
                     ) : (
-                      <span className="inline-block px-2 py-0.5 mt-1 bg-[#F1F5F9] text-[#76777D] text-[10px] uppercase font-mono-code rounded-full">
-                        Receipt Saved
+                      <span className="inline-block px-2 py-0.5 mt-1 bg-[#F1F5F9] text-[#475569] text-[10px] uppercase font-mono-code rounded-full border border-[#E2E8F0]">
+                        Audit Cleared
                       </span>
                     )}
                   </div>
@@ -322,9 +312,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </motion.div>
         </div>
 
-        {/* Right Column (4 cols): Capital at Risk + Upcoming Deadlines Timeline */}
+        {/* Right Column (4 cols): Flagged Expense Exposure + Upcoming Deadlines Timeline */}
         <div className="lg:col-span-4 flex flex-col gap-5">
-          {/* Capital at Risk Widget */}
+          {/* Flagged Expense Exposure Widget */}
           <motion.div
             initial={{ opacity: 0, y: 16, filter: 'blur(8px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -333,24 +323,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           >
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-mono-code text-[11px] text-[#76777D] uppercase tracking-wider font-semibold">
-                Capital at Risk
+                Flagged Expense Exposure
               </h3>
               <Info className="w-4 h-4 text-[#94A3B8]" />
             </div>
             <div className="mt-3">
               <p className="text-3xl md:text-4xl text-[#0F172A] font-semibold tracking-tighter leading-none font-mono-code">
-                {formatPrice(capitalAtRisk)}
+                {formatPrice(auditRiskSpend)}
               </p>
               <p className="text-[12px] text-[#76777D] mt-2 leading-relaxed">
-                Value of items eligible for return or exchange within the next 14 days.
+                Total value of expense items flagged for policy non-compliance or missing documentation.
               </p>
             </div>
             <div className="mt-4 pt-4 border-t border-[#E2E8F0]">
               <button
-                onClick={() => setActiveView('returns')}
+                onClick={() => setActiveView('review-queue')}
                 className="w-full py-2.5 bg-[#F9F9FB] text-[#0F172A] border border-[#E2E8F0] rounded-xl text-[12px] font-medium hover:bg-[#F1F5F9] transition-colors cursor-pointer"
               >
-                View Eligible Items ({itemsEligibleForReturn.length})
+                Open Review Queue ({flaggedExpenses.length})
               </button>
             </div>
           </motion.div>
@@ -377,9 +367,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Today
                 </p>
                 <p className="text-[13px] font-medium text-[#0F172A] mt-0.5">
-                  MacBook Pro Return Window
+                  Monthly Reimbursement Cutoff
                 </p>
-                <p className="text-[11px] text-[#76777D]">Apple Store · Order #W99281044</p>
+                <p className="text-[11px] text-[#76777D]">Finance cycle batch closing today</p>
               </div>
 
               {/* Timeline Item 2 */}
@@ -389,9 +379,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Nov 2
                 </p>
                 <p className="text-[13px] font-medium text-[#0F172A] mt-0.5">
-                  Sony A7IV Warranty Expiry
+                  Per Diem Reconciliation
                 </p>
-                <p className="text-[11px] text-[#76777D]">Manufacturer 1-Year Limited</p>
+                <p className="text-[11px] text-[#76777D]">Quarterly travel allowance audits</p>
               </div>
 
               {/* Timeline Item 3 */}
@@ -413,9 +403,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Nov 19
                 </p>
                 <p className="text-[13px] font-medium text-[#0F172A] mt-0.5">
-                  Breville Barista Pro RMA
+                  ERP Ledger Sync
                 </p>
-                <p className="text-[11px] text-[#76777D]">Williams Sonoma Warranty Claim</p>
+                <p className="text-[11px] text-[#76777D]">Automated NetSuite batch sync</p>
               </div>
             </div>
 

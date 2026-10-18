@@ -60,7 +60,7 @@ const PRESET_TEMPLATES = [
       { id: '1', description: 'Workstation Hardware Assembly & Calibration', quantity: 4, unitPrice: 650, taxRate: 7, discount: 0, amount: 2600 },
       { id: '2', description: 'On-Site Network Infrastructure Configuration', quantity: 8, unitPrice: 110, taxRate: 7, discount: 0, amount: 880 },
     ],
-    notes: 'Hardware covered under 1-year manufacturer warranty. Service SLA active.',
+    notes: 'Enterprise procurement agreement. Corporate service SLA active.',
     terms: 'Net 30',
   },
 ];

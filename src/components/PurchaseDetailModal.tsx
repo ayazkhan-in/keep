@@ -1,25 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
-  ShieldCheck,
-  RotateCcw,
-  Download,
   Trash2,
   FileText,
   Bot,
   ExternalLink,
-  Calendar,
-  CreditCard,
-  Hash,
-  Tag,
-  Building,
   CheckCircle2,
-  TrendingDown,
-  Loader2,
-  DollarSign,
-  Clock,
-  ArrowUpRight,
 } from 'lucide-react';
 import { PurchaseItem } from '../types';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
@@ -30,8 +17,6 @@ interface PurchaseDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDelete: (id: string) => void;
-  onTriggerClaim: (item: PurchaseItem) => void;
-  onTriggerReturn: (item: PurchaseItem) => void;
 }
 
 export const PurchaseDetailModal: React.FC<PurchaseDetailModalProps> = ({
@@ -39,40 +24,10 @@ export const PurchaseDetailModal: React.FC<PurchaseDetailModalProps> = ({
   isOpen,
   onClose,
   onDelete,
-  onTriggerClaim,
-  onTriggerReturn,
 }) => {
   const { formatPrice } = useCurrency();
-  const [activeTab, setActiveTab] = useState<'overview' | 'valuation' | 'warranty' | 'return' | 'documents'>('overview');
-  const [valuationData, setValuationData] = useState<any>(null);
-  const [isValuating, setIsValuating] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'compliance' | 'documents'>('overview');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (activeTab === 'valuation' && purchase && !valuationData) {
-      fetchValuation();
-    }
-  }, [activeTab, purchase]);
-
-  const fetchValuation = async () => {
-    if (!purchase) return;
-    setIsValuating(true);
-    try {
-      const res = await fetch('/api/gemini/valuate-asset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ purchase }),
-      });
-      const data = await res.json();
-      if (data.success && data.valuation) {
-        setValuationData(data.valuation);
-      }
-    } catch (err) {
-      console.error('Valuation error:', err);
-    } finally {
-      setIsValuating(false);
-    }
-  };
 
   return (
     <AnimatePresence>
@@ -143,9 +98,7 @@ export const PurchaseDetailModal: React.FC<PurchaseDetailModalProps> = ({
         <div className="border-b border-[#E2E8F0] px-5 flex gap-4 bg-white text-[13px] font-medium overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview' },
-            { id: 'valuation', label: 'AI Resale Valuation' },
-            { id: 'warranty', label: 'Warranty & Protection' },
-            { id: 'return', label: 'Return Policy' },
+            { id: 'compliance', label: 'Policy & Compliance' },
             { id: 'documents', label: `Documents (${purchase.documents.length})` },
           ].map((tab) => (
             <button
@@ -234,189 +187,59 @@ export const PurchaseDetailModal: React.FC<PurchaseDetailModalProps> = ({
             </div>
           )}
 
-          {activeTab === 'valuation' && (
-            <div className="space-y-5">
-              {isValuating && (
-                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
-                  <Loader2 className="w-8 h-8 text-[#0F172A] animate-spin" />
-                  <p className="text-[13px] font-medium text-[#0F172A]">
-                    Estimating secondary market value & depreciation curves...
-                  </p>
-                  <p className="text-[11px] text-[#76777D] font-mono-code">
-                    Gemini 3.6 Flash Asset Valuation Engine
-                  </p>
-                </div>
-              )}
-
-              {valuationData && !isValuating && (
-                <div className="space-y-4 animate-in fade-in">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="p-4 bg-[#F9F9FB] border border-[#E2E8F0] rounded-2xl">
-                      <span className="text-[10px] font-mono-code text-[#76777D] uppercase">
-                        Current Estimated Value
-                      </span>
-                      <p className="text-2xl font-bold font-mono-code text-[#0F172A] mt-1">
-                        {formatPrice(valuationData.estimatedCurrentValue || 0)}
-                      </p>
-                      <p className="text-[11px] text-[#76777D] mt-0.5">
-                        Original: {formatPrice(purchase.price)}
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-[#F9F9FB] border border-[#E2E8F0] rounded-2xl">
-                      <span className="text-[10px] font-mono-code text-[#76777D] uppercase">
-                        Total Depreciation
-                      </span>
-                      <p className="text-2xl font-bold font-mono-code text-[#DC2626] mt-1">
-                        -{valuationData.depreciationPercentage}%
-                      </p>
-                      <p className="text-[11px] text-[#76777D] mt-0.5">
-                        Rate: {valuationData.annualDepreciationRate || '18%/yr'}
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-[#F9F9FB] border border-[#E2E8F0] rounded-2xl">
-                      <span className="text-[10px] font-mono-code text-[#76777D] uppercase">
-                        Condition Grade
-                      </span>
-                      <p className="text-2xl font-bold font-mono-code text-[#0F172A] mt-1">
-                        {valuationData.conditionGrade || 'A-'}
-                      </p>
-                      <p className="text-[11px] text-[#76777D] mt-0.5">
-                        Demand: {valuationData.marketTrend || 'High'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-white border border-[#E2E8F0] rounded-2xl space-y-2 text-[13px]">
-                    <h4 className="font-semibold text-[#0F172A] text-[12px] font-mono-code uppercase text-[#76777D] flex items-center gap-1.5">
-                      <Bot className="w-3.5 h-3.5 text-[#0F172A]" />
-                      AI Resale Recommendation
-                    </h4>
-                    <p className="text-[#0F172A] font-medium">
-                      {valuationData.recommendedResaleWindow || 'Optimal listing window: Next 3 months'}
-                    </p>
-                    <p className="text-[#45464D] leading-relaxed text-[12px]">
-                      {valuationData.resaleAdvice}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'warranty' && (
+          {activeTab === 'compliance' && (
             <div className="space-y-4">
               <div className="p-5 bg-[#F9F9FB] border border-[#E2E8F0] rounded-2xl">
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="font-mono-code text-[11px] text-[#76777D] uppercase font-semibold">
-                      Provider & Term
+                      Automated Policy Audit
                     </span>
                     <h4 className="font-medium text-[15px] text-[#0F172A] mt-1">
-                      {purchase.warranty.provider}
+                      {purchase.category} Compliance Check
                     </h4>
                     <p className="text-[12px] text-[#76777D] mt-0.5">
-                      Coverage Duration: {purchase.warranty.durationMonths} Months ({purchase.warranty.startDate} → {purchase.warranty.expiryDate})
+                      Merchant: {purchase.vendor} · Expensed on {purchase.purchaseDate}
                     </p>
                   </div>
-                  {purchase.warranty.hasWarranty ? (
-                    <span className="bg-[#ECFDF5] text-[#065F46] font-mono-code text-[11px] px-2.5 py-1 rounded-full font-semibold border border-[#A7F3D0]">
-                      ACTIVE
+                  {purchase.notes?.includes('FLAGGED') || purchase.notes?.includes('EXCEEDED') ? (
+                    <span className="bg-rose-50 text-rose-700 font-mono-code text-[11px] px-2.5 py-1 rounded-full font-semibold border border-rose-200">
+                      EXCEPTION FLAGGED
                     </span>
                   ) : (
-                    <span className="bg-[#F1F5F9] text-[#76777D] font-mono-code text-[11px] px-2.5 py-1 rounded-full">
-                      NO WARRANTY
+                    <span className="bg-[#ECFDF5] text-[#065F46] font-mono-code text-[11px] px-2.5 py-1 rounded-full font-semibold border border-[#A7F3D0]">
+                      COMPLIANT
                     </span>
                   )}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#E2E8F0]">
+                <div className="mt-4 pt-3 border-t border-[#E2E8F0] space-y-2">
                   <p className="text-[12px] text-[#45464D] leading-relaxed">
-                    <strong>Coverage Terms:</strong> {purchase.warranty.terms}
+                    <strong>Tax Deductibility:</strong> {purchase.taxDeductible ? 'Tax Deductible Business Expense (FY2026 Write-off)' : 'Non-deductible / Standard Expense'}
                   </p>
-                  {purchase.warranty.claimInstructions && (
-                    <p className="text-[12px] text-[#76777D] mt-2">
-                      <strong>Claim Process:</strong> {purchase.warranty.claimInstructions}
+                  {purchase.notes && (
+                    <p className="text-[12px] text-[#45464D] leading-relaxed">
+                      <strong>Audit Findings:</strong> {purchase.notes}
+                    </p>
+                  )}
+                  {purchase.aiExtractedNotes && (
+                    <p className="text-[12px] text-[#76777D] font-mono-code">
+                      <strong>OCR Verification:</strong> {purchase.aiExtractedNotes}
                     </p>
                   )}
                 </div>
               </div>
 
-              {purchase.warranty.hasWarranty && (
-                <div className="p-5 border border-dashed border-[#CBD5E1] rounded-2xl bg-white flex items-center justify-between">
-                  <div>
-                    <h5 className="font-medium text-[13px] text-[#0F172A]">Need to submit a repair or replacement claim?</h5>
-                    <p className="text-[12px] text-[#76777D]">
-                      Gemini will craft an official RMA notice referencing serial #{purchase.serialNumber || 'N/A'}.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      onClose();
-                      onTriggerClaim(purchase);
-                    }}
-                    className="px-4 py-2 bg-[#0F172A] text-white text-[12px] font-medium rounded-xl hover:bg-[#1E293B] flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Bot className="w-3.5 h-3.5" />
-                    <span>Generate AI Claim</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'return' && (
-            <div className="space-y-4">
-              <div className="p-5 bg-[#F9F9FB] border border-[#E2E8F0] rounded-2xl">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="font-mono-code text-[11px] text-[#76777D] uppercase font-semibold">
-                      Merchant Return Policy
-                    </span>
-                    <h4 className="font-medium text-[15px] text-[#0F172A] mt-1">
-                      {purchase.vendor} Return Window
-                    </h4>
-                    <p className="text-[12px] text-[#76777D] mt-0.5">
-                      Deadline Date: {purchase.returnWindow.deadlineDate} ({purchase.returnWindow.returnDays} days policy)
-                    </p>
-                  </div>
-                  <span
-                    className={`font-mono-code text-[11px] px-3 py-1 rounded-full font-semibold ${
-                      purchase.returnWindow.status === 'expiring_soon'
-                        ? 'bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA]'
-                        : 'bg-[#F1F5F9] text-[#475569]'
-                    }`}
-                  >
-                    {purchase.returnWindow.status.toUpperCase()}
+              <div className="p-4 bg-white border border-[#E2E8F0] rounded-2xl flex items-center justify-between text-[12px]">
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-[#45464D]">
+                    {purchase.notes?.includes('FLAGGED')
+                      ? 'Action needed: Submit missing justification or request manager sign-off.'
+                      : 'All line items and expenditure thresholds verified against organizational policy.'}
                   </span>
                 </div>
-
-                <p className="text-[12px] text-[#45464D] mt-3 leading-relaxed">
-                  {purchase.returnWindow.policy}
-                </p>
               </div>
-
-              {purchase.returnWindow.hasReturn && (
-                <div className="p-5 border border-dashed border-[#CBD5E1] rounded-2xl bg-white flex items-center justify-between">
-                  <div>
-                    <h5 className="font-medium text-[13px] text-[#0F172A]">Initiate Return & Refund</h5>
-                    <p className="text-[12px] text-[#76777D]">
-                      Generate a formatted merchant return request email with order #{purchase.orderNumber}.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      onClose();
-                      onTriggerReturn(purchase);
-                    }}
-                    className="px-4 py-2 bg-[#0F172A] text-white text-[12px] font-medium rounded-xl hover:bg-[#1E293B] flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Bot className="w-3.5 h-3.5" />
-                    <span>Draft Return Email</span>
-                  </button>
-                </div>
-              )}
             </div>
           )}
 

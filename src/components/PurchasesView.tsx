@@ -18,8 +18,6 @@ import {
   ChevronRight,
   Search,
   ExternalLink,
-  ShieldCheck,
-  RotateCcw,
   FileText,
   Trash2,
   Utensils,
@@ -36,8 +34,6 @@ interface PurchasesViewProps {
   openScanner: () => void;
   onSelectPurchase: (item: PurchaseItem) => void;
   onDeletePurchase: (id: string) => void;
-  onTriggerClaim: (item: PurchaseItem) => void;
-  onTriggerReturn: (item: PurchaseItem) => void;
 }
 
 const CATEGORY_OPTIONS = [
@@ -65,8 +61,6 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
   openScanner,
   onSelectPurchase,
   onDeletePurchase,
-  onTriggerClaim,
-  onTriggerReturn,
 }) => {
   const { formatPrice, currency } = useCurrency();
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
@@ -142,7 +136,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
         ? purchases.filter((p) => selectedIds.includes(p.id))
         : purchases;
 
-    const headers = 'ID,Name,Vendor,Category,Purchase Date,Price,Warranty Expiry,Return Deadline,Serial Number\n';
+    const headers = 'ID,Name,Vendor,Category,Purchase Date,Price,Tax Deductible,Notes,Serial Number\n';
     const rows = itemsToExport
       .map(
         (p) =>
@@ -153,8 +147,8 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
             escapeCsvCell(p.category),
             escapeCsvCell(p.purchaseDate),
             Number(p.price || 0).toFixed(2),
-            escapeCsvCell(p.warranty?.expiryDate || 'N/A'),
-            escapeCsvCell(p.returnWindow?.deadlineDate || 'N/A'),
+            escapeCsvCell(p.taxDeductible ? 'Yes' : 'No'),
+            escapeCsvCell(p.notes || 'N/A'),
             escapeCsvCell(p.serialNumber || 'N/A'),
           ].join(',')
       )
@@ -339,15 +333,15 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                 </p>
               </div>
               <div className="p-3 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
-                <p className="font-semibold text-[#0F172A]">Warranty Coverage Rate</p>
+                <p className="font-semibold text-[#0F172A]">Policy Compliance Rate</p>
                 <p className="mt-0.5 text-[#76777D]">
-                  87.5% of electronic hardware currently protected under valid warranty.
+                  92% of corporate expenses fully meet company procurement standards.
                 </p>
               </div>
               <div className="p-3 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
-                <p className="font-semibold text-[#0F172A]">Return Velocity</p>
+                <p className="font-semibold text-[#0F172A]">Audit Exceptions</p>
                 <p className="mt-0.5 text-[#76777D]">
-                  2 items eligible for full refund within the next 48-72 hours.
+                  Items exceeding meal allowances or weekend travel flagged for review.
                 </p>
               </div>
             </div>
@@ -454,20 +448,15 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex gap-2">
-                          {item.returnWindow.hasReturn &&
-                          item.returnWindow.status === 'expiring_soon' ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] font-mono-code text-[11px] font-medium border border-[#FDE68A]">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-                              Return: {item.returnWindow.returnDays} Days
-                            </span>
-                          ) : item.warranty.hasWarranty ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] font-mono-code text-[11px] font-medium border border-[#A7F3D0]">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                              Active Warranty
+                          {item.notes?.includes('FLAGGED') || item.notes?.includes('EXCEEDED') ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 font-mono-code text-[11px] font-semibold border border-rose-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              Policy Flag
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F1F5F9] text-[#76777D] font-mono-code text-[11px]">
-                              N/A
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] font-mono-code text-[11px] font-medium border border-[#A7F3D0]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+                              Compliant
                             </span>
                           )}
                         </div>
@@ -498,30 +487,6 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                                 <FileText className="w-3.5 h-3.5 text-[#76777D]" />
                                 View Details
                               </button>
-                              {item.warranty.hasWarranty && (
-                                <button
-                                  onClick={() => {
-                                    setActiveMenuId(null);
-                                    onTriggerClaim(item);
-                                  }}
-                                  className="w-full text-left px-3 py-1.5 text-[12px] text-[#0F172A] hover:bg-[#F9F9FB] flex items-center gap-2 cursor-pointer"
-                                >
-                                  <ShieldCheck className="w-3.5 h-3.5 text-[#10B981]" />
-                                  Draft AI Claim
-                                </button>
-                              )}
-                              {item.returnWindow.hasReturn && (
-                                <button
-                                  onClick={() => {
-                                    setActiveMenuId(null);
-                                    onTriggerReturn(item);
-                                  }}
-                                  className="w-full text-left px-3 py-1.5 text-[12px] text-[#0F172A] hover:bg-[#F9F9FB] flex items-center gap-2 cursor-pointer"
-                                >
-                                  <RotateCcw className="w-3.5 h-3.5 text-[#F59E0B]" />
-                                  Draft Return Email
-                                </button>
-                              )}
                               <div className="border-t border-[#F1F5F9] my-1" />
                               <button
                                 onClick={() => {
@@ -598,13 +563,13 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
               </div>
 
               <div className="mt-4 pt-3 border-t border-[#E2E8F0] flex items-center justify-between">
-                {item.warranty.hasWarranty ? (
-                  <span className="text-[11px] font-mono-code text-[#065F46] bg-[#ECFDF5] px-2.5 py-0.5 rounded-full border border-[#A7F3D0]">
-                    Warranty Active
+                {item.notes?.includes('FLAGGED') || item.notes?.includes('EXCEEDED') ? (
+                  <span className="text-[11px] font-mono-code text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200 font-semibold">
+                    Policy Flag
                   </span>
                 ) : (
-                  <span className="text-[11px] font-mono-code text-[#76777D] bg-[#F1F5F9] px-2.5 py-0.5 rounded-full">
-                    No Warranty
+                  <span className="text-[11px] font-mono-code text-[#065F46] bg-[#ECFDF5] px-2.5 py-0.5 rounded-full border border-[#A7F3D0]">
+                    Compliant
                   </span>
                 )}
                 <span className="text-[11px] text-[#0F172A] font-medium hover:underline">

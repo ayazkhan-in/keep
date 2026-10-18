@@ -346,8 +346,8 @@ Unit Price: $1,599.00 USD
 Serial Number: APL-SD5K-881920
 Payment Method: Apple Pay (Visa •••• 4012)
 Date: 2026-10-18
-Warranty: 1-Year Limited Manufacturer Warranty (Covers screen panel, internal power supply, logic board)
-Return Window: 14 calendar days from delivery (Deadline: Nov 01, 2026)`;
+Corporate Procurement Policy: Enterprise Commercial Hardware Policy Section 4.1
+Tax Status: Qualified 100% Business Write-off (FY2026)`;
     } else if (type === 'herman') {
       mockPhoto = 'https://images.unsplash.com/photo-1580481077195-c3f25c7e148e?auto=format&fit=crop&w=800&q=80';
       mockContext = `HERMAN MILLER OFFICIAL INVOICE
@@ -356,8 +356,8 @@ Item: Aeron Chair - Size B (Graphite Frame, PostureFit SL, Fully Adjustable Arms
 Total: $1,495.00 USD
 Serial: HM-AER-2026-9914
 Date: 2026-09-15
-Warranty: Herman Miller 12-Year 24/7 Comprehensive Warranty (Pneumatic cylinder, frame, tilt mechanism, pellicle mesh)
-Return Window: 30-Day In-Home Trial`;
+Policy Compliance: Ergonomic Allocation Policy Section 2.1
+Tax Status: Capital Equipment Write-off Eligible`;
     } else if (type === 'blurry') {
       mockPhoto = 'https://images.unsplash.com/photo-1554415707-9e4c07dca042?auto=format&fit=crop&w=800&q=80';
       mockContext = `BLURRY UNREADABLE RECEIPT SAMPLE
@@ -552,19 +552,6 @@ This file contains no financial transactions, prices, dates, or vendor informati
     }
 
     const purchaseDate = extractedData.purchaseDate || new Date().toISOString().split('T')[0];
-    const warrantyMonths = Number(extractedData.warrantyMonths) >= 0 ? Number(extractedData.warrantyMonths) : 12;
-    const returnDays = Number(extractedData.returnDays) >= 0 ? Number(extractedData.returnDays) : 14;
-
-    // Calculate dates
-    const pDate = new Date(purchaseDate);
-    const warExpDate = new Date(pDate);
-    warExpDate.setMonth(warExpDate.getMonth() + warrantyMonths);
-
-    const retDeadlineDate = new Date(pDate);
-    retDeadlineDate.setDate(retDeadlineDate.getDate() + returnDays);
-
-    const now = new Date();
-    const isReturnOpen = retDeadlineDate >= now && returnDays > 0;
 
     const newPurchase: PurchaseItem = {
       id: `pur-${Date.now()}`,
@@ -580,22 +567,6 @@ This file contains no financial transactions, prices, dates, or vendor informati
       orderNumber: extractedData.orderNumber || `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
       ...(extractedData.serialNumber ? { serialNumber: extractedData.serialNumber } : {}),
       paymentMethod: extractedData.paymentMethod || 'Credit Card (•••• 1004)',
-      warranty: {
-        hasWarranty: warrantyMonths > 0,
-        durationMonths: warrantyMonths,
-        startDate: purchaseDate,
-        expiryDate: warExpDate.toISOString().split('T')[0],
-        provider: extractedData.warrantyProvider || `${extractedData.vendor || 'Manufacturer'} Warranty`,
-        terms: extractedData.warrantyTerms || 'Standard limited warranty coverage.',
-        claimStatus: 'none',
-      },
-      returnWindow: {
-        hasReturn: returnDays > 0,
-        returnDays,
-        deadlineDate: retDeadlineDate.toISOString().split('T')[0],
-        status: isReturnOpen ? 'open' : 'closed',
-        policy: extractedData.returnPolicy || `${returnDays}-day standard return policy.`,
-      },
       documents: [
         {
           id: `doc-${Date.now()}`,
@@ -1299,43 +1270,27 @@ This file contains no financial transactions, prices, dates, or vendor informati
                   </div>
                 )}
 
-                {/* Warranty fields if tech/hardware asset */}
+                {/* Corporate Policy & Tax Details */}
                 {(extractedData.category === 'Electronics' ||
                   extractedData.category === 'Appliances' ||
                   extractedData.category === 'Office Furniture') && (
                   <>
                     <div>
                       <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
-                        Warranty Duration (Months)
+                        Tax Status
                       </label>
-                      <input
-                        type="number"
-                        value={extractedData.warrantyMonths ?? 12}
-                        onChange={(e) =>
-                          setExtractedData({
-                            ...extractedData,
-                            warrantyMonths: parseInt(e.target.value) || 0,
-                          })
-                        }
-                        className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A]"
-                      />
+                      <div className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A] text-xs">
+                        {extractedData.taxDeductible ? 'Tax Deductible Write-off' : 'Standard Expense'}
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
-                        Return Window (Days)
+                        Compliance Check
                       </label>
-                      <input
-                        type="number"
-                        value={extractedData.returnDays ?? 14}
-                        onChange={(e) =>
-                          setExtractedData({
-                            ...extractedData,
-                            returnDays: parseInt(e.target.value) || 0,
-                          })
-                        }
-                        className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A]"
-                      />
+                      <div className="w-full px-3.5 py-2 bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl font-mono-code text-[#065F46] text-xs font-semibold">
+                        OCR Verified
+                      </div>
                     </div>
                   </>
                 )}

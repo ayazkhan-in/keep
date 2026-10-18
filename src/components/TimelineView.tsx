@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-  ShieldCheck,
-  RotateCcw,
-  ShoppingBag,
   ArrowRight,
+  ShieldAlert,
+  CheckCircle2,
 } from 'lucide-react';
 import { PurchaseItem } from '../types';
 import { useCurrency } from '../context/CurrencyContext';
@@ -15,69 +12,51 @@ import { useCurrency } from '../context/CurrencyContext';
 interface TimelineViewProps {
   purchases: PurchaseItem[];
   onSelectPurchase: (item: PurchaseItem) => void;
-  onTriggerClaim: (item: PurchaseItem) => void;
-  onTriggerReturn: (item: PurchaseItem) => void;
 }
 
 export const TimelineView: React.FC<TimelineViewProps> = ({
   purchases,
   onSelectPurchase,
-  onTriggerClaim,
-  onTriggerReturn,
 }) => {
   const { formatPrice } = useCurrency();
-  const [selectedEventType, setSelectedEventType] = useState<'all' | 'returns' | 'warranties' | 'purchases'>('all');
+  const [selectedEventType, setSelectedEventType] = useState<'all' | 'audits' | 'purchases'>('all');
 
   // Build unified chronological timeline events
   const timelineEvents: Array<{
     id: string;
     date: string;
     title: string;
-    type: 'purchase' | 'return_deadline' | 'warranty_expiry';
+    type: 'purchase' | 'audit';
     item: PurchaseItem;
     description: string;
     badge: string;
-    severity: 'normal' | 'urgent' | 'highlight';
+    severity: 'normal' | 'urgent';
   }> = [];
 
   purchases.forEach((p) => {
-    // Purchase event
+    // Expense event
     timelineEvents.push({
-      id: `${p.id}-pur`,
+      id: `${p.id}-exp`,
       date: p.purchaseDate,
-      title: `Purchased ${p.name}`,
+      title: `Expense Submitted: ${p.name}`,
       type: 'purchase',
       item: p,
       description: `${p.vendor} · ${formatPrice(p.price)}`,
-      badge: 'Acquisition',
+      badge: 'Expense Claim',
       severity: 'normal',
     });
 
-    // Return deadline
-    if (p.returnWindow.hasReturn && p.returnWindow.deadlineDate) {
+    // Policy exception audit event
+    if (p.notes?.includes('FLAGGED') || p.notes?.includes('EXCEEDED') || p.notes?.includes('ALERT')) {
       timelineEvents.push({
-        id: `${p.id}-ret`,
-        date: p.returnWindow.deadlineDate,
-        title: `Return Window Closes: ${p.name}`,
-        type: 'return_deadline',
+        id: `${p.id}-audit`,
+        date: p.purchaseDate,
+        title: `Policy Exception Flagged: ${p.name}`,
+        type: 'audit',
         item: p,
-        description: `Last day for full refund to ${p.paymentMethod || 'original payment'}`,
-        badge: 'Return Deadline',
-        severity: p.returnWindow.status === 'expiring_soon' ? 'urgent' : 'normal',
-      });
-    }
-
-    // Warranty expiry
-    if (p.warranty.hasWarranty && p.warranty.expiryDate) {
-      timelineEvents.push({
-        id: `${p.id}-war`,
-        date: p.warranty.expiryDate,
-        title: `Warranty Expiry: ${p.name}`,
-        type: 'warranty_expiry',
-        item: p,
-        description: `${p.warranty.provider} expires`,
-        badge: 'Warranty End',
-        severity: 'highlight',
+        description: p.notes,
+        badge: 'Policy Flag',
+        severity: 'urgent',
       });
     }
   });
@@ -86,8 +65,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   timelineEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const filteredEvents = timelineEvents.filter((ev) => {
-    if (selectedEventType === 'returns' && ev.type !== 'return_deadline') return false;
-    if (selectedEventType === 'warranties' && ev.type !== 'warranty_expiry') return false;
+    if (selectedEventType === 'audits' && ev.type !== 'audit') return false;
     if (selectedEventType === 'purchases' && ev.type !== 'purchase') return false;
     return true;
   });
@@ -103,20 +81,19 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       >
         <div>
           <h1 className="text-2xl md:text-3xl font-semibold text-[#0F172A] tracking-tight">
-            Purchase & Asset Timeline
+            Expense & Compliance Timeline
           </h1>
           <p className="text-[13px] text-[#76777D] mt-1">
-            Chronological log of acquisitions, warranty renewals, and return window closures.
+            Chronological log of submitted expenses, policy violations, and compliance audit events.
           </p>
         </div>
 
         {/* Filter pills */}
         <div className="flex items-center gap-1.5 bg-white border border-[#E2E8F0] p-1.5 rounded-2xl shadow-2xs">
           {[
-            { id: 'all', label: 'All Milestones' },
-            { id: 'returns', label: 'Returns' },
-            { id: 'warranties', label: 'Warranties' },
-            { id: 'purchases', label: 'Purchases' },
+            { id: 'all', label: 'All Events' },
+            { id: 'audits', label: 'Policy Flags' },
+            { id: 'purchases', label: 'Expense Claims' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -154,10 +131,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 <div
                   className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-white ring-2 transition-transform group-hover:scale-110 ${
                     isUrgent
-                      ? 'bg-[#DC2626] ring-[#DC2626]'
-                      : ev.type === 'warranty_expiry'
-                      ? 'bg-[#0F172A] ring-[#0F172A]'
-                      : 'bg-[#94A3B8] ring-[#E2E8F0]'
+                      ? 'bg-rose-600 ring-rose-600'
+                      : 'bg-[#0F172A] ring-[#E2E8F0]'
                   }`}
                 />
 
@@ -195,30 +170,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   <div className="mt-3 pt-2.5 border-t border-[#E2E8F0] flex items-center justify-between text-[11px]">
                     <span className="text-[#94A3B8]">{ev.item.vendor}</span>
                     <div className="flex items-center gap-3">
-                      {ev.type === 'return_deadline' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onTriggerReturn(ev.item);
-                          }}
-                          className="text-[#0F172A] font-medium hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <RotateCcw className="w-3 h-3" /> Start Return
-                        </button>
-                      )}
-                      {ev.type === 'warranty_expiry' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onTriggerClaim(ev.item);
-                          }}
-                          className="text-[#0F172A] font-medium hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <ShieldCheck className="w-3 h-3" /> Claim Warranty
-                        </button>
-                      )}
                       <span className="text-[#0F172A] font-medium group-hover:underline">
-                        View Asset →
+                        View Details →
                       </span>
                     </div>
                   </div>
