@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
-  Sparkles,
+  Bot,
   Copy,
   Check,
   Download,
@@ -190,7 +190,7 @@ export const AIClaimModal: React.FC<AIClaimModalProps> = ({
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Sparkles className="w-4 h-4" />
+                  <Bot className="w-4 h-4" />
                 )}
                 <span>
                   {isLoading

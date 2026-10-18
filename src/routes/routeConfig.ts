@@ -13,6 +13,7 @@ export const ROUTES = {
     SUBMIT: '/employee/submit',
     ALLOWANCES: '/employee/allowances',
     CAPS_ALIAS: '/employee/caps',
+    POLICIES: '/employee/policies',
     TRIPS: '/employee/trips',
     SETTINGS: '/employee/settings',
   },
@@ -49,6 +50,7 @@ export const VIEW_TO_PATH: Record<ActiveView, string> = {
   'my-expenses': ROUTES.EMPLOYEE.EXPENSES,
   'submit-expense': ROUTES.EMPLOYEE.SUBMIT,
   'my-caps': ROUTES.EMPLOYEE.ALLOWANCES,
+  'employee-policies': ROUTES.EMPLOYEE.POLICIES,
   'trips': ROUTES.EMPLOYEE.TRIPS,
   'messages': ROUTES.EMPLOYEE.EXPENSES,
 
@@ -83,6 +85,7 @@ export function getPathToView(pathname: string): ActiveView {
 
   if (cleanPath.startsWith('/employee/submit')) return 'submit-expense';
   if (cleanPath.startsWith('/employee/allowances') || cleanPath.startsWith('/employee/caps')) return 'my-caps';
+  if (cleanPath.startsWith('/employee/policies') || cleanPath.startsWith('/employee/policy')) return 'employee-policies';
   if (cleanPath.startsWith('/employee/trips')) return 'trips';
   if (cleanPath.startsWith('/employee/settings')) return 'settings';
   if (cleanPath.startsWith('/employee')) return 'my-expenses';

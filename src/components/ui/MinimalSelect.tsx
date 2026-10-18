@@ -80,41 +80,41 @@ export function MinimalSelect<T extends string = string>({
       ref={containerRef}
       className={`relative inline-block ${fullWidth ? 'w-full' : ''} ${className}`}
     >
-      {/* Trigger Button - Minimal Grey & White */}
+      {/* Trigger Button - Minimal Grey & White with Dark Mode */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] hover:border-[#CBD5E1] text-[#334155] hover:text-[#0F172A] rounded-xl font-medium transition-all shadow-2xs cursor-pointer select-none focus:outline-none focus:border-[#94A3B8] ${
+        className={`w-full flex items-center justify-between bg-[#F8FAFC] dark:bg-[#151B22] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#212C36] hover:border-[#CBD5E1] dark:hover:border-[#334155] text-[#334155] dark:text-[#E2E8F0] hover:text-[#0F172A] dark:hover:text-white rounded-xl font-medium transition-all shadow-2xs cursor-pointer select-none focus:outline-none focus:border-emerald-500 ${
           sizeClasses[size]
         } ${
           isOpen
-            ? 'border-[#94A3B8] bg-white ring-2 ring-slate-100 text-[#0F172A]'
+            ? 'border-emerald-500 bg-white dark:bg-[#151B22] ring-2 ring-emerald-500/10 text-[#0F172A] dark:text-white'
             : ''
         }`}
       >
         <div className="flex items-center gap-1.5 min-w-0 truncate">
           {prefix}
           {selectedOption?.icon && (
-            <selectedOption.icon className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
+            <selectedOption.icon className="w-3.5 h-3.5 text-[#64748B] dark:text-[#94A3B8] shrink-0" />
           )}
           <span className="truncate">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           {selectedOption?.badge && (
-            <span className="text-[10px] font-mono-code px-1.5 py-0.2 rounded-full bg-[#E2E8F0] text-[#475569]">
+            <span className="text-[10px] font-mono-code px-1.5 py-0.2 rounded-full bg-[#E2E8F0] dark:bg-[#1E293B] text-[#475569] dark:text-[#94A3B8]">
               {selectedOption.badge}
             </span>
           )}
         </div>
 
         <ChevronDown
-          className={`w-3.5 h-3.5 text-[#64748B] shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-[#334155]' : ''
+          className={`w-3.5 h-3.5 text-[#64748B] dark:text-[#94A3B8] shrink-0 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-emerald-600 dark:text-emerald-400' : ''
           }`}
         />
       </button>
 
-      {/* Floating Animated Menu Popover - Grey and White Aesthetic */}
+      {/* Floating Animated Menu Popover */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -122,7 +122,7 @@ export function MinimalSelect<T extends string = string>({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className={`absolute mt-1.5 z-50 min-w-[150px] max-h-60 overflow-y-auto bg-white border border-[#E2E8F0] rounded-xl shadow-lg p-1 space-y-0.5 ${
+            className={`absolute mt-1.5 z-50 min-w-[150px] max-h-60 overflow-y-auto bg-white dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl shadow-lg p-1 space-y-0.5 ${
               fullWidth ? 'w-full' : ''
             } ${align === 'right' ? 'right-0' : 'left-0'}`}
           >
@@ -140,15 +140,15 @@ export function MinimalSelect<T extends string = string>({
                   }}
                   className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
                     isSelected
-                      ? 'bg-[#F1F5F9] text-[#0F172A] font-semibold border border-[#E2E8F0]'
-                      : 'text-[#475569] hover:bg-[#F8FAFC] hover:text-[#0F172A] border border-transparent font-medium'
+                      ? 'bg-[#F1F5F9] dark:bg-[#1E293B] text-[#0F172A] dark:text-white font-semibold border border-[#E2E8F0] dark:border-[#2D3748]'
+                      : 'text-[#475569] dark:text-[#94A3B8] hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B] hover:text-[#0F172A] dark:hover:text-white border border-transparent font-medium'
                   }`}
                 >
                   <div className="flex items-center gap-2 min-w-0 truncate">
                     {Icon && (
                       <Icon
                         className={`w-3.5 h-3.5 ${
-                          isSelected ? 'text-[#0F172A]' : 'text-[#94A3B8]'
+                          isSelected ? 'text-[#0F172A] dark:text-white' : 'text-[#94A3B8]'
                         }`}
                       />
                     )}
@@ -160,15 +160,15 @@ export function MinimalSelect<T extends string = string>({
                       <span
                         className={`text-[10px] font-mono-code px-1.5 py-0.2 rounded-full ${
                           isSelected
-                            ? 'bg-[#E2E8F0] text-[#334155]'
-                            : 'bg-[#F1F5F9] text-[#64748B]'
+                            ? 'bg-[#E2E8F0] dark:bg-[#334155] text-[#334155] dark:text-slate-200'
+                            : 'bg-[#F1F5F9] dark:bg-[#1E293B] text-[#64748B] dark:text-[#94A3B8]'
                         }`}
                       >
                         {option.badge}
                       </span>
                     )}
                     {isSelected && (
-                      <Check className="w-3.5 h-3.5 text-[#0F172A]" />
+                      <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     )}
                   </div>
                 </button>
@@ -202,18 +202,19 @@ export const MinimalNativeSelect = React.forwardRef<
     <div className={`relative inline-block ${fullWidth ? 'w-full' : ''}`}>
       <select
         ref={ref}
-        className={`w-full appearance-none bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] hover:border-[#CBD5E1] text-[#334155] rounded-xl font-medium transition-all shadow-2xs cursor-pointer focus:outline-none focus:border-[#94A3B8] focus:bg-white ${
+        className={`w-full appearance-none bg-[#F8FAFC] dark:bg-[#151B22] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#212C36] hover:border-[#CBD5E1] dark:hover:border-[#334155] text-[#334155] dark:text-[#E2E8F0] rounded-xl font-medium transition-all shadow-2xs cursor-pointer focus:outline-none focus:border-emerald-500 focus:bg-white dark:focus:bg-[#151B22] ${
           sizeClasses[sizeVariant]
         } ${className}`}
         {...props}
       >
         {children}
       </select>
-      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#64748B]">
+      <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#64748B] dark:text-[#94A3B8]">
         <ChevronDown className="w-3.5 h-3.5" />
       </div>
     </div>
   );
 });
+
 
 MinimalNativeSelect.displayName = 'MinimalNativeSelect';

@@ -4,14 +4,17 @@ import {
   X,
   User,
   Bell,
-  Sparkles,
+  Bot,
   Shield,
   CreditCard,
   Database,
   Check,
   Coins,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { useCurrency, SupportedCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 import { MinimalSelect } from './ui/MinimalSelect';
 
 interface SettingsModalProps {
@@ -39,6 +42,7 @@ const REMINDER_OPTIONS = [
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { currency, setCurrency } = useCurrency();
+  const { theme, toggleTheme } = useTheme();
   const [selectedCurrency, setSelectedCurrency] = useState<SupportedCurrency>(currency);
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [returnReminders, setReturnReminders] = useState(() => {
@@ -105,21 +109,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 16, filter: 'blur(8px)' }}
             animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
             exit={{ opacity: 0, scale: 0.95, y: 16, filter: 'blur(8px)' }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="bg-white rounded-2xl max-w-lg w-full border border-[#E2E8F0] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col"
+            className="bg-white dark:bg-[#0D1217] rounded-2xl max-w-lg w-full border border-[#E2E8F0] dark:border-[#1E293B] shadow-2xl overflow-hidden max-h-[85vh] flex flex-col transition-colors"
           >
             {/* Header */}
-            <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between bg-[#FAFAFC]">
-              <h3 className="font-semibold text-[15px] text-[#0F172A]">Keepr Settings</h3>
+            <div className="p-4 border-b border-[#E2E8F0] dark:border-[#1E293B] flex items-center justify-between bg-[#FAFAFC] dark:bg-[#11161B]">
+              <h3 className="font-semibold text-[15px] text-[#0F172A] dark:text-white">Keepr Settings</h3>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-[#76777D] hover:text-[#0F172A] hover:bg-[#F1F5F9] cursor-pointer"
+                className="p-1.5 rounded-lg text-[#76777D] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -127,30 +131,63 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
             {/* Content */}
             <div className="p-6 overflow-y-auto flex-1 space-y-6 text-[13px]">
+              {/* Appearance & Dark Mode */}
+              <div className="space-y-3">
+                <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] dark:text-[#94A3B8] font-semibold flex items-center gap-1.5">
+                  <Sun className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Appearance & Dark Mode
+                </h4>
+                <div className="p-3.5 bg-[#F9F9FB] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-[#0F172A] dark:text-white">Site Theme</p>
+                    <p className="text-[12px] text-[#76777D] dark:text-[#94A3B8]">
+                      {theme === 'dark' ? 'Dark mode enabled' : 'Light mode enabled'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className="px-3 py-1.5 bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-xl text-xs font-semibold text-[#0F172A] dark:text-white hover:border-emerald-500 dark:hover:border-emerald-500 flex items-center gap-2 cursor-pointer shadow-2xs"
+                  >
+                    {theme === 'dark' ? (
+                      <>
+                        <Sun className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Light Mode</span>
+                      </>
+                    ) : (
+                      <>
+                        <Moon className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Dark Mode</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
               {/* Account Profile */}
               <div className="space-y-3">
-                <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] font-semibold">
+                <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] dark:text-[#94A3B8] font-semibold">
                   Profile & Organization
                 </h4>
-                <div className="flex items-center gap-3 p-3.5 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl">
-                  <div className="w-10 h-10 rounded-full bg-[#0F172A] text-white flex items-center justify-center font-semibold text-sm">
+                <div className="flex items-center gap-3 p-3.5 bg-[#F9F9FB] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl">
+                  <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-semibold text-sm">
                     KP
                   </div>
                   <div>
-                    <p className="font-medium text-[#0F172A]">Workspace Enclave</p>
-                    <p className="text-[12px] text-[#76777D]">Protected Purchase & Invoice Data</p>
+                    <p className="font-medium text-[#0F172A] dark:text-white">Workspace Enclave</p>
+                    <p className="text-[12px] text-[#76777D] dark:text-[#94A3B8]">Protected Purchase & Invoice Data</p>
                   </div>
                 </div>
               </div>
 
               {/* Currency & Financial Preferences */}
               <div className="space-y-3">
-                <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] font-semibold flex items-center gap-1.5">
-                  <Coins className="w-3.5 h-3.5 text-[#0F172A]" />
+                <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] dark:text-[#94A3B8] font-semibold flex items-center gap-1.5">
+                  <Coins className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   Financial Defaults & Regional Currency
                 </h4>
-                <div className="p-3.5 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl space-y-2">
-                  <label className="block text-[#45464D] text-xs font-medium">
+                <div className="p-3.5 bg-[#F9F9FB] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl space-y-2">
+                  <label className="block text-[#45464D] dark:text-[#CBD5E1] text-xs font-medium">
                     Default Workspace Display Currency
                   </label>
                   <MinimalSelect
@@ -159,7 +196,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     options={CURRENCY_OPTIONS}
                     fullWidth
                   />
-                  <p className="text-[11px] text-[#76777D]">
+                  <p className="text-[11px] text-[#76777D] dark:text-[#94A3B8]">
                     All dashboard totals, invoices, expenses, and analytics will format in {selectedCurrency}.
                   </p>
                 </div>
@@ -167,26 +204,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
               {/* Notification Deadlines */}
               <div className="space-y-3">
-                <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] font-semibold flex items-center gap-1.5">
-                  <Bell className="w-3.5 h-3.5 text-[#0F172A]" />
+                <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] dark:text-[#94A3B8] font-semibold flex items-center gap-1.5">
+                  <Bell className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   Alerts & Deadlines
                 </h4>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3.5 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl">
+                  <div className="flex items-center justify-between p-3.5 bg-[#F9F9FB] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl">
                     <div>
-                      <p className="font-medium text-[#0F172A]">Email & In-App Alerts</p>
-                      <p className="text-[12px] text-[#76777D]">Receive digests on closing return windows & warranty expiries</p>
+                      <p className="font-medium text-[#0F172A] dark:text-white">Email & In-App Alerts</p>
+                      <p className="text-[12px] text-[#76777D] dark:text-[#94A3B8]">Receive digests on closing return windows & warranty expiries</p>
                     </div>
                     <input
                       type="checkbox"
                       checked={emailAlerts}
                       onChange={(e) => setEmailAlerts(e.target.checked)}
-                      className="rounded-md border-[#CBD5E1] text-[#0F172A] focus:ring-0 w-4 h-4 cursor-pointer"
+                      className="rounded-md border-[#CBD5E1] dark:border-[#334155] text-emerald-600 focus:ring-0 w-4 h-4 cursor-pointer"
                     />
                   </div>
 
-                  <div className="p-3.5 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl space-y-2">
-                    <label className="block text-[#45464D] text-xs font-medium">
+                  <div className="p-3.5 bg-[#F9F9FB] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl space-y-2">
+                    <label className="block text-[#45464D] dark:text-[#CBD5E1] text-xs font-medium">
                       Warranty & Return Expiry Alert Buffer
                     </label>
                     <MinimalSelect
@@ -199,79 +236,79 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 </div>
               </div>
 
-          {/* AI Ingestion Engine */}
-          <div className="space-y-2">
-            <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] font-semibold">
-              AI Intelligence
-            </h4>
-            <div className="p-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Sparkles className="w-4 h-4 text-[#0F172A]" />
-                <div>
-                  <p className="font-medium text-[#0F172A]">Gemini 3.6 Flash Model</p>
-                  <p className="text-[11px] text-[#76777D]">Active backend OCR & Purchase Parser</p>
+              {/* AI Ingestion Engine */}
+              <div className="space-y-2">
+                <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] dark:text-[#94A3B8] font-semibold">
+                  AI Intelligence
+                </h4>
+                <div className="p-3.5 bg-[#F8FAFC] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <div>
+                      <p className="font-medium text-[#0F172A] dark:text-white">Gemini 3.6 Flash Model</p>
+                      <p className="text-[11px] text-[#76777D] dark:text-[#94A3B8]">Active backend OCR & Purchase Parser</p>
+                    </div>
+                  </div>
+                  <span className="font-mono-code text-[10px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                    Connected
+                  </span>
                 </div>
               </div>
-              <span className="font-mono-code text-[10px] bg-[#ECFDF5] text-[#065F46] px-2.5 py-0.5 rounded-full border border-[#A7F3D0]">
-                Connected
-              </span>
-            </div>
-          </div>
 
-          {/* LangChain + Nodemailer Email Intelligence */}
-          <div className="space-y-2">
-            <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] font-semibold">
-              LangChain & Nodemailer SMTP Email Alerts
-            </h4>
-            <div className="p-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-3">
-              <div>
-                <p className="font-medium text-[#0F172A] text-xs">Automated Expiry Email Engine</p>
-                <p className="text-[11px] text-[#76777D]">Powered by LangChain LLM & Nodemailer SMTP Transport</p>
-              </div>
+              {/* LangChain + Nodemailer Email Intelligence */}
+              <div className="space-y-2">
+                <h4 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] dark:text-[#94A3B8] font-semibold">
+                  LangChain & Nodemailer SMTP Email Alerts
+                </h4>
+                <div className="p-3.5 bg-[#F8FAFC] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl space-y-3">
+                  <div>
+                    <p className="font-medium text-[#0F172A] dark:text-white text-xs">Automated Expiry Email Engine</p>
+                    <p className="text-[11px] text-[#76777D] dark:text-[#94A3B8]">Powered by LangChain LLM & Nodemailer SMTP Transport</p>
+                  </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="email"
-                  value={testEmailAddress}
-                  onChange={(e) => setTestEmailAddress(e.target.value)}
-                  placeholder="Enter recipient email address..."
-                  className="flex-1 px-3 py-1.5 bg-white border border-[#CBD5E1] rounded-lg text-xs text-[#0F172A] focus:outline-none focus:border-[#0F172A]"
-                />
-                <button
-                  onClick={handleSendTestEmail}
-                  disabled={isSendingTestEmail}
-                  className="px-3 py-1.5 bg-[#0F172A] hover:bg-[#1E293B] text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
-                >
-                  {isSendingTestEmail ? (
-                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <span>Send Test Email</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="email"
+                      value={testEmailAddress}
+                      onChange={(e) => setTestEmailAddress(e.target.value)}
+                      placeholder="Enter recipient email address..."
+                      className="flex-1 px-3 py-1.5 bg-white dark:bg-[#0D1217] border border-[#CBD5E1] dark:border-[#334155] rounded-lg text-xs text-[#0F172A] dark:text-white focus:outline-none focus:border-emerald-500"
+                    />
+                    <button
+                      onClick={handleSendTestEmail}
+                      disabled={isSendingTestEmail}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      {isSendingTestEmail ? (
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <span>Send Test Email</span>
+                      )}
+                    </button>
+                  </div>
+
+                  {testEmailStatus && (
+                    <p className="text-[11px] font-mono-code pt-1 border-t border-[#E2E8F0] dark:border-[#212C36] text-[#0F172A] dark:text-white">
+                      {testEmailStatus}
+                    </p>
                   )}
-                </button>
+                </div>
               </div>
-
-              {testEmailStatus && (
-                <p className="text-[11px] font-mono-code pt-1 border-t border-[#E2E8F0]">
-                  {testEmailStatus}
-                </p>
-              )}
             </div>
-          </div>
-        </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-[#E2E8F0] flex justify-end items-center gap-2 bg-white">
+            <div className="p-4 border-t border-[#E2E8F0] dark:border-[#1E293B] flex justify-end items-center gap-2 bg-white dark:bg-[#11161B]">
               <button
                 onClick={onClose}
-                className="px-3.5 py-2 text-[12px] font-medium text-[#45464D] hover:bg-[#F9F9FB] rounded-xl cursor-pointer"
+                className="px-3.5 py-2 text-[12px] font-medium text-[#45464D] dark:text-[#94A3B8] hover:bg-[#F9F9FB] dark:hover:bg-[#151B22] rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-[#0F172A] text-white text-[12px] font-medium rounded-xl hover:bg-[#1E293B] flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[12px] font-medium rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
-                {saved ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                {saved ? <Check className="w-3.5 h-3.5 text-white" /> : null}
                 <span>{saved ? 'Saved!' : 'Save Preferences'}</span>
               </button>
             </div>
@@ -281,3 +318,4 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     </AnimatePresence>
   );
 };
+

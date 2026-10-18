@@ -6,7 +6,7 @@ import {
   Clock,
   CheckCircle2,
   DollarSign,
-  Sparkles,
+  Bot,
   ArrowRight,
   ShieldAlert,
   Coins,
@@ -158,7 +158,7 @@ export const ReturnsView: React.FC<ReturnsViewProps> = ({
                     }}
                     className="bg-[#0F172A] text-white px-3.5 py-2 rounded-xl text-[12px] font-medium hover:bg-[#1E293B] transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer ml-auto sm:ml-0"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Bot className="w-3.5 h-3.5" />
                     <span>Draft Return Email</span>
                   </button>
                 </div>

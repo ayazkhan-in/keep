@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
@@ -6,6 +7,11 @@
     --font-heading: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
     --font-serif: 'Newsreader', Georgia, serif;
+    color-scheme: light;
+  }
+
+  :root.dark {
+    color-scheme: dark;
   }
 
   body {
@@ -16,7 +22,15 @@
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
-    color: #1A1C1D;
+    color: #0F172A;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .dark body,
+  html.dark body {
+    background-color: #090D11;
+    background-image: none;
+    color: #F1F5F9;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -55,11 +69,105 @@
   background: #C6C6CD;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: #1E293B;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
 /* Subtle dashed AI border */
 .ai-border-subtle {
   border: 1px dashed #C6C6CD;
 }
 
 .ai-border-subtle:hover {
-  border-color: #76777D;
+  border-color: #10B981;
+}
+
+.dark .ai-border-subtle {
+  border-color: #1E293B;
+}
+
+.dark .ai-border-subtle:hover {
+  border-color: #10B981;
+}
+
+/* Dark mode universal minimalist base */
+html.dark .bg-white:not([data-theme-ignore]) {
+  background-color: #0E1318;
+}
+
+html.dark .bg-slate-50:not([data-theme-ignore]),
+html.dark .bg-gray-50:not([data-theme-ignore]),
+html.dark .bg-\[\#F8FAFC\]:not([data-theme-ignore]),
+html.dark .bg-\[\#F8F9FA\]:not([data-theme-ignore]) {
+  background-color: #12181F;
+}
+
+html.dark .bg-slate-100:not([data-theme-ignore]),
+html.dark .bg-gray-100:not([data-theme-ignore]),
+html.dark .bg-\[\#F1F5F9\]:not([data-theme-ignore]) {
+  background-color: #17202A;
+}
+
+html.dark .border-slate-200:not([data-theme-ignore]),
+html.dark .border-slate-100:not([data-theme-ignore]),
+html.dark .border-slate-300:not([data-theme-ignore]),
+html.dark .border-gray-200:not([data-theme-ignore]),
+html.dark .border-gray-100:not([data-theme-ignore]),
+html.dark .border-\[\#E2E8F0\]:not([data-theme-ignore]),
+html.dark .border-\[\#CBD5E1\]:not([data-theme-ignore]) {
+  border-color: #1E293B;
+}
+
+html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-\[\#E2E8F0\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1E293B;
+}
+
+html.dark .text-slate-900:not([data-theme-ignore]),
+html.dark .text-gray-900:not([data-theme-ignore]),
+html.dark .text-\[\#0F172A\]:not([data-theme-ignore]) {
+  color: #F8FAFC;
+}
+
+html.dark .text-slate-800:not([data-theme-ignore]),
+html.dark .text-gray-800:not([data-theme-ignore]),
+html.dark .text-\[\#1E293B\]:not([data-theme-ignore]) {
+  color: #F1F5F9;
+}
+
+html.dark .text-slate-700:not([data-theme-ignore]),
+html.dark .text-gray-700:not([data-theme-ignore]),
+html.dark .text-\[\#334155\]:not([data-theme-ignore]) {
+  color: #CBD5E1;
+}
+
+html.dark .text-slate-600:not([data-theme-ignore]),
+html.dark .text-gray-600:not([data-theme-ignore]),
+html.dark .text-\[\#475569\],
+html.dark .text-\[\#64748B\] {
+  color: #94A3B8;
+}
+
+html.dark .text-slate-500:not([data-theme-ignore]),
+html.dark .text-gray-500:not([data-theme-ignore]) {
+  color: #64748B;
+}
+
+/* Ensure form controls harmonize with dark mode */
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark textarea,
+html.dark select {
+  background-color: #12181F;
+  border-color: #1E293B;
+  color: #F1F5F9;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748B;
 }

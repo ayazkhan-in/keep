@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Sparkles,
+  Bot,
   ArrowRight,
   Info,
   Laptop,
@@ -111,7 +111,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="bg-white border border-[#E2E8F0] rounded-2xl p-5 relative overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.02)]"
           >
             <div className="flex items-center gap-2 mb-3.5">
-              <Sparkles className="w-4 h-4 text-[#76777D]" />
+              <Bot className="w-4 h-4 text-[#76777D]" />
               <h3 className="font-mono-code text-[11px] text-[#76777D] uppercase tracking-wider font-semibold">
                 AI Action Center
               </h3>

@@ -15,12 +15,13 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { Expense } from '../../types/expense';
-import { getEmployeeExpenses } from '../../services/expenseService';
+import { getEmployeeExpenses, subscribeExpenses } from '../../services/expenseService';
 import { getActiveEmployee } from '../../services/employeeService';
 import { VerdictCard } from './VerdictCard';
 import { EvidenceTimeline } from './EvidenceTimeline';
 import { DuplicateCompareModal } from './DuplicateCompareModal';
 import { FixItModal } from './FixItModal';
+import { EmployeePolicyAssistant } from './EmployeePolicyAssistant';
 
 interface MyExpensesViewProps {
   onNavigateToSubmit: () => void;
@@ -38,6 +39,19 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
   const [showTimelineModal, setShowTimelineModal] = useState<Expense | null>(null);
   const [showDupModal, setShowDupModal] = useState<Expense | null>(null);
   const [showFixItModal, setShowFixItModal] = useState<Expense | null>(null);
+
+  // Real-time Firestore sync
+  React.useEffect(() => {
+    const unsubscribe = subscribeExpenses(() => {
+      const list = getEmployeeExpenses(activeEmp.id);
+      setExpenses(list);
+      if (selectedExpense) {
+        const updated = list.find((e) => e.id === selectedExpense.id);
+        if (updated) setSelectedExpense(updated);
+      }
+    });
+    return () => unsubscribe();
+  }, [activeEmp.id, selectedExpense?.id]);
 
   const refreshExpenses = () => {
     const list = getEmployeeExpenses(activeEmp.id);
@@ -97,6 +111,9 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Employee Policy Coverage Assistant */}
+      <EmployeePolicyAssistant />
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

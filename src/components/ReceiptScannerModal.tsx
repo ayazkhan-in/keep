@@ -4,7 +4,7 @@ import {
   X,
   UploadCloud,
   FileText,
-  Sparkles,
+  Bot,
   Loader2,
   CheckCircle2,
   AlertCircle,
@@ -623,7 +623,7 @@ This file contains no financial transactions, prices, dates, or vendor informati
         <div className="p-4 border-b border-[#E2E8F0] flex items-center justify-between bg-[#FAFAFC]">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-[#0F172A] text-white flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
+              <Bot className="w-4 h-4" />
             </div>
             <div>
               <h3 className="font-medium text-[15px] text-[#0F172A] leading-tight">
@@ -786,7 +786,7 @@ This file contains no financial transactions, prices, dates, or vendor informati
                     disabled={!pastedText.trim()}
                     className="px-4 py-2 bg-[#0F172A] disabled:opacity-40 text-white rounded-xl text-[12px] font-medium hover:bg-[#1E293B] transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Bot className="w-3.5 h-3.5" />
                     <span>Process Text with Gemini</span>
                   </button>
                 </div>
@@ -967,7 +967,7 @@ This file contains no financial transactions, prices, dates, or vendor informati
             <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
               <div className="relative">
                 <Loader2 className="w-10 h-10 text-[#0F172A] animate-spin" />
-                <Sparkles className="w-4 h-4 text-[#76777D] absolute -top-1 -right-1 animate-pulse" />
+                <Bot className="w-4 h-4 text-[#76777D] absolute -top-1 -right-1 animate-pulse" />
               </div>
               <div>
                 <h4 className="font-medium text-[15px] text-[#0F172A]">

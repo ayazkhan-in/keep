@@ -18,9 +18,17 @@ setPersistence(auth, browserLocalPersistence).catch((err) => {
 
 export async function loginWithGoogle(): Promise<User> {
   try {
+    googleProvider.setCustomParameters({
+      prompt: 'select_account',
+    });
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
   } catch (error: any) {
+    if (error?.code === 'auth/popup-closed-by-user') {
+      const cancelErr = new Error('Google sign-in popup was closed before selecting an account.');
+      (cancelErr as any).code = 'auth/popup-closed-by-user';
+      throw cancelErr;
+    }
     console.error('Google Sign-In Error:', error);
     throw new Error(error?.message || 'Google sign-in failed');
   }

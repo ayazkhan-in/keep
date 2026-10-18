@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   X,
   MessageSquare,
-  Sparkles,
   Send,
   CheckCircle2,
   AlertCircle,

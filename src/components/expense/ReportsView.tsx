@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   Send,
   X,
-  Sparkles,
+  Bot,
   Shield,
   PieChart,
   DollarSign,
@@ -17,7 +17,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Expense } from '../../types/expense';
-import { getAllExpenses } from '../../services/expenseService';
+import { getAllExpenses, subscribeExpenses } from '../../services/expenseService';
 import { getActivePolicy } from '../../services/policyService';
 import { getActiveEmployee } from '../../services/employeeService';
 
@@ -30,9 +30,16 @@ export const ReportsView: React.FC = () => {
   const [emailNotes, setEmailNotes] = useState('Attached is the verified monthly expense reimbursement schedule and policy compliance summary for your executive review.');
   const [sendSuccessMsg, setSendSuccessMsg] = useState<string | null>(null);
 
-  const expenses = useMemo(() => getAllExpenses(), []);
+  const [expenses, setExpenses] = useState<Expense[]>(() => getAllExpenses());
   const policy = useMemo(() => getActivePolicy(), []);
   const activeEmployee = getActiveEmployee();
+
+  React.useEffect(() => {
+    const unsubscribe = subscribeExpenses((updated) => {
+      setExpenses(updated);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Filtered claims for the report
   const reportExpenses = useMemo(() => {
@@ -105,7 +112,7 @@ export const ReportsView: React.FC = () => {
       <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight flex items-center gap-2.5">
-            <FileText className="w-6 h-6 text-indigo-600" />
+            <FileText className="w-6 h-6 text-emerald-600" />
             Audit & Executive Reports
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
@@ -125,7 +132,7 @@ export const ReportsView: React.FC = () => {
 
           <button
             onClick={() => setIsEmailModalOpen(true)}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-2 transition-colors cursor-pointer"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-2 transition-colors cursor-pointer"
           >
             <Mail className="w-4 h-4 text-white" />
             <span>Send via Email</span>
@@ -147,7 +154,7 @@ export const ReportsView: React.FC = () => {
           <select
             value={reportType}
             onChange={(e) => setReportType(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-indigo-500 font-medium"
+            className="bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-emerald-500 font-medium"
           >
             <option value="monthly_digest">Monthly Reimbursement Digest (Full Audit)</option>
             <option value="compliance">Policy Compliance & Exceptions Summary</option>
@@ -206,7 +213,7 @@ export const ReportsView: React.FC = () => {
 
           <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
             <div className="text-[10px] uppercase font-mono-code text-slate-500 font-semibold">Touchless Automation</div>
-            <div className="text-xl font-bold text-indigo-700 mt-1">{stats.touchlessRate}%</div>
+            <div className="text-xl font-bold text-emerald-700 mt-1">{stats.touchlessRate}%</div>
             <div className="text-[11px] text-slate-500 mt-0.5">{stats.autoApprovedCount} touchless auto-approvals</div>
           </div>
 
@@ -218,15 +225,15 @@ export const ReportsView: React.FC = () => {
         </div>
 
         {/* Policy Citation & Compliance Overview */}
-        <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 text-xs space-y-2">
-          <div className="font-bold text-indigo-950 flex items-center gap-2">
-            <Shield className="w-4 h-4 text-indigo-700" />
+        <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 text-xs space-y-2">
+          <div className="font-bold text-emerald-950 flex items-center gap-2">
+            <Shield className="w-4 h-4 text-emerald-700" />
             <span>Deterministic Policy Compliance Statement</span>
           </div>
           <p className="text-slate-700 leading-relaxed">
             All disbursements listed in this schedule have been audited by deterministic Zod policy schemas without generative LLM hallucination.
             Non-reimbursable alcohol and tobacco items have been excluded with statutory tax apportioned proportionally under <strong>Section 3.1</strong>.
-            Destination city limits (Tier-1 ₹3,000 / Tier-2 ₹1,800) have been resolved via chronological ledger replay under <strong>Section 4.1</strong>.
+            Daily meal limits (₹3,000 / day) have been resolved via chronological ledger replay under <strong>Section 4.1</strong>.
           </p>
         </div>
 
@@ -267,7 +274,7 @@ export const ReportsView: React.FC = () => {
                     <td className="py-2 px-2.5 font-mono-code font-bold text-slate-900">
                       ₹{((exp.verdict?.approvedAmountMinor || exp.normalizedCurrency.targetAmountMinor) / 100).toFixed(2)}
                     </td>
-                    <td className="py-2 px-2.5 text-[10.5px] font-mono-code text-indigo-700">
+                    <td className="py-2 px-2.5 text-[10.5px] font-mono-code text-emerald-700">
                       {exp.verdict?.ruleImpacts?.[0]?.ruleId || 'sys-auto-standard'}
                     </td>
                     <td className="py-2 px-2.5">
@@ -310,7 +317,7 @@ export const ReportsView: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div className="flex items-center gap-2">
-                <Mail className="w-5 h-5 text-indigo-600" />
+                <Mail className="w-5 h-5 text-emerald-600" />
                 <h3 className="font-bold text-base text-[#0F172A]">Send Report via Email</h3>
               </div>
               <button
@@ -329,7 +336,7 @@ export const ReportsView: React.FC = () => {
                   required
                   value={emailTo}
                   onChange={(e) => setEmailTo(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -340,7 +347,7 @@ export const ReportsView: React.FC = () => {
                   required
                   value={emailSubject}
                   onChange={(e) => setEmailSubject(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -350,14 +357,14 @@ export const ReportsView: React.FC = () => {
                   rows={3}
                   value={emailNotes}
                   onChange={(e) => setEmailNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 resize-none"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 resize-none"
                 />
               </div>
 
               {/* Attachment Pill */}
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-indigo-600" />
+                  <FileText className="w-4 h-4 text-emerald-600" />
                   <span className="font-semibold text-slate-800">Acme_Expense_Audit_Oct2026.pdf</span>
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono-code">2.4 MB</span>
@@ -373,7 +380,7 @@ export const ReportsView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold flex items-center gap-1.5 shadow-xs"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold flex items-center gap-1.5 shadow-xs"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Send Report</span>

@@ -8,7 +8,7 @@ import {
   Filter,
   Calendar,
   DollarSign,
-  Sparkles,
+  Bot,
   MoreVertical,
   Laptop,
   Armchair,
@@ -289,7 +289,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                 : 'text-[#45464D] border-dashed border-[#CBD5E1] bg-[#F9F9FB] hover:border-[#76777D]'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Bot className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">AI Insights</span>
           </button>
         </div>
@@ -306,7 +306,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
             className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl relative overflow-hidden"
           >
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-[#0F172A]" />
+              <Bot className="w-4 h-4 text-[#0F172A]" />
               <span className="font-mono-code text-[11px] uppercase tracking-wider text-[#0F172A] font-semibold">
                 Purchase Intelligence Summary
               </span>
@@ -405,7 +405,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
                                 className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white rounded-full flex items-center justify-center border border-[#E2E8F0]"
                                 title="AI Extracted"
                               >
-                                <Sparkles className="w-2 h-2 text-[#76777D]" />
+                                <Bot className="w-2 h-2 text-[#76777D]" />
                               </div>
                             )}
                           </div>

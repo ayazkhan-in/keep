@@ -52,7 +52,7 @@ export const ExpenseHeader: React.FC<ExpenseHeaderProps> = ({
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl px-3 py-1.5 shadow-2xs">
           <div className={`w-6 h-6 rounded-lg text-white flex items-center justify-center text-[10px] font-bold ${
-            isAuditor ? 'bg-indigo-600' : 'bg-slate-800'
+            isAuditor ? 'bg-emerald-600' : 'bg-slate-800'
           }`}>
             {isAuditor ? (
               <ShieldCheck className="w-3.5 h-3.5 text-white" />
@@ -71,7 +71,7 @@ export const ExpenseHeader: React.FC<ExpenseHeaderProps> = ({
           <span
             className={`ml-1 text-[10px] font-mono-code px-2 py-0.5 rounded-md font-bold uppercase tracking-wide border ${
               isAuditor
-                ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                 : 'bg-emerald-50 text-emerald-700 border-emerald-200'
             }`}
           >

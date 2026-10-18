@@ -3,7 +3,6 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from '../components/Sidebar';
 import { TopBar } from '../components/TopBar';
-import { ExpenseHeader } from '../components/expense/ExpenseHeader';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ReceiptScannerModal } from '../components/ReceiptScannerModal';
 import { PurchaseDetailModal } from '../components/PurchaseDetailModal';
@@ -13,6 +12,7 @@ import { SettingsModal } from '../components/SettingsModal';
 import { AIChatDrawer } from '../components/AIChatDrawer';
 import { AuthModal } from '../components/AuthModal';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useTheme } from '../context/ThemeContext';
 import { ROUTES } from '../routes/routeConfig';
 
 interface WorkspaceLayoutProps {
@@ -22,6 +22,7 @@ interface WorkspaceLayoutProps {
 export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ portal }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme } = useTheme();
 
   const {
     purchases,
@@ -59,8 +60,8 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ portal }) => {
       initial={{ opacity: 0, scale: 0.98, filter: 'blur(12px)' }}
       animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
       transition={{ duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
-      className="flex h-[100dvh] w-full text-[#1A1C1D] overflow-hidden font-sans p-1.5 sm:p-2.5 md:p-3.5 gap-2 md:gap-3.5 bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('/bg.jpg')" }}
+      className="flex h-[100dvh] w-full text-[#1A1C1D] dark:text-[#F1F5F9] overflow-hidden font-sans p-1.5 sm:p-2.5 md:p-3.5 gap-2 md:gap-3.5 bg-cover bg-center bg-no-repeat dark:bg-none bg-[#F8F9FA] dark:bg-[#080C0F]"
+      style={{ backgroundImage: theme === 'dark' ? 'none' : "url('/bg.jpg')" }}
     >
       {/* Left Sidebar */}
       <Sidebar
@@ -79,7 +80,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ portal }) => {
         initial={{ opacity: 0, y: 12, filter: 'blur(8px)' }}
         animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
         transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
-        className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white rounded-xl sm:rounded-2xl border border-[#E2E8F0] shadow-sm"
+        className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-white dark:bg-[#0D1217] rounded-xl sm:rounded-2xl border border-[#E2E8F0] dark:border-[#1E293B] shadow-sm"
       >
         {/* Top Bar */}
         <TopBar
@@ -97,9 +98,6 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ portal }) => {
           onNavigateToLanding={() => navigate(ROUTES.HOME)}
           userRole={currentRole}
         />
-
-        {/* Corporate Expense Header */}
-        <ExpenseHeader currentRole={currentRole} />
 
         {/* Viewport Screen */}
         <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-7 max-w-7xl w-full mx-auto">

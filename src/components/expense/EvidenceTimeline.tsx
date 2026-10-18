@@ -11,7 +11,7 @@ import {
   Clock,
   ArrowRight,
   Hash,
-  Sparkles,
+  Bot,
   DollarSign,
   AlertCircle,
   Eye,
@@ -91,13 +91,13 @@ export const EvidenceTimeline: React.FC<EvidenceTimelineProps> = ({
 
         {/* Node 2: Extracted Values vs Corrections */}
         <div className="relative group">
-          <div className="absolute -left-6 top-1 w-5 h-5 rounded-full bg-white border-2 border-indigo-600 flex items-center justify-center">
-            <Sparkles className="w-2.5 h-2.5 text-indigo-600" />
+          <div className="absolute -left-6 top-1 w-5 h-5 rounded-full bg-white border-2 border-emerald-600 flex items-center justify-center">
+            <Bot className="w-2.5 h-2.5 text-emerald-600" />
           </div>
           <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3.5">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-semibold text-[#0F172A]">Extracted Values & Confidence</span>
-              <span className="text-[10px] font-mono-code px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium">
+              <span className="text-[10px] font-mono-code px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-medium">
                 OCR Confidence: {Math.round((expense.verdict?.confidence || 0.95) * 100)}%
               </span>
             </div>

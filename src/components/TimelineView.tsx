@@ -7,7 +7,6 @@ import {
   ShieldCheck,
   RotateCcw,
   ShoppingBag,
-  Sparkles,
   ArrowRight,
 } from 'lucide-react';
 import { PurchaseItem } from '../types';

@@ -16,34 +16,34 @@ import {
   Layers,
   ChevronRight,
   ChevronDown,
-  Sparkles,
+  Bot,
   AlertTriangle,
 } from 'lucide-react';
 import { SimulationResult, PolicyVersion } from '../../types/expense';
 import { simulatePolicyChange } from '../../engine/simulator';
 import { getAllExpenses } from '../../services/expenseService';
-import { DEMO_EMPLOYEES } from '../../services/employeeService';
+import { DEMO_EMPLOYEES, getAllEmployeesList } from '../../services/employeeService';
 import { getActivePolicy, getDraftPolicy } from '../../services/policyService';
 
 export const SimulatorView: React.FC = () => {
   const activePolicy = getActivePolicy();
-  const [selectedScenario, setSelectedScenario] = useState<string>('stricter_tier1');
+  const [selectedScenario, setSelectedScenario] = useState<string>('stricter_daily_meal');
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
   const [expandedClaimId, setExpandedClaimId] = useState<string | null>(null);
 
   // Generate draft policy based on selected scenario
   const draftPolicy = useMemo<PolicyVersion>(() => {
     const base = getDraftPolicy();
-    if (selectedScenario === 'stricter_tier1') {
+    if (selectedScenario === 'stricter_daily_meal') {
       return {
         ...base,
-        name: 'Draft: Stricter Tier-1 Meal Caps (₹2,500/day)',
+        name: 'Draft: Stricter Daily Meal Caps (₹2,500/day)',
         rules: base.rules.map((r) =>
           r.id === 'rule_cap_tier1_daily_meal'
             ? {
                 ...r,
                 parameters: { ...r.parameters, capAmountMinor: 250000 },
-                sourceQuote: 'Tier-1 Cities: Capped at ₹2,500 per day (tightened from ₹3,000).',
+                sourceQuote: 'Daily Meals: Capped at ₹2,500 per day (tightened from ₹3,000).',
               }
             : r
         ),
@@ -64,16 +64,16 @@ export const SimulatorView: React.FC = () => {
         ),
       };
     }
-    if (selectedScenario === 'relaxed_tier2') {
+    if (selectedScenario === 'relaxed_daily_meal') {
       return {
         ...base,
-        name: 'Draft: Expanded Tier-2 Meal Caps (₹2,200/day)',
+        name: 'Draft: Expanded Daily Meal Caps (₹3,500/day)',
         rules: base.rules.map((r) =>
-          r.id === 'rule_cap_tier2_daily_meal'
+          r.id === 'rule_cap_tier1_daily_meal'
             ? {
                 ...r,
-                parameters: { ...r.parameters, capAmountMinor: 220000 },
-                sourceQuote: 'Tier-2 Cities: Capped at ₹2,200 per day (increased from ₹1,800).',
+                parameters: { ...r.parameters, capAmountMinor: 350000 },
+                sourceQuote: 'Daily Meals: Capped at ₹3,500 per day (increased from ₹3,000).',
               }
             : r
         ),
@@ -88,7 +88,7 @@ export const SimulatorView: React.FC = () => {
       activePolicy,
       draftPolicy,
       expenses,
-      employees: DEMO_EMPLOYEES,
+      employees: getAllEmployeesList(),
     });
     setSimulationResult(result);
   };
@@ -99,7 +99,7 @@ export const SimulatorView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight flex items-center gap-2.5">
-            <Sliders className="w-6 h-6 text-indigo-600" />
+            <Sliders className="w-6 h-6 text-emerald-600" />
             Historical Policy Simulator
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
@@ -117,7 +117,7 @@ export const SimulatorView: React.FC = () => {
       {/* Simulation Setup Card */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs space-y-4">
         <h2 className="text-sm font-bold text-[#0F172A] flex items-center gap-2">
-          <Layers className="w-4 h-4 text-indigo-600" />
+          <Layers className="w-4 h-4 text-emerald-600" />
           <span>Policy Replay Configuration</span>
         </h2>
 
@@ -136,21 +136,21 @@ export const SimulatorView: React.FC = () => {
           </div>
 
           {/* Scenario Selector */}
-          <div className="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/40 md:col-span-2">
-            <span className="text-[10px] font-mono-code uppercase tracking-wider text-indigo-700 font-semibold">
+          <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 md:col-span-2">
+            <span className="text-[10px] font-mono-code uppercase tracking-wider text-emerald-700 font-semibold">
               Select Proposed Policy Scenario
             </span>
             <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setSelectedScenario('stricter_tier1')}
+                onClick={() => setSelectedScenario('stricter_daily_meal')}
                 className={`p-2.5 rounded-lg text-left text-xs transition-all border cursor-pointer ${
-                  selectedScenario === 'stricter_tier1'
-                    ? 'bg-white border-indigo-500 shadow-xs font-semibold text-[#0F172A]'
-                    : 'bg-white/60 border-indigo-100 text-[#475569] hover:bg-white'
+                  selectedScenario === 'stricter_daily_meal'
+                    ? 'bg-white border-emerald-500 shadow-xs font-semibold text-[#0F172A]'
+                    : 'bg-white/60 border-emerald-100 text-[#475569] hover:bg-white'
                 }`}
               >
-                <div className="font-bold">Tighten Tier-1 Caps</div>
+                <div className="font-bold">Tighten Daily Meal Caps</div>
                 <div className="text-[10px] text-[#64748B] mt-0.5">₹3,000 → ₹2,500/day</div>
               </button>
 
@@ -159,8 +159,8 @@ export const SimulatorView: React.FC = () => {
                 onClick={() => setSelectedScenario('higher_threshold')}
                 className={`p-2.5 rounded-lg text-left text-xs transition-all border cursor-pointer ${
                   selectedScenario === 'higher_threshold'
-                    ? 'bg-white border-indigo-500 shadow-xs font-semibold text-[#0F172A]'
-                    : 'bg-white/60 border-indigo-100 text-[#475569] hover:bg-white'
+                    ? 'bg-white border-emerald-500 shadow-xs font-semibold text-[#0F172A]'
+                    : 'bg-white/60 border-emerald-100 text-[#475569] hover:bg-white'
                 }`}
               >
                 <div className="font-bold">Raise Auto Threshold</div>
@@ -169,15 +169,15 @@ export const SimulatorView: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setSelectedScenario('relaxed_tier2')}
+                onClick={() => setSelectedScenario('relaxed_daily_meal')}
                 className={`p-2.5 rounded-lg text-left text-xs transition-all border cursor-pointer ${
-                  selectedScenario === 'relaxed_tier2'
-                    ? 'bg-white border-indigo-500 shadow-xs font-semibold text-[#0F172A]'
-                    : 'bg-white/60 border-indigo-100 text-[#475569] hover:bg-white'
+                  selectedScenario === 'relaxed_daily_meal'
+                    ? 'bg-white border-emerald-500 shadow-xs font-semibold text-[#0F172A]'
+                    : 'bg-white/60 border-emerald-100 text-[#475569] hover:bg-white'
                 }`}
               >
-                <div className="font-bold">Expand Tier-2 Caps</div>
-                <div className="text-[10px] text-[#64748B] mt-0.5">₹1,800 → ₹2,200/day</div>
+                <div className="font-bold">Expand Daily Meal Caps</div>
+                <div className="text-[10px] text-[#64748B] mt-0.5">₹3,000 → ₹3,500/day</div>
               </button>
             </div>
           </div>
@@ -187,7 +187,7 @@ export const SimulatorView: React.FC = () => {
         <div className="pt-2 flex justify-end">
           <button
             onClick={handleRunSimulation}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer"
           >
             <Play className="w-4 h-4 fill-white" />
             <span>Simulate Historical Claims Replay</span>
@@ -244,7 +244,7 @@ export const SimulatorView: React.FC = () => {
                 Impacted Claims
               </span>
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-xl font-bold text-indigo-700">
+                <span className="text-xl font-bold text-emerald-700">
                   {simulationResult.changedVerdictsCount}
                 </span>
                 <span className="text-xs text-[#64748B]">
@@ -276,7 +276,7 @@ export const SimulatorView: React.FC = () => {
           {/* Per-Employee Impact Table */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs space-y-3">
             <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-indigo-600" />
+              <Users className="w-4 h-4 text-emerald-600" />
               <h3 className="text-sm font-bold text-[#0F172A]">
                 Per-Employee Reimbursement Impact
               </h3>
@@ -326,7 +326,7 @@ export const SimulatorView: React.FC = () => {
           <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-indigo-600" />
+                <FileText className="w-4 h-4 text-emerald-600" />
                 <h3 className="text-sm font-bold text-[#0F172A]">
                   Detailed Claim-by-Claim Shifts ({simulationResult.changedClaims.length})
                 </h3>
@@ -378,7 +378,7 @@ export const SimulatorView: React.FC = () => {
                       </div>
 
                       <div className="mt-1 text-xs text-[#475569] bg-[#F8FAFC] p-2 rounded-lg border border-[#E2E8F0] mt-1.5">
-                        <span className="font-semibold text-indigo-700">Replay Explanation: </span>
+                        <span className="font-semibold text-emerald-700">Replay Explanation: </span>
                         {claim.deltaReason}
                       </div>
                     </div>

@@ -1,4 +1,7 @@
 import { AuditActor, AuditEvent } from '../types/expense';
+import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
+import { sanitizeFirestoreData } from './purchaseService';
 
 const STORAGE_KEY_AUDIT_LOG = 'keepr_audit_log_v1';
 
@@ -25,7 +28,7 @@ export function logAuditEvent(params: {
   const event: AuditEvent = {
     id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     correlationId: params.correlationId || `corr_${Date.now()}`,
-    orgId: params.orgId,
+    orgId: params.orgId || 'org_acme',
     expenseId: params.expenseId,
     timestamp: new Date().toISOString(),
     actor: params.actor,
@@ -41,7 +44,25 @@ export function logAuditEvent(params: {
     existing.push(event);
     localStorage.setItem(key, JSON.stringify(existing));
   } catch (err) {
-    console.error('Failed appending audit event:', err);
+    console.error('Failed appending audit event locally:', err);
+  }
+
+  // Persist to Firestore asynchronously
+  try {
+    const auditDocRef = doc(
+      db,
+      'orgs',
+      params.orgId || 'org_acme',
+      'expenses',
+      params.expenseId,
+      'audit',
+      event.id
+    );
+    setDoc(auditDocRef, sanitizeFirestoreData(event)).catch((e) =>
+      console.warn('Firestore audit event sync notice:', e.message)
+    );
+  } catch (err) {
+    console.warn('Failed queuing Firestore audit event:', err);
   }
 
   return event;

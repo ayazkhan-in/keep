@@ -69,8 +69,8 @@ export const TripsView: React.FC = () => {
                       <Plane className="w-3.5 h-3.5 text-blue-600" />
                       {t.destinationCity}
                     </span>
-                    <span className="text-[10px] font-mono-code px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold">
-                      {t.cityTier}
+                    <span className="text-[10px] font-mono-code px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold">
+                      {t.expenseIds.length} {t.expenseIds.length === 1 ? 'claim' : 'claims'}
                     </span>
                   </div>
 
@@ -99,7 +99,7 @@ export const TripsView: React.FC = () => {
                     {selectedTrip.name}
                   </h3>
                   <p className="text-xs text-[#64748B] mt-0.5">
-                    {selectedTrip.startDate} to {selectedTrip.endDate} • {selectedTrip.destinationCity} ({selectedTrip.cityTier})
+                    {selectedTrip.startDate} to {selectedTrip.endDate} • {selectedTrip.destinationCity}
                   </p>
                 </div>
                 <div className="text-right">
