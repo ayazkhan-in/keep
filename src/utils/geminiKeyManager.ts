@@ -1,3 +1,6 @@
+import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config();
 import { GoogleGenAI } from '@google/genai';
 
 export const DEFAULT_GEMINI_KEYS: string[] = [];
@@ -81,8 +84,8 @@ export class GeminiKeyManager {
   private keys: KeyEntry[] = [];
   private activeIndex: number = 0;
   private clients: Map<string, GoogleGenAI> = new Map();
-  public primaryModel: string = 'gemini-3.6-flash';
-  public fallbackModel: string = 'gemini-3.5-flash-lite';
+  public primaryModel: string = 'gemini-3.8-flash';
+  public fallbackModel: string = 'gemini-3.6-flash';
   public defaultCooldownMs: number = 60 * 1000; // 60s cooldown for quota/rate-limits
   public authCooldownMs: number = 10 * 60 * 1000; // 10 min cooldown for invalid keys
 
@@ -115,6 +118,9 @@ export class GeminiKeyManager {
       }
       if (process.env.GEMINI_API_KEY_2) {
         rawKeys.push(process.env.GEMINI_API_KEY_2.trim());
+      }
+      if (process.env.GEMINI_API_KEY_3) {
+        rawKeys.push(process.env.GEMINI_API_KEY_3.trim());
       }
       if (process.env.VITE_GEMINI_API_KEY) {
         rawKeys.push(process.env.VITE_GEMINI_API_KEY.trim());
@@ -150,6 +156,7 @@ export class GeminiKeyManager {
    * Total number of configured keys
    */
   public getKeyCount(): number {
+    if (this.keys.length === 0) this.initKeys();
     return this.keys.length;
   }
 
@@ -157,6 +164,7 @@ export class GeminiKeyManager {
    * Get active key entry
    */
   public getActiveKeyEntry(): KeyEntry | null {
+    if (this.keys.length === 0) this.initKeys();
     if (this.keys.length === 0) return null;
     return this.keys[this.activeIndex] || this.keys[0];
   }
@@ -184,6 +192,7 @@ export class GeminiKeyManager {
    * Get GoogleGenAI instance for the currently active key
    */
   public getAI(): GoogleGenAI | null {
+    if (this.keys.length === 0) this.initKeys();
     const entry = this.getActiveKeyEntry();
     if (!entry) return null;
     return this.getClient(entry.key);
@@ -237,13 +246,14 @@ export class GeminiKeyManager {
    * Main execution engine: executes content generation with automatic key failover and model downgrade
    */
   public async generateContent(params: GeminiCallParams): Promise<any> {
+    if (this.keys.length === 0) this.initKeys();
     if (this.keys.length === 0) {
       throw new Error('NO_API_KEYS_CONFIGURED');
     }
 
     const models = params.models && params.models.length > 0
       ? params.models
-      : [this.primaryModel, this.fallbackModel];
+      : [this.primaryModel, this.fallbackModel, 'gemini-3.1-flash-lite'];
 
     let lastError: any = null;
 
@@ -255,11 +265,17 @@ export class GeminiKeyManager {
         const client = this.getClient(entry.key);
 
         try {
+          console.log(`[Gemini AI] 🚀 Calling Gemini API (model: "${model}") with Key #${keyIndex + 1} [${entry.masked}]...`);
+          const startTime = Date.now();
+
           const res = await client.models.generateContent({
             model,
             contents: params.contents,
             config: params.config,
           });
+
+          const elapsed = Date.now() - startTime;
+          console.log(`[Gemini AI] ✨ Model "${model}" responded successfully in ${elapsed}ms!`);
 
           // Mark successful execution
           entry.failureCount = 0;
@@ -275,7 +291,7 @@ export class GeminiKeyManager {
           const isAuth = isAuthOrInvalidKeyError(err);
 
           console.warn(
-            `[GeminiKeyManager] Call failed on model "${model}" with Key #${keyIndex + 1} (${entry.masked}): ${errMsg}`
+            `[GeminiKeyManager] ⚠️ Call failed on model "${model}" with Key #${keyIndex + 1} (${entry.masked}): ${errMsg}`
           );
 
           if (isQuota || isAuth) {
@@ -295,12 +311,12 @@ export class GeminiKeyManager {
         }
       }
 
-      console.warn(`[GeminiKeyManager] All configured keys failed for model "${model}". Trying next model if available...`);
+      console.warn(`[GeminiKeyManager] ⚠️ All configured keys failed for model "${model}". Trying next fallback model if available...`);
     }
 
     // If quota or rate-limit was hit on all keys and all models, throw normalized QUOTA_EXHAUSTED
     if (isQuotaOrRateLimitError(lastError)) {
-      console.warn('[GeminiKeyManager] All Gemini keys and models quota exhausted. Engaging smart heuristic fallback.');
+      console.warn('[GeminiKeyManager] ⚠️ All Gemini keys and models quota exhausted. Engaging smart heuristic fallback.');
       throw new Error('QUOTA_EXHAUSTED');
     }
 
@@ -311,6 +327,7 @@ export class GeminiKeyManager {
    * Diagnostic pool status report (used by /api/health and admin logs)
    */
   public getKeyPoolStatus(): KeyPoolStatus {
+    if (this.keys.length === 0) this.initKeys();
     const now = Date.now();
     const activeEntry = this.getActiveKeyEntry();
 

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
@@ -687,7 +688,14 @@ app.post('/api/gemini/scan-receipt', async (req, res) => {
       existingAnchorHashes = [],
       allowDuplicate = false,
     } = req.body;
+
+    console.log(`\n======================================================`);
+    console.log(`[RECEIPT OCR] 📥 Incoming Receipt Scan Request (${new Date().toLocaleTimeString()})`);
+    console.log(`              • Payload: ${imageBase64 ? `${Math.round(imageBase64.length / 1024)} KB image (${mimeType})` : 'Text context'}`);
+
     const ai = getAI();
+    const poolStatus = geminiKeyManager.getKeyPoolStatus();
+    console.log(`[RECEIPT OCR] 🤖 Gemini Key Pool: ${poolStatus.totalKeys} keys loaded | Active: ${poolStatus.activeKeyMasked}`);
 
     let rawImageHash: string | undefined;
 
@@ -695,6 +703,7 @@ app.post('/api/gemini/scan-receipt', async (req, res) => {
     if (imageBase64) {
       const rawData = imageBase64.replace(/^data:[^;]+;base64,/, '');
       if (rawData.length < 200) {
+        console.warn(`[RECEIPT OCR] ⚠️ Corrupt or microscopic image payload (${rawData.length} bytes). Engaging quality guard.`);
         return res.json({
           success: true,
           extracted: getReceiptFallback('unreadable blurry corrupt', imageBase64),
@@ -704,6 +713,7 @@ app.post('/api/gemini/scan-receipt', async (req, res) => {
 
       // Compute raw image SHA-256 hash
       rawImageHash = crypto.createHash('sha256').update(rawData).digest('hex');
+      console.log(`[RECEIPT OCR] 🔍 Stage 1 Raw Image SHA-256: ${rawImageHash.substring(0, 16)}...`);
 
       // STAGE 1: Raw Image Hashing - Catch duplicate BEFORE Gemini API call!
       if (!allowDuplicate) {
@@ -716,6 +726,8 @@ app.post('/api/gemini/scan-receipt', async (req, res) => {
             typeof rawMatch === 'object' && rawMatch.vendor
               ? `${rawMatch.vendor} (${rawMatch.date || 'Previously Uploaded'})`
               : 'Existing Record';
+
+          console.warn(`[RECEIPT OCR] 🛑 REJECTED: Stage 1 Raw Image Duplicate Detected (${matchedTitle})!`);
 
           return res.json({
             success: false,
@@ -751,6 +763,7 @@ app.post('/api/gemini/scan-receipt', async (req, res) => {
     }
 
     if (!ai) {
+      console.warn(`[RECEIPT OCR] ⚠️ No active Gemini AI key found in pool. Using heuristic fallback.`);
       const fallback = getReceiptFallback(textContext, imageBase64);
       const { anchor, anchorJsonHash } = computeServerAnchorJson(fallback);
       fallback.rawImageHash = rawImageHash;
@@ -976,6 +989,14 @@ Carefully examine the physical and digital condition of the receipt:
       const parsed = JSON.parse(response.text || '{}');
       if (!parsed.aiConfidence) parsed.aiConfidence = 0.98;
 
+      console.log(`[RECEIPT OCR] ✅ Gemini AI Parsing Successful!`);
+      console.log(`              • Merchant: "${parsed.vendor || 'Unknown'}"`);
+      console.log(`              • Category: "${parsed.category || 'N/A'}" (${parsed.subcategory || 'General'})`);
+      console.log(`              • Date: ${parsed.purchaseDate || 'N/A'}`);
+      console.log(`              • Total Amount: ${parsed.currency || 'INR'} ${parsed.price}`);
+      console.log(`              • Line Items: ${parsed.lineItems?.length || 0} items extracted`);
+      console.log(`              • Legibility: isReceipt=${parsed.isReceipt}, isReadable=${parsed.isReadable}, hasIssue=${Boolean(parsed.hasIssue)}`);
+
       // Ensure issue flags are consistent
       if (parsed.primaryIssue && parsed.hasIssue === undefined) {
         parsed.hasIssue = true;
@@ -995,6 +1016,7 @@ Carefully examine the physical and digital condition of the receipt:
       const { anchor, anchorJsonHash } = computeServerAnchorJson(parsed);
       parsed.rawImageHash = rawImageHash;
       parsed.anchorJsonHash = anchorJsonHash;
+      console.log(`[RECEIPT OCR] 🔍 Stage 2 Anchor JSON SHA-256: ${anchorJsonHash.substring(0, 16)}...`);
 
       if (!allowDuplicate && !parsed.hasIssue) {
         const anchorMatch =
@@ -1006,6 +1028,8 @@ Carefully examine the physical and digital condition of the receipt:
             typeof anchorMatch === 'object' && (anchorMatch as any).vendor
               ? `${(anchorMatch as any).vendor} (${(anchorMatch as any).currency || parsed.currency} ${(anchorMatch as any).amount || parsed.price} on ${(anchorMatch as any).date || parsed.purchaseDate})`
               : `${parsed.vendor} (${parsed.currency} ${parsed.price} on ${parsed.purchaseDate})`;
+
+          console.warn(`[RECEIPT OCR] 🛑 REJECTED: Stage 2 Anchor JSON Duplicate Detected (${matchedTitle})!`);
 
           parsed.hasIssue = true;
           parsed.isDuplicate = true;
@@ -1032,6 +1056,7 @@ Carefully examine the physical and digital condition of the receipt:
         }
       }
 
+      console.log(`[RECEIPT OCR] 🚀 Returning parsed receipt data to client.`);
       return res.json({
         success: true,
         duplicate: false,
@@ -1039,7 +1064,7 @@ Carefully examine the physical and digital condition of the receipt:
         source: 'gemini',
       });
     } catch (apiError: any) {
-      console.warn('Gemini API execution error/quota limit, using versatile heuristic fallback:', apiError.message);
+      console.warn(`[RECEIPT OCR] ⚠️ Gemini API execution error: ${apiError.message}. Switching to versatile heuristic fallback.`);
       const fallback = getReceiptFallback(textContext, imageBase64);
       const { anchor, anchorJsonHash } = computeServerAnchorJson(fallback);
       fallback.rawImageHash = rawImageHash;

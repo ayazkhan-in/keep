@@ -1,7 +1,8 @@
 // src/server/api.ts
+import "dotenv/config";
 import express2 from "express";
 import crypto from "crypto";
-import dotenv from "dotenv";
+import dotenv2 from "dotenv";
 import { Type } from "@google/genai";
 
 // src/server/expenseRoutes.ts
@@ -3109,7 +3110,10 @@ function convertReceiptToInr(receipt, customRates) {
 }
 
 // src/utils/geminiKeyManager.ts
+import "dotenv/config";
+import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
+dotenv.config();
 var DEFAULT_GEMINI_KEYS = [];
 function maskKey(key) {
   if (!key || key.length <= 12) return "***";
@@ -3137,8 +3141,8 @@ var GeminiKeyManager = class {
     this.keys = [];
     this.activeIndex = 0;
     this.clients = /* @__PURE__ */ new Map();
-    this.primaryModel = "gemini-3.6-flash";
-    this.fallbackModel = "gemini-3.5-flash-lite";
+    this.primaryModel = "gemini-3.8-flash";
+    this.fallbackModel = "gemini-3.6-flash";
     this.defaultCooldownMs = 60 * 1e3;
     // 60s cooldown for quota/rate-limits
     this.authCooldownMs = 10 * 60 * 1e3;
@@ -3164,6 +3168,9 @@ var GeminiKeyManager = class {
       }
       if (process.env.GEMINI_API_KEY_2) {
         rawKeys.push(process.env.GEMINI_API_KEY_2.trim());
+      }
+      if (process.env.GEMINI_API_KEY_3) {
+        rawKeys.push(process.env.GEMINI_API_KEY_3.trim());
       }
       if (process.env.VITE_GEMINI_API_KEY) {
         rawKeys.push(process.env.VITE_GEMINI_API_KEY.trim());
@@ -3192,12 +3199,14 @@ var GeminiKeyManager = class {
    * Total number of configured keys
    */
   getKeyCount() {
+    if (this.keys.length === 0) this.initKeys();
     return this.keys.length;
   }
   /**
    * Get active key entry
    */
   getActiveKeyEntry() {
+    if (this.keys.length === 0) this.initKeys();
     if (this.keys.length === 0) return null;
     return this.keys[this.activeIndex] || this.keys[0];
   }
@@ -3223,6 +3232,7 @@ var GeminiKeyManager = class {
    * Get GoogleGenAI instance for the currently active key
    */
   getAI() {
+    if (this.keys.length === 0) this.initKeys();
     const entry = this.getActiveKeyEntry();
     if (!entry) return null;
     return this.getClient(entry.key);
@@ -3269,10 +3279,11 @@ var GeminiKeyManager = class {
    * Main execution engine: executes content generation with automatic key failover and model downgrade
    */
   async generateContent(params) {
+    if (this.keys.length === 0) this.initKeys();
     if (this.keys.length === 0) {
       throw new Error("NO_API_KEYS_CONFIGURED");
     }
-    const models = params.models && params.models.length > 0 ? params.models : [this.primaryModel, this.fallbackModel];
+    const models = params.models && params.models.length > 0 ? params.models : [this.primaryModel, this.fallbackModel, "gemini-3.1-flash-lite"];
     let lastError = null;
     for (const model of models) {
       const candidateIndices = this.getCandidateKeyIndices();
@@ -3280,11 +3291,15 @@ var GeminiKeyManager = class {
         const entry = this.keys[keyIndex];
         const client = this.getClient(entry.key);
         try {
+          console.log(`[Gemini AI] \u{1F680} Calling Gemini API (model: "${model}") with Key #${keyIndex + 1} [${entry.masked}]...`);
+          const startTime = Date.now();
           const res = await client.models.generateContent({
             model,
             contents: params.contents,
             config: params.config
           });
+          const elapsed = Date.now() - startTime;
+          console.log(`[Gemini AI] \u2728 Model "${model}" responded successfully in ${elapsed}ms!`);
           entry.failureCount = 0;
           entry.cooldownUntil = 0;
           entry.lastUsed = Date.now();
@@ -3297,7 +3312,7 @@ var GeminiKeyManager = class {
           const isQuota = isQuotaOrRateLimitError(err);
           const isAuth = isAuthOrInvalidKeyError(err);
           console.warn(
-            `[GeminiKeyManager] Call failed on model "${model}" with Key #${keyIndex + 1} (${entry.masked}): ${errMsg}`
+            `[GeminiKeyManager] \u26A0\uFE0F Call failed on model "${model}" with Key #${keyIndex + 1} (${entry.masked}): ${errMsg}`
           );
           if (isQuota || isAuth) {
             const cooldown = isAuth ? this.authCooldownMs : this.defaultCooldownMs;
@@ -3313,10 +3328,10 @@ var GeminiKeyManager = class {
           }
         }
       }
-      console.warn(`[GeminiKeyManager] All configured keys failed for model "${model}". Trying next model if available...`);
+      console.warn(`[GeminiKeyManager] \u26A0\uFE0F All configured keys failed for model "${model}". Trying next fallback model if available...`);
     }
     if (isQuotaOrRateLimitError(lastError)) {
-      console.warn("[GeminiKeyManager] All Gemini keys and models quota exhausted. Engaging smart heuristic fallback.");
+      console.warn("[GeminiKeyManager] \u26A0\uFE0F All Gemini keys and models quota exhausted. Engaging smart heuristic fallback.");
       throw new Error("QUOTA_EXHAUSTED");
     }
     throw lastError || new Error("GEMINI_CALL_FAILED");
@@ -3325,6 +3340,7 @@ var GeminiKeyManager = class {
    * Diagnostic pool status report (used by /api/health and admin logs)
    */
   getKeyPoolStatus() {
+    if (this.keys.length === 0) this.initKeys();
     const now = Date.now();
     const activeEntry = this.getActiveKeyEntry();
     return {
@@ -3499,7 +3515,7 @@ async function sendWarrantyExpiryAlert(purchase, recipientEmail = "khanasifshams
 }
 
 // src/server/api.ts
-dotenv.config();
+dotenv2.config();
 var app = express2();
 app.disable("x-powered-by");
 app.use((req, res, next) => {
@@ -4050,11 +4066,18 @@ app.post("/api/gemini/scan-receipt", async (req, res) => {
       existingAnchorHashes = [],
       allowDuplicate = false
     } = req.body;
+    console.log(`
+======================================================`);
+    console.log(`[RECEIPT OCR] \u{1F4E5} Incoming Receipt Scan Request (${(/* @__PURE__ */ new Date()).toLocaleTimeString()})`);
+    console.log(`              \u2022 Payload: ${imageBase64 ? `${Math.round(imageBase64.length / 1024)} KB image (${mimeType})` : "Text context"}`);
     const ai = getAI();
+    const poolStatus = geminiKeyManager.getKeyPoolStatus();
+    console.log(`[RECEIPT OCR] \u{1F916} Gemini Key Pool: ${poolStatus.totalKeys} keys loaded | Active: ${poolStatus.activeKeyMasked}`);
     let rawImageHash;
     if (imageBase64) {
       const rawData = imageBase64.replace(/^data:[^;]+;base64,/, "");
       if (rawData.length < 200) {
+        console.warn(`[RECEIPT OCR] \u26A0\uFE0F Corrupt or microscopic image payload (${rawData.length} bytes). Engaging quality guard.`);
         return res.json({
           success: true,
           extracted: getReceiptFallback("unreadable blurry corrupt", imageBase64),
@@ -4062,10 +4085,12 @@ app.post("/api/gemini/scan-receipt", async (req, res) => {
         });
       }
       rawImageHash = crypto.createHash("sha256").update(rawData).digest("hex");
+      console.log(`[RECEIPT OCR] \u{1F50D} Stage 1 Raw Image SHA-256: ${rawImageHash.substring(0, 16)}...`);
       if (!allowDuplicate) {
         const rawMatch = serverReceiptRegistry.rawImageHashes.get(rawImageHash) || (existingRawHashes.includes(rawImageHash) ? { vendor: "Previous Receipt", date: "", amount: 0 } : void 0);
         if (rawMatch) {
           const matchedTitle = typeof rawMatch === "object" && rawMatch.vendor ? `${rawMatch.vendor} (${rawMatch.date || "Previously Uploaded"})` : "Existing Record";
+          console.warn(`[RECEIPT OCR] \u{1F6D1} REJECTED: Stage 1 Raw Image Duplicate Detected (${matchedTitle})!`);
           return res.json({
             success: false,
             duplicate: true,
@@ -4099,6 +4124,7 @@ app.post("/api/gemini/scan-receipt", async (req, res) => {
       }
     }
     if (!ai) {
+      console.warn(`[RECEIPT OCR] \u26A0\uFE0F No active Gemini AI key found in pool. Using heuristic fallback.`);
       const fallback = getReceiptFallback(textContext, imageBase64);
       const { anchor, anchorJsonHash } = computeServerAnchorJson(fallback);
       fallback.rawImageHash = rawImageHash;
@@ -4311,6 +4337,13 @@ ${textContext}` : "Scan this document thoroughly. Inspect readability and qualit
       });
       const parsed = JSON.parse(response.text || "{}");
       if (!parsed.aiConfidence) parsed.aiConfidence = 0.98;
+      console.log(`[RECEIPT OCR] \u2705 Gemini AI Parsing Successful!`);
+      console.log(`              \u2022 Merchant: "${parsed.vendor || "Unknown"}"`);
+      console.log(`              \u2022 Category: "${parsed.category || "N/A"}" (${parsed.subcategory || "General"})`);
+      console.log(`              \u2022 Date: ${parsed.purchaseDate || "N/A"}`);
+      console.log(`              \u2022 Total Amount: ${parsed.currency || "INR"} ${parsed.price}`);
+      console.log(`              \u2022 Line Items: ${parsed.lineItems?.length || 0} items extracted`);
+      console.log(`              \u2022 Legibility: isReceipt=${parsed.isReceipt}, isReadable=${parsed.isReadable}, hasIssue=${Boolean(parsed.hasIssue)}`);
       if (parsed.primaryIssue && parsed.hasIssue === void 0) {
         parsed.hasIssue = true;
       }
@@ -4327,10 +4360,12 @@ ${textContext}` : "Scan this document thoroughly. Inspect readability and qualit
       const { anchor, anchorJsonHash } = computeServerAnchorJson(parsed);
       parsed.rawImageHash = rawImageHash;
       parsed.anchorJsonHash = anchorJsonHash;
+      console.log(`[RECEIPT OCR] \u{1F50D} Stage 2 Anchor JSON SHA-256: ${anchorJsonHash.substring(0, 16)}...`);
       if (!allowDuplicate && !parsed.hasIssue) {
         const anchorMatch = serverReceiptRegistry.anchorJsonHashes.get(anchorJsonHash) || (existingAnchorHashes.includes(anchorJsonHash) ? { vendor: parsed.vendor, date: parsed.purchaseDate, amount: parsed.price, currency: parsed.currency } : void 0);
         if (anchorMatch) {
           const matchedTitle = typeof anchorMatch === "object" && anchorMatch.vendor ? `${anchorMatch.vendor} (${anchorMatch.currency || parsed.currency} ${anchorMatch.amount || parsed.price} on ${anchorMatch.date || parsed.purchaseDate})` : `${parsed.vendor} (${parsed.currency} ${parsed.price} on ${parsed.purchaseDate})`;
+          console.warn(`[RECEIPT OCR] \u{1F6D1} REJECTED: Stage 2 Anchor JSON Duplicate Detected (${matchedTitle})!`);
           parsed.hasIssue = true;
           parsed.isDuplicate = true;
           parsed.duplicateStage = "anchor_json_hash";
@@ -4354,6 +4389,7 @@ ${textContext}` : "Scan this document thoroughly. Inspect readability and qualit
           });
         }
       }
+      console.log(`[RECEIPT OCR] \u{1F680} Returning parsed receipt data to client.`);
       return res.json({
         success: true,
         duplicate: false,
@@ -4361,7 +4397,7 @@ ${textContext}` : "Scan this document thoroughly. Inspect readability and qualit
         source: "gemini"
       });
     } catch (apiError) {
-      console.warn("Gemini API execution error/quota limit, using versatile heuristic fallback:", apiError.message);
+      console.warn(`[RECEIPT OCR] \u26A0\uFE0F Gemini API execution error: ${apiError.message}. Switching to versatile heuristic fallback.`);
       const fallback = getReceiptFallback(textContext, imageBase64);
       const { anchor, anchorJsonHash } = computeServerAnchorJson(fallback);
       fallback.rawImageHash = rawImageHash;

@@ -1,7 +1,9 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import cron from 'node-cron';
+import { geminiKeyManager } from './src/utils/geminiKeyManager';
 import app, {
   getReceiptFallback,
   serverReceiptRegistry,
@@ -32,7 +34,9 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
+    const keyPool = geminiKeyManager.getKeyPoolStatus();
     console.log(`Keepr server listening on http://localhost:${PORT}`);
+    console.log(`[Keepr AI] Gemini Engine active: ${keyPool.totalKeys} keys loaded (active: ${keyPool.activeKeyMasked}) | Model: ${geminiKeyManager.primaryModel}`);
   });
 }
 
