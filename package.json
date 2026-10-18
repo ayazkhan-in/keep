@@ -33,7 +33,6 @@
     "node-cron": "^4.6.0",
     "nodemailer": "^9.0.5",
     "pdf-parse": "^2.4.5",
-    "pdfjs-dist": "^5.4.296",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "react-router-dom": "^7.18.4",

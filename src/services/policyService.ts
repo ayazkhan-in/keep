@@ -676,18 +676,20 @@ export async function extractPdfText(
       }
     }
   } catch (err) {
-    // Expected in offline, tests, or when dev server is restarting
+    // Expected when server endpoint is unavailable
   }
 
-  // 2. Client-side extraction fallback (uses pdfjs-dist directly for 100% offline resilience)
+  // 2. Direct extraction fallback using pdf-parse (safe in all runtimes)
   try {
-    const buf = arrayBuffer || base64ToArrayBuffer(pdfBase64);
-    const clientResult = await extractTextFromPdfArrayBuffer(buf);
-    return clientResult;
+    const buf = arrayBuffer || (pdfBase64 ? base64ToArrayBuffer(pdfBase64) : undefined);
+    if (buf) {
+      return await extractTextFromPdfArrayBuffer(buf);
+    }
   } catch (clientErr) {
-    console.error('Client PDF fallback extraction failed:', clientErr);
-    throw new Error('Could not extract text from PDF. Please check the document format.');
+    console.error('PDF fallback extraction failed:', clientErr);
   }
+
+  throw new Error('Could not extract text from PDF. Please check the document format or ensure the server is running.');
 }
 
 /**

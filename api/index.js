@@ -1960,9 +1960,6 @@ async function extractTextFromPdfBase64(base64Data) {
   return extractTextFromPdfBuffer(buffer);
 }
 
-// src/utils/pdfExtractorClient.ts
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
-
 // src/services/policyService.ts
 var DEFAULT_ACME_POLICY = {
   id: "pol_acme_v1",
