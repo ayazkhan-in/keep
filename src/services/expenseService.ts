@@ -15,7 +15,7 @@ import {
   normalizeExpenseCategory,
 } from '../engine';
 import { getActivePolicy } from './policyService';
-import { DEMO_EMPLOYEES, getAllEmployeesList } from './employeeService';
+import { DEMO_EMPLOYEES, getAllEmployeesList, getEmployeeDisplayName } from './employeeService';
 import { logAuditEvent, getAuditEventsForExpense } from './auditService';
 import {
   collection,
@@ -30,8 +30,22 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { sanitizeFirestoreData } from './purchaseService';
+import { SYNTHETIC_EXPENSES } from '../data/syntheticClaims';
 
 const STORAGE_KEY_EXPENSES = 'keepr_expenses_v1';
+
+// Active in-memory subscribers across all components
+const expenseSubscribers = new Set<(expenses: Expense[]) => void>();
+
+export function notifyExpenseSubscribers(expenses: Expense[]): void {
+  for (const subscriber of Array.from(expenseSubscribers)) {
+    try {
+      subscriber(expenses);
+    } catch (err) {
+      console.warn('Error in expense subscriber callback:', err);
+    }
+  }
+}
 
 export function getExpensesCollection(orgId: string = 'org_acme'): CollectionReference {
   return collection(db, 'orgs', orgId, 'expenses');
@@ -42,34 +56,81 @@ export function getExpenseDoc(expenseId: string, orgId: string = 'org_acme'): Do
 }
 
 /**
- * Real-time subscription to corporate expenses in Firestore.
+ * Real-time subscription to corporate expenses with synchronous in-memory propagation
+ * and smart-merging with Firestore.
  */
 export function subscribeExpenses(
   onUpdate: (expenses: Expense[]) => void,
   onError?: (err: Error) => void,
   orgId: string = 'org_acme'
 ): () => void {
+  // Register in-memory subscriber for instant cross-component updates
+  expenseSubscribers.add(onUpdate);
+
+  // Send current expenses immediately so caller has latest state without delay
+  const initial = getAllExpenses();
+  if (initial.length > 0) {
+    onUpdate(initial);
+  }
+
+  // Handle custom window events for same-tab and multi-tab instant sync
+  const handleLocalUpdate = (e: Event) => {
+    const custom = e as CustomEvent<Expense[]>;
+    if (custom.detail && Array.isArray(custom.detail)) {
+      onUpdate(custom.detail);
+    } else {
+      onUpdate(getAllExpenses());
+    }
+  };
+
+  const handleStorageEvent = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEY_EXPENSES) {
+      onUpdate(getAllExpenses());
+    }
+  };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keepr:expenses_updated', handleLocalUpdate);
+    window.addEventListener('storage', handleStorageEvent);
+  }
+
   const colRef = getExpensesCollection(orgId);
 
-  const unsubscribe = onSnapshot(
+  const unsubscribeFirestore = onSnapshot(
     colRef,
     (snapshot) => {
-      const items: Expense[] = [];
+      const firestoreItems: Expense[] = [];
       snapshot.forEach((docSnap) => {
-        items.push({ id: docSnap.id, ...docSnap.data() } as Expense);
+        firestoreItems.push({ id: docSnap.id, ...docSnap.data() } as Expense);
       });
 
-      if (items.length > 0) {
-        // Sort chronologically (newest first)
-        const sorted = items.sort((a, b) => {
-          const dateA = a.submittedAt || a.expenseDate || '';
-          const dateB = b.submittedAt || b.expenseDate || '';
-          return dateB.localeCompare(dateA);
-        });
+      // SMART MERGE: Never discard locally submitted claims that haven't synced to Firestore yet!
+      const localExpenses = getAllExpenses();
+      const mergedMap = new Map<string, Expense>();
 
-        // Cache locally for synchronous consumers
-        saveAllExpenses(sorted);
-        onUpdate(sorted);
+      // 1. Seed with local expenses
+      for (const exp of localExpenses) {
+        if (exp && exp.id) {
+          mergedMap.set(exp.id, exp);
+        }
+      }
+
+      // 2. Overlay Firestore documents (preserving any local unsaved claims)
+      for (const exp of firestoreItems) {
+        if (exp && exp.id) {
+          mergedMap.set(exp.id, exp);
+        }
+      }
+
+      const merged = Array.from(mergedMap.values()).sort((a, b) => {
+        const dateA = a.submittedAt || a.expenseDate || '';
+        const dateB = b.submittedAt || b.expenseDate || '';
+        return dateB.localeCompare(dateA);
+      });
+
+      if (merged.length > 0) {
+        saveAllExpenses(merged);
+        notifyExpenseSubscribers(merged);
       } else {
         onUpdate(getAllExpenses());
       }
@@ -81,7 +142,14 @@ export function subscribeExpenses(
     }
   );
 
-  return unsubscribe;
+  return () => {
+    expenseSubscribers.delete(onUpdate);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('keepr:expenses_updated', handleLocalUpdate);
+      window.removeEventListener('storage', handleStorageEvent);
+    }
+    unsubscribeFirestore();
+  };
 }
 
 /**
@@ -89,12 +157,15 @@ export function subscribeExpenses(
  */
 export async function addExpenseToDb(expense: Expense, orgId: string = 'org_acme'): Promise<void> {
   try {
+    if (!expense.employeeName || expense.employeeName === expense.employeeId || expense.employeeName.startsWith('emp_')) {
+      expense.employeeName = getEmployeeDisplayName(expense.employeeId);
+    }
     const docRef = getExpenseDoc(expense.id, orgId);
     const sanitized = sanitizeFirestoreData(expense);
     await setDoc(docRef, sanitized);
     // Also save to root collection for redundancy
     await setDoc(doc(db, 'expenses', expense.id), sanitized).catch(() => {});
-    console.log(`[EXPENSE DB] Synchronized claim ${expense.id} to Firestore!`);
+    console.log(`[EXPENSE DB] Synchronized claim ${expense.id} to Firestore with employee: ${expense.employeeName}`);
   } catch (err) {
     console.warn(`[EXPENSE DB] Could not sync claim ${expense.id} to Firestore:`, err);
   }
@@ -109,6 +180,9 @@ export async function updateExpenseInDb(
   orgId: string = 'org_acme'
 ): Promise<void> {
   try {
+    if (updates.employeeId && (!updates.employeeName || updates.employeeName === updates.employeeId)) {
+      updates.employeeName = getEmployeeDisplayName(updates.employeeId);
+    }
     const docRef = getExpenseDoc(expenseId, orgId);
     const sanitized = sanitizeFirestoreData(updates);
     await updateDoc(docRef, sanitized);
@@ -120,36 +194,79 @@ export async function updateExpenseInDb(
 }
 
 export function getAllExpenses(): Expense[] {
+  let list: Expense[] = [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY_EXPENSES);
     if (raw) {
-      const list = JSON.parse(raw);
-      if (Array.isArray(list) && list.length > 0) return list;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        list = parsed;
+      }
     }
   } catch (err) {
     console.error('Failed reading expenses from storage:', err);
   }
-  return [];
+  // Initialize with SYNTHETIC_EXPENSES baseline if storage is empty
+  if (list.length === 0 && Array.isArray(SYNTHETIC_EXPENSES) && SYNTHETIC_EXPENSES.length > 0) {
+    list = [...SYNTHETIC_EXPENSES];
+    saveAllExpenses(list);
+  }
+
+  // Ensure every claim has an authentic human employeeName populated (never synthetic 'emp_105' or random hash)
+  let mutated = false;
+  for (const exp of list) {
+    if (!exp.employeeName || exp.employeeName === exp.employeeId || exp.employeeName.startsWith('emp_')) {
+      exp.employeeName = getEmployeeDisplayName(exp.employeeId);
+      mutated = true;
+    }
+  }
+  if (mutated) {
+    try {
+      localStorage.setItem(STORAGE_KEY_EXPENSES, JSON.stringify(list));
+    } catch {}
+  }
+
+  return list;
 }
 
 export function saveAllExpenses(expenses: Expense[]): void {
-  localStorage.setItem(STORAGE_KEY_EXPENSES, JSON.stringify(expenses));
+  // Always guarantee employeeName before saving
+  for (const exp of expenses) {
+    if (!exp.employeeName || exp.employeeName === exp.employeeId || exp.employeeName.startsWith('emp_')) {
+      exp.employeeName = getEmployeeDisplayName(exp.employeeId);
+    }
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY_EXPENSES, JSON.stringify(expenses));
+  } catch (err) {
+    console.error('Failed saving expenses to localStorage:', err);
+  }
+  notifyExpenseSubscribers(expenses);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('keepr:expenses_updated', { detail: expenses })
+    );
+  }
 }
 
 export function getEmployeeExpenses(employeeId: string): Expense[] {
   const all = getAllExpenses();
+  const targetName = getEmployeeDisplayName(employeeId);
   return all.filter((e) => {
     if (e.employeeId === employeeId) return true;
     if ((e as any).employeeAlias && (e as any).employeeAlias === employeeId) return true;
+    if (e.employeeName && targetName && e.employeeName.toLowerCase() === targetName.toLowerCase()) return true;
     // Cross-link Alice Walker's claims between UID and emp_101
     const isAliceParam =
       employeeId === 'emp_101' ||
       employeeId === 'pXmBbGDnDwTsrErsGuad8r4Gz4S2' ||
-      employeeId === 'nEqzcEzb0zPDjsvy4tfL8tm2QHl1';
+      employeeId === 'nEqzcEzb0zPDjsvy4tfL8tm2QHl1' ||
+      targetName === 'Alice Walker';
     const isAliceClaim =
       e.employeeId === 'emp_101' ||
       e.employeeId === 'pXmBbGDnDwTsrErsGuad8r4Gz4S2' ||
-      e.employeeId === 'nEqzcEzb0zPDjsvy4tfL8tm2QHl1';
+      e.employeeId === 'nEqzcEzb0zPDjsvy4tfL8tm2QHl1' ||
+      e.employeeName === 'Alice Walker';
     return isAliceParam && isAliceClaim;
   });
 }
@@ -246,6 +363,7 @@ export function replayLedger(expenses: Expense[]): {
   }
 
   saveAllExpenses(sorted);
+  notifyExpenseSubscribers(sorted);
   return { ledger, reflowCount };
 }
 
@@ -261,6 +379,11 @@ export function submitExpense(newExpense: Expense): {
   const policy = getActivePolicy();
   const allEmps = getAllEmployeesList();
   const employee = allEmps.find((e) => e.id === newExpense.employeeId) || allEmps[0];
+
+  // Guarantee actual human employeeName is stored on the claim
+  if (!newExpense.employeeName || newExpense.employeeName === newExpense.employeeId || newExpense.employeeName.startsWith('emp_')) {
+    newExpense.employeeName = employee.identity?.name || getEmployeeDisplayName(newExpense.employeeId);
+  }
 
   // 1. Authoritative Currency Normalization
   const rawAmount = newExpense.corrected?.total ?? newExpense.extracted?.total?.value ?? 0;
@@ -331,11 +454,19 @@ export function submitExpense(newExpense: Expense): {
   newExpense.verdict = verdict;
   newExpense.status = verdict.status;
 
-  // Append claim locally
-  all.push(newExpense);
-  saveAllExpenses(all);
+  // Directly insert or update in authoritative organization claims list
+  const existingIdx = all.findIndex((e) => e.id === newExpense.id);
+  if (existingIdx >= 0) {
+    all[existingIdx] = newExpense;
+  } else {
+    all.unshift(newExpense);
+  }
 
-  // Sync claim to Firestore
+  // Persist locally & synchronously notify all views
+  saveAllExpenses(all);
+  notifyExpenseSubscribers(all);
+
+  // Sync claim asynchronously to Firestore
   addExpenseToDb(newExpense, newExpense.orgId || 'org_acme');
 
   // Append-only audit events

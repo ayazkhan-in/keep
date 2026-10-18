@@ -19,7 +19,7 @@ import {
 import { Expense } from '../../types/expense';
 import { getAllExpenses, subscribeExpenses } from '../../services/expenseService';
 import { getActivePolicy } from '../../services/policyService';
-import { getActiveEmployee } from '../../services/employeeService';
+import { getActiveEmployee, getEmployeeDisplayName } from '../../services/employeeService';
 
 export const ReportsView: React.FC = () => {
   const [reportType, setReportType] = useState<string>('monthly_digest');
@@ -263,7 +263,7 @@ export const ReportsView: React.FC = () => {
                   <tr key={exp.id} className="hover:bg-slate-50">
                     <td className="py-2 px-2.5 font-mono-code font-bold text-slate-900">{exp.id}</td>
                     <td className="py-2 px-2.5 text-slate-600 whitespace-nowrap">{exp.expenseDate}</td>
-                    <td className="py-2 px-2.5 font-medium text-slate-800">{exp.employeeId}</td>
+                    <td className="py-2 px-2.5 font-medium text-slate-800">{exp.employeeName || getEmployeeDisplayName(exp.employeeId)}</td>
                     <td className="py-2 px-2.5 font-semibold text-slate-900 truncate max-w-[140px]">
                       {exp.extracted?.merchant?.value || 'Merchant'}
                     </td>

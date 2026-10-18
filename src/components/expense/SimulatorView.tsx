@@ -94,51 +94,50 @@ export const SimulatorView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight flex items-center gap-2.5">
-            <Sliders className="w-6 h-6 text-emerald-600" />
-            Historical Policy Simulator
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+            Policy Simulator
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
-            Replay real organization claim history across active vs draft policy versions.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Replay historical claims against proposed policy adjustments.
           </p>
         </div>
 
         {/* Safe Sandbox Indicator */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-medium text-[#475569]">
-          <Lock className="w-3.5 h-3.5 text-slate-500" />
-          <span>Zero Mutation: Live claims remain untouched</span>
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200/60 text-xs font-medium text-slate-600">
+          <Lock className="w-3 h-3 text-slate-500" />
+          <span>Zero Mutation Sandbox</span>
         </div>
       </div>
 
       {/* Simulation Setup Card */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs space-y-4">
-        <h2 className="text-sm font-bold text-[#0F172A] flex items-center gap-2">
-          <Layers className="w-4 h-4 text-emerald-600" />
+      <div className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-2xs space-y-3.5">
+        <h2 className="text-xs font-semibold text-slate-900 flex items-center gap-2">
+          <Layers className="w-3.5 h-3.5 text-slate-500" />
           <span>Policy Replay Configuration</span>
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
           {/* Active Policy Card */}
-          <div className="p-3.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC]">
-            <span className="text-[10px] font-mono-code uppercase tracking-wider text-[#64748B] font-semibold">
+          <div className="p-3 rounded-lg border border-slate-200/70 bg-slate-50/60">
+            <span className="text-[10px] font-mono-code uppercase tracking-wider text-slate-400 font-medium">
               Baseline Policy
             </span>
-            <div className="mt-1 font-bold text-xs sm:text-sm text-[#0F172A]">
+            <div className="mt-1 font-semibold text-xs sm:text-sm text-slate-900">
               {activePolicy.name} (v{activePolicy.versionNumber})
             </div>
-            <p className="text-[11px] text-[#64748B] mt-1">
-              {activePolicy.rules.length} active deterministic rules
+            <p className="text-[11px] text-slate-500 mt-1">
+              {activePolicy.rules.length} active rules
             </p>
           </div>
 
           {/* Scenario Selector */}
-          <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 md:col-span-2">
-            <span className="text-[10px] font-mono-code uppercase tracking-wider text-emerald-700 font-semibold">
-              Select Proposed Policy Scenario
+          <div className="p-3 rounded-lg border border-slate-200/70 bg-slate-50/40 md:col-span-2">
+            <span className="text-[10px] font-mono-code uppercase tracking-wider text-slate-500 font-medium">
+              Proposed Policy Scenario
             </span>
             <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
@@ -146,12 +145,12 @@ export const SimulatorView: React.FC = () => {
                 onClick={() => setSelectedScenario('stricter_daily_meal')}
                 className={`p-2.5 rounded-lg text-left text-xs transition-all border cursor-pointer ${
                   selectedScenario === 'stricter_daily_meal'
-                    ? 'bg-white border-emerald-500 shadow-xs font-semibold text-[#0F172A]'
-                    : 'bg-white/60 border-emerald-100 text-[#475569] hover:bg-white'
+                    ? 'bg-white border-slate-900 shadow-2xs font-medium text-slate-900 ring-1 ring-slate-900'
+                    : 'bg-white/80 border-slate-200/80 text-slate-600 hover:bg-white'
                 }`}
               >
-                <div className="font-bold">Tighten Daily Meal Caps</div>
-                <div className="text-[10px] text-[#64748B] mt-0.5">₹3,000 → ₹2,500/day</div>
+                <div className="font-semibold text-slate-900">Tighten Daily Meal Caps</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">₹3,000 → ₹2,500/day</div>
               </button>
 
               <button
@@ -159,12 +158,12 @@ export const SimulatorView: React.FC = () => {
                 onClick={() => setSelectedScenario('higher_threshold')}
                 className={`p-2.5 rounded-lg text-left text-xs transition-all border cursor-pointer ${
                   selectedScenario === 'higher_threshold'
-                    ? 'bg-white border-emerald-500 shadow-xs font-semibold text-[#0F172A]'
-                    : 'bg-white/60 border-emerald-100 text-[#475569] hover:bg-white'
+                    ? 'bg-white border-slate-900 shadow-2xs font-medium text-slate-900 ring-1 ring-slate-900'
+                    : 'bg-white/80 border-slate-200/80 text-slate-600 hover:bg-white'
                 }`}
               >
-                <div className="font-bold">Raise Auto Threshold</div>
-                <div className="text-[10px] text-[#64748B] mt-0.5">₹10,000 → ₹15,000</div>
+                <div className="font-semibold text-slate-900">Raise Auto Threshold</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">₹10,000 → ₹15,000</div>
               </button>
 
               <button
@@ -172,12 +171,12 @@ export const SimulatorView: React.FC = () => {
                 onClick={() => setSelectedScenario('relaxed_daily_meal')}
                 className={`p-2.5 rounded-lg text-left text-xs transition-all border cursor-pointer ${
                   selectedScenario === 'relaxed_daily_meal'
-                    ? 'bg-white border-emerald-500 shadow-xs font-semibold text-[#0F172A]'
-                    : 'bg-white/60 border-emerald-100 text-[#475569] hover:bg-white'
+                    ? 'bg-white border-slate-900 shadow-2xs font-medium text-slate-900 ring-1 ring-slate-900'
+                    : 'bg-white/80 border-slate-200/80 text-slate-600 hover:bg-white'
                 }`}
               >
-                <div className="font-bold">Expand Daily Meal Caps</div>
-                <div className="text-[10px] text-[#64748B] mt-0.5">₹3,000 → ₹3,500/day</div>
+                <div className="font-semibold text-slate-900">Expand Daily Meal Caps</div>
+                <div className="text-[10px] text-slate-500 mt-0.5">₹3,000 → ₹3,500/day</div>
               </button>
             </div>
           </div>
@@ -187,7 +186,7 @@ export const SimulatorView: React.FC = () => {
         <div className="pt-2 flex justify-end">
           <button
             onClick={handleRunSimulation}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium shadow-2xs flex items-center gap-2 transition-all cursor-pointer"
           >
             <Play className="w-4 h-4 fill-white" />
             <span>Simulate Historical Claims Replay</span>
@@ -298,10 +297,7 @@ export const SimulatorView: React.FC = () => {
                     return (
                       <tr key={emp.employeeId} className="hover:bg-[#F8FAFC]">
                         <td className="py-2.5 px-3 font-semibold text-[#0F172A]">
-                          {emp.employeeName}{' '}
-                          <span className="font-mono-code text-[11px] text-[#64748B] font-normal">
-                            ({emp.employeeId})
-                          </span>
+                          {emp.employeeName}
                         </td>
                         <td className="py-2.5 px-3 text-[#334155]">
                           ₹{(emp.activeApprovedMinor / 100).toLocaleString()}

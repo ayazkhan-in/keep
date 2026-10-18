@@ -58,16 +58,15 @@ export const ScorecardView: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight flex items-center gap-2.5">
-            <BarChart3 className="w-6 h-6 text-emerald-600" />
-            Analytics Scorecard & Live Benchmark
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+            Audit Scorecard & Benchmark
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
-            Live accuracy, touchless automation rates, and duplicate precision across the 60-claim synthetic ground truth dataset.
+          <p className="text-xs text-slate-500 mt-0.5">
+            Audit accuracy, touchless rates, and duplicate precision across verified ground truth datasets.
           </p>
         </div>
 
@@ -76,10 +75,10 @@ export const ScorecardView: React.FC = () => {
           <button
             onClick={handleRunBenchmark}
             disabled={isRunning}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-lg text-xs font-medium shadow-2xs flex items-center gap-2 transition-all cursor-pointer"
           >
-            <Play className={`w-4 h-4 fill-white ${isRunning ? 'animate-spin' : ''}`} />
-            <span>{isRunning ? 'Benchmarking...' : 'Run Live Benchmark'}</span>
+            <Play className={`w-3.5 h-3.5 fill-white ${isRunning ? 'animate-spin' : ''}`} />
+            <span>{isRunning ? 'Benchmarking...' : 'Run Benchmark'}</span>
           </button>
         </div>
       </div>
@@ -87,135 +86,129 @@ export const ScorecardView: React.FC = () => {
       {benchmarkData && (
         <>
           {/* SLA & Dataset Meta Header */}
-          <div className="flex flex-wrap items-center gap-3 p-3 bg-white border border-[#E2E8F0] rounded-xl text-xs text-[#475569] shadow-2xs">
-            <div className="flex items-center gap-1.5 font-semibold text-[#0F172A]">
-              <Zap className="w-4 h-4 text-amber-500" />
-              <span>Benchmark Execution: {benchmarkData.metrics.runtimeMs.toFixed(1)}ms</span>
+          <div className="flex flex-wrap items-center gap-3 p-2.5 bg-white border border-slate-200/80 rounded-lg text-xs text-slate-500 shadow-2xs">
+            <div className="flex items-center gap-1.5 font-medium text-slate-900">
+              <Zap className="w-3.5 h-3.5 text-slate-400" />
+              <span>Execution: {benchmarkData.metrics.runtimeMs.toFixed(1)}ms</span>
             </div>
-            <span>•</span>
-            <span className="text-emerald-700 font-semibold">&lt; 5,000ms SLA Target Met</span>
-            <span>•</span>
-            <span>Sample: {benchmarkData.metrics.sampleSize} Synthetic Claims</span>
-            <span>•</span>
-            <span>Deterministic Ground Truth: Synthetic Labels v1</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-emerald-700 font-medium">&lt; 5,000ms SLA Met</span>
+            <span className="text-slate-300">•</span>
+            <span>Sample: {benchmarkData.metrics.sampleSize} Claims</span>
+            <span className="text-slate-300">•</span>
+            <span>Deterministic Ground Truth v1</span>
           </div>
 
           {/* Primary Metrics Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {/* Touchless Rate */}
-            <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
-              <div className="flex items-center justify-between text-[#64748B]">
-                <span className="text-[10px] font-mono-code uppercase tracking-wider font-semibold">Touchless Rate</span>
-                <Bot className="w-4 h-4 text-emerald-600" />
+            <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs">
+              <div className="flex items-center justify-between text-slate-500">
+                <span className="text-[11px] font-medium uppercase tracking-wider">Touchless Rate</span>
+                <Bot className="w-3.5 h-3.5 text-slate-400" />
               </div>
               <div className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold text-emerald-700">
+                <span className="text-xl font-bold text-emerald-700 font-mono-code">
                   {benchmarkData.metrics.touchlessRate}%
                 </span>
               </div>
-              <p className="mt-1 text-[11px] text-[#64748B]">
-                {benchmarkData.metrics.touchlessCount} of {benchmarkData.metrics.sampleSize} claims auto-approved with 0 human touch
+              <p className="mt-1 text-[11px] text-slate-500">
+                {benchmarkData.metrics.touchlessCount} of {benchmarkData.metrics.sampleSize} auto-approved
               </p>
             </div>
 
             {/* Decision Accuracy */}
-            <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
-              <div className="flex items-center justify-between text-[#64748B]">
-                <span className="text-[10px] font-mono-code uppercase tracking-wider font-semibold">Decision Accuracy</span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs">
+              <div className="flex items-center justify-between text-slate-500">
+                <span className="text-[11px] font-medium uppercase tracking-wider">Decision Accuracy</span>
+                <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
               </div>
               <div className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold text-[#0F172A]">
+                <span className="text-xl font-bold text-slate-900 font-mono-code">
                   {benchmarkData.metrics.decisionAccuracy}%
                 </span>
               </div>
-              <p className="mt-1 text-[11px] text-[#64748B]">
-                Deterministic agreement vs labeled expected decisions
+              <p className="mt-1 text-[11px] text-slate-500">
+                Agreement vs ground truth
               </p>
             </div>
 
             {/* Rule Citation Coverage */}
-            <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
-              <div className="flex items-center justify-between text-[#64748B]">
-                <span className="text-[10px] font-mono-code uppercase tracking-wider font-semibold">Citation Coverage</span>
-                <FileCheck2 className="w-4 h-4 text-blue-600" />
+            <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs">
+              <div className="flex items-center justify-between text-slate-500">
+                <span className="text-[11px] font-medium uppercase tracking-wider">Citation Coverage</span>
+                <FileCheck2 className="w-3.5 h-3.5 text-slate-400" />
               </div>
               <div className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold text-blue-700">
+                <span className="text-xl font-bold text-slate-900 font-mono-code">
                   {benchmarkData.metrics.ruleCitationCoverage}%
                 </span>
               </div>
-              <p className="mt-1 text-[11px] text-[#64748B]">
-                100% of verdicts cite policy section & exact quote
+              <p className="mt-1 text-[11px] text-slate-500">
+                Verdicts with exact policy citation
               </p>
             </div>
 
             {/* Amount Protected */}
-            <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
-              <div className="flex items-center justify-between text-[#64748B]">
-                <span className="text-[10px] font-mono-code uppercase tracking-wider font-semibold">Amount Protected</span>
-                <Shield className="w-4 h-4 text-emerald-600" />
+            <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs">
+              <div className="flex items-center justify-between text-slate-500">
+                <span className="text-[11px] font-medium uppercase tracking-wider">Amount Protected</span>
+                <Shield className="w-3.5 h-3.5 text-slate-400" />
               </div>
               <div className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold text-[#0F172A]">
+                <span className="text-xl font-bold text-slate-900 font-mono-code">
                   ₹{(benchmarkData.metrics.amountProtected / 100).toLocaleString()}
                 </span>
               </div>
-              <p className="mt-1 text-[11px] text-[#64748B]">
-                Unauthorized, over-cap & duplicate spend caught
+              <p className="mt-1 text-[11px] text-slate-500">
+                Over-cap & exclusion deductions
               </p>
             </div>
           </div>
 
           {/* Secondary Quality & Efficiency Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {/* Duplicate Precision & Recall */}
-            <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs space-y-2">
-              <span className="text-[10px] font-mono-code uppercase tracking-wider text-[#64748B] font-semibold">
-                Duplicate Detection Quality
+            <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs space-y-2">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 block">
+                Duplicate Quality
               </span>
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-[#475569]">Precision:</span>
-                <span className="text-sm font-bold text-[#0F172A] font-mono-code">
+              <div className="flex items-center justify-between pt-0.5">
+                <span className="text-xs text-slate-600">Precision:</span>
+                <span className="text-xs font-bold text-slate-900 font-mono-code">
                   {(benchmarkData.metrics.duplicatePrecision * 100).toFixed(0)}%
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[#475569]">Recall:</span>
-                <span className="text-sm font-bold text-[#0F172A] font-mono-code">
+                <span className="text-xs text-slate-600">Recall:</span>
+                <span className="text-xs font-bold text-slate-900 font-mono-code">
                   {(benchmarkData.metrics.duplicateRecall * 100).toFixed(0)}%
                 </span>
               </div>
-              <p className="text-[10.5px] text-[#64748B] pt-1">
-                5-signal fusion (SHA-256, dHash, order ID, temporal, shared meal)
-              </p>
             </div>
 
             {/* Anomaly Safety */}
-            <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs space-y-2">
-              <span className="text-[10px] font-mono-code uppercase tracking-wider text-[#64748B] font-semibold">
+            <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs space-y-2">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 block">
                 Safety Guarantee
               </span>
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-[#475569]">False Clears:</span>
-                <span className="text-sm font-bold text-emerald-700 font-mono-code">
+              <div className="flex items-center justify-between pt-0.5">
+                <span className="text-xs text-slate-600">False Clears:</span>
+                <span className="text-xs font-bold text-emerald-700 font-mono-code">
                   {benchmarkData.metrics.falseClearsCount}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-[#475569]">False Flags:</span>
-                <span className="text-sm font-bold text-[#475569] font-mono-code">
+                <span className="text-xs text-slate-600">False Flags:</span>
+                <span className="text-xs font-bold text-slate-700 font-mono-code">
                   {benchmarkData.metrics.falseFlagsCount}
                 </span>
               </div>
-              <p className="text-[10.5px] text-[#64748B] pt-1">
-                Zero high-risk claims mistakenly auto-approved
-              </p>
             </div>
 
             {/* Time Saved Estimate */}
-            <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs space-y-2">
-              <span className="text-[10px] font-mono-code uppercase tracking-wider text-[#64748B] font-semibold">
+            <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs space-y-2">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500 block">
                 Audit Efficiency
               </span>
               <div className="flex items-center justify-between pt-1">

@@ -22,6 +22,14 @@ import {
   AlertOctagon,
   LayoutGrid,
   List,
+  Utensils,
+  Plane,
+  Building2,
+  Car,
+  Fuel,
+  Laptop,
+  Briefcase,
+  Coffee,
 } from 'lucide-react';
 import { Expense, ClaimStatus } from '../../types/expense';
 import {
@@ -29,8 +37,73 @@ import {
   applyReviewerDecision,
   subscribeExpenses,
 } from '../../services/expenseService';
-import { getActiveEmployee } from '../../services/employeeService';
+import { getActiveEmployee, getEmployeeDisplayName } from '../../services/employeeService';
 import { VerdictCard } from './VerdictCard';
+
+// Subtle grey standalone category icon (no background color wrapper)
+const getCategoryIcon = (category?: string) => {
+  const cat = (category || '').toLowerCase();
+  if (
+    cat.includes('meal') ||
+    cat.includes('food') ||
+    cat.includes('dining') ||
+    cat.includes('lunch') ||
+    cat.includes('dinner') ||
+    cat.includes('breakfast')
+  ) {
+    return <Utensils className="w-4 h-4 text-slate-400 shrink-0" />;
+  }
+  if (cat.includes('flight') || cat.includes('air') || cat.includes('travel')) {
+    return <Plane className="w-4 h-4 text-slate-400 shrink-0" />;
+  }
+  if (
+    cat.includes('hotel') ||
+    cat.includes('lodg') ||
+    cat.includes('stay') ||
+    cat.includes('room') ||
+    cat.includes('accommodat')
+  ) {
+    return <Building2 className="w-4 h-4 text-slate-400 shrink-0" />;
+  }
+  if (
+    cat.includes('transport') ||
+    cat.includes('cab') ||
+    cat.includes('taxi') ||
+    cat.includes('uber') ||
+    cat.includes('ola') ||
+    cat.includes('ride') ||
+    cat.includes('auto')
+  ) {
+    return <Car className="w-4 h-4 text-slate-400 shrink-0" />;
+  }
+  if (cat.includes('fuel') || cat.includes('gas') || cat.includes('petrol')) {
+    return <Fuel className="w-4 h-4 text-slate-400 shrink-0" />;
+  }
+  if (
+    cat.includes('software') ||
+    cat.includes('saas') ||
+    cat.includes('tech') ||
+    cat.includes('cloud') ||
+    cat.includes('subscri') ||
+    cat.includes('infra') ||
+    cat.includes('it')
+  ) {
+    return <Laptop className="w-4 h-4 text-slate-400 shrink-0" />;
+  }
+  if (
+    cat.includes('supply') ||
+    cat.includes('supplies') ||
+    cat.includes('office') ||
+    cat.includes('stationery') ||
+    cat.includes('hardware')
+  ) {
+    return <Briefcase className="w-4 h-4 text-slate-400 shrink-0" />;
+  }
+  if (cat.includes('entertain') || cat.includes('client') || cat.includes('coffee') || cat.includes('tea')) {
+    return <Coffee className="w-4 h-4 text-slate-400 shrink-0" />;
+  }
+  return <Receipt className="w-4 h-4 text-slate-400 shrink-0" />;
+};
 
 export const AllClaimsView: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>(() => getAllExpenses());
@@ -70,6 +143,7 @@ export const AllClaimsView: React.FC = () => {
         const q = searchQuery.toLowerCase();
         return (
           exp.id.toLowerCase().includes(q) ||
+          (exp.employeeName || '').toLowerCase().includes(q) ||
           exp.employeeId.toLowerCase().includes(q) ||
           (exp.extracted?.merchant?.value || '').toLowerCase().includes(q) ||
           (exp.extracted?.lineItems?.[0]?.category || '').toLowerCase().includes(q)
@@ -142,15 +216,15 @@ export const AllClaimsView: React.FC = () => {
         );
       case 'needs_info':
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
             <span>Needs Info</span>
           </span>
         );
       case 'in_review':
         return (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
             <span>In Review</span>
           </span>
         );
@@ -299,6 +373,7 @@ export const AllClaimsView: React.FC = () => {
                     const merchant = exp.extracted?.merchant?.value || exp.corrected?.merchant || 'Unknown Merchant';
                     const category = exp.extracted?.lineItems?.[0]?.category || 'General';
                     const riskScore = exp.verdict?.riskScore ?? 0;
+                    const employeeName = exp.employeeName || getEmployeeDisplayName(exp.employeeId);
 
                     return (
                       <div
@@ -307,11 +382,14 @@ export const AllClaimsView: React.FC = () => {
                         className="bg-white border border-slate-200 hover:border-emerald-400 rounded-xl p-3.5 transition-all shadow-2xs hover:shadow-sm cursor-pointer flex flex-col justify-between group"
                       >
                         <div>
-                          {/* Top: Merchant & Amount */}
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h3 className="font-semibold text-xs sm:text-sm text-slate-900 group-hover:text-emerald-600 transition-colors truncate">
-                              {merchant}
-                            </h3>
+                          {/* Top: Merchant with Grey Icon (No background color) & Amount */}
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {getCategoryIcon(category)}
+                              <h3 className="font-semibold text-xs sm:text-sm text-slate-900 group-hover:text-emerald-600 transition-colors truncate">
+                                {merchant}
+                              </h3>
+                            </div>
                             <div className="text-right shrink-0">
                               <span className="font-bold text-xs sm:text-sm text-slate-900 font-mono-code">
                                 ₹{((exp.normalizedCurrency?.targetAmountMinor ?? 0) / 100).toFixed(2)}
@@ -332,9 +410,11 @@ export const AllClaimsView: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Footer: Employee & Minimal Status */}
+                        {/* Footer: Actual Employee Name & Minimal Status */}
                         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                          <span className="truncate max-w-[120px] font-medium text-slate-600">{exp.employeeId}</span>
+                          <span className="truncate max-w-[140px] font-medium text-slate-600" title={employeeName}>
+                            {employeeName}
+                          </span>
                           <div className="flex items-center gap-2">
                             {riskScore >= 60 && (
                               <span className="text-[10px] font-mono-code font-bold text-rose-600">
@@ -357,6 +437,7 @@ export const AllClaimsView: React.FC = () => {
                     const merchant = exp.extracted?.merchant?.value || exp.corrected?.merchant || 'Unknown Merchant';
                     const category = exp.extracted?.lineItems?.[0]?.category || 'General';
                     const riskScore = exp.verdict?.riskScore ?? 0;
+                    const employeeName = exp.employeeName || getEmployeeDisplayName(exp.employeeId);
 
                     return (
                       <div
@@ -364,8 +445,9 @@ export const AllClaimsView: React.FC = () => {
                         onClick={() => setSelectedClaim(exp)}
                         className="px-4 py-2.5 hover:bg-slate-50/80 flex items-center justify-between gap-3 cursor-pointer transition-colors group"
                       >
-                        {/* Left: Merchant & Meta */}
-                        <div className="min-w-0 flex-1 flex items-center gap-3">
+                        {/* Left: Grey Icon (No background color), Merchant & Meta */}
+                        <div className="min-w-0 flex-1 flex items-center gap-2.5">
+                          {getCategoryIcon(category)}
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-xs sm:text-sm text-slate-900 group-hover:text-emerald-600 transition-colors truncate">
@@ -378,7 +460,7 @@ export const AllClaimsView: React.FC = () => {
                             <div className="text-[11px] text-slate-500 mt-0.5 truncate">
                               <span>{category}</span>
                               {exp.context?.city && <span> • {exp.context.city}</span>}
-                              <span> • by <strong className="text-slate-600 font-medium">{exp.employeeId}</strong></span>
+                              <span> • by <strong className="text-slate-600 font-medium">{employeeName}</strong></span>
                             </div>
                           </div>
                         </div>
@@ -439,7 +521,7 @@ export const AllClaimsView: React.FC = () => {
                     {getStatusBadge(selectedClaim.status)}
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Submitted on {selectedClaim.submittedAt ? new Date(selectedClaim.submittedAt).toLocaleString() : 'Recent'} by <strong className="text-slate-700">{selectedClaim.employeeId}</strong>
+                    Submitted on {selectedClaim.submittedAt ? new Date(selectedClaim.submittedAt).toLocaleString() : 'Recent'} by <strong className="text-slate-700">{selectedClaim.employeeName || getEmployeeDisplayName(selectedClaim.employeeId)}</strong>
                   </p>
                 </div>
               </div>

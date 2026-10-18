@@ -81,33 +81,33 @@ export const MyCapsView: React.FC = () => {
   const monthlyRemainingMinor = Math.max(0, monthlyCapMinor - monthlySpentMinor);
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight">
-            My Allowances & Spend Caps
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+            Spend Allowances & Caps
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
-            Live meters tracking daily and per-claim corporate reimbursement allowances for {activeEmp.identity.name} ({activeEmp.department} • {activeEmp.grade})
+          <p className="text-xs text-slate-500 mt-0.5">
+            {activeEmp.identity.name} • {activeEmp.department} • {activeEmp.grade} • {cityTier}
           </p>
         </div>
 
         {isCustomAllowance && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold self-start sm:self-center shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Custom Auditor Allowance Active</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 border border-emerald-200/60 text-emerald-800 rounded-full text-xs font-medium self-start sm:self-center">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Custom Allowance Active</span>
           </div>
         )}
       </div>
 
       {/* Reimbursement Hold Banner */}
       {activeEmp.financeProfile?.reimbursementHold && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center gap-3 text-xs">
-          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200/70 text-amber-900 flex items-start gap-2.5 text-xs">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold">Reimbursement Payouts On Hold</p>
-            <p className="text-amber-700 mt-0.5">
-              The Finance Auditor has placed a temporary hold on payouts for your account. Claims can still be submitted and will be reviewed once the audit status clears.
+            <p className="font-semibold">Reimbursement Payouts On Hold</p>
+            <p className="text-amber-800/80 mt-0.5">
+              A temporary hold has been placed on payouts for your account. Submitted claims will be reviewed once the audit status clears.
             </p>
           </div>
         </div>
@@ -117,23 +117,32 @@ export const MyCapsView: React.FC = () => {
       <EmployeePolicyAssistant />
 
       {/* Main Meter Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         {/* Daily Meal Meter */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#0F172A] flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-blue-600" />
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium text-slate-600 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
               Daily Meal Cap
             </span>
-            <span className="text-xs font-mono-code font-bold text-emerald-700">
-              ₹{(dailyRemainingMinor / 100).toFixed(0)} Remaining
+            <span className="font-mono-code text-[11px] text-slate-500">
+              ₹{(dailyCapMinor / 100).toFixed(0)} / day
             </span>
           </div>
 
-          <div className="w-full bg-[#E2E8F0] rounded-full h-3 overflow-hidden">
+          <div>
+            <div className="text-xl font-bold text-slate-900 font-mono-code">
+              ₹{(dailyRemainingMinor / 100).toLocaleString()}
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              remaining today
+            </div>
+          </div>
+
+          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
-              className={`h-3 rounded-full transition-all duration-500 ${
-                (todaySpentMinor / dailyCapMinor) > 0.85 ? 'bg-amber-500' : 'bg-emerald-600'
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                (todaySpentMinor / dailyCapMinor) > 0.85 ? 'bg-amber-500' : 'bg-slate-900'
               }`}
               style={{
                 width: `${Math.min(100, (todaySpentMinor / (dailyCapMinor || 1)) * 100)}%`,
@@ -141,28 +150,37 @@ export const MyCapsView: React.FC = () => {
             ></div>
           </div>
 
-          <div className="flex justify-between text-xs text-[#64748B] font-mono-code">
-            <span>Spent: ₹{(todaySpentMinor / 100).toFixed(2)}</span>
-            <span>Limit: ₹{(dailyCapMinor / 100).toFixed(2)} / day</span>
+          <div className="flex justify-between text-[11px] text-slate-400 font-mono-code pt-0.5">
+            <span>Spent: ₹{(todaySpentMinor / 100).toFixed(0)}</span>
+            <span>Limit: ₹{(dailyCapMinor / 100).toFixed(0)}</span>
           </div>
         </div>
 
         {/* Monthly Spend Cap Meter */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#0F172A] flex items-center gap-1.5">
-              <PieChart className="w-3.5 h-3.5 text-purple-600" />
-              Monthly Spend Budget
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium text-slate-600 flex items-center gap-1.5">
+              <PieChart className="w-3.5 h-3.5 text-slate-400" />
+              Monthly Budget
             </span>
-            <span className="text-xs font-mono-code font-bold text-emerald-700">
-              ₹{(monthlyRemainingMinor / 100).toFixed(0)} Remaining
+            <span className="font-mono-code text-[11px] text-slate-500">
+              ₹{(monthlyCapMinor / 100).toLocaleString()} / mo
             </span>
           </div>
 
-          <div className="w-full bg-[#E2E8F0] rounded-full h-3 overflow-hidden">
+          <div>
+            <div className="text-xl font-bold text-slate-900 font-mono-code">
+              ₹{(monthlyRemainingMinor / 100).toLocaleString()}
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              remaining this month
+            </div>
+          </div>
+
+          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
-              className={`h-3 rounded-full transition-all duration-500 ${
-                (monthlySpentMinor / monthlyCapMinor) > 0.85 ? 'bg-amber-500' : 'bg-purple-600'
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                (monthlySpentMinor / monthlyCapMinor) > 0.85 ? 'bg-amber-500' : 'bg-slate-900'
               }`}
               style={{
                 width: `${Math.min(100, (monthlySpentMinor / (monthlyCapMinor || 1)) * 100)}%`,
@@ -170,31 +188,36 @@ export const MyCapsView: React.FC = () => {
             ></div>
           </div>
 
-          <div className="flex justify-between text-xs text-[#64748B] font-mono-code">
-            <span>Spent: ₹{(monthlySpentMinor / 100).toFixed(2)}</span>
-            <span>Limit: ₹{(monthlyCapMinor / 100).toFixed(2)} / mo</span>
+          <div className="flex justify-between text-[11px] text-slate-400 font-mono-code pt-0.5">
+            <span>Spent: ₹{(monthlySpentMinor / 100).toFixed(0)}</span>
+            <span>Budget: ₹{(monthlyCapMinor / 100).toLocaleString()}</span>
           </div>
         </div>
 
         {/* Per-Transaction Limit */}
-        <div className="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-[#0F172A] flex items-center gap-1.5">
-              <Scale className="w-3.5 h-3.5 text-emerald-600" />
-              Per-Claim Meal Cap
-            </span>
-            <span className="text-xs font-mono-code font-bold text-emerald-700">
-              ₹{(perClaimCapMinor / 100).toFixed(0)} / claim
-            </span>
+        <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs space-y-3 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-medium text-slate-600 flex items-center gap-1.5">
+                <Scale className="w-3.5 h-3.5 text-slate-400" />
+                Per-Claim Meal Limit
+              </span>
+              <span className="font-mono-code text-[11px] text-slate-500">Single Transaction</span>
+            </div>
+
+            <div className="mt-3">
+              <div className="text-xl font-bold text-slate-900 font-mono-code">
+                ₹{(perClaimCapMinor / 100).toLocaleString()}
+              </div>
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                standard single-meal ceiling
+              </div>
+            </div>
           </div>
 
-          <p className="text-xs text-[#64748B] leading-relaxed">
-            Single meal expenses are capped at ₹{(perClaimCapMinor / 100).toFixed(0)} without prior manager authorization.
-          </p>
-
-          <div className="p-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl flex items-center gap-2 text-[11px] text-[#475569]">
-            <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-            <span>Client dinners scale by ₹{(clientAttendeeCap / 100).toFixed(0)} per confirmed attendee.</span>
+          <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-lg flex items-center gap-2 text-[11px] text-slate-500">
+            <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span>Client meals allow ₹{(clientAttendeeCap / 100).toFixed(0)} per attendee.</span>
           </div>
         </div>
       </div>

@@ -67,31 +67,31 @@ export const EmployeePolicyAssistant: React.FC<EmployeePolicyAssistantProps> = (
   const statusType = getStatusType();
 
   return (
-    <div className={`bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-3.5 ${className}`}>
+    <div className={`bg-white rounded-xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs space-y-3 ${className}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
-            <Bot className="w-4 h-4" />
+          <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center text-slate-700">
+            <Search className="w-3.5 h-3.5" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">
-              <span>Policy Assistant: Check Coverage</span>
-              <span className="text-[10px] font-mono-code font-normal text-slate-500">
-                v{policy.versionNumber} Active
+            <h3 className="text-xs font-semibold text-slate-900 flex items-center gap-2">
+              <span>Policy Coverage Checker</span>
+              <span className="text-[10px] font-mono-code font-normal text-slate-400">
+                v{policy.versionNumber}
               </span>
             </h3>
             <p className="text-[11px] text-slate-500">
-              Instant check whether an expense is eligible, capped, or non-reimbursable.
+              Verify if an expense is reimbursable or capped before spending.
             </p>
           </div>
         </div>
 
         <button
           onClick={onOpenFullChat ? onOpenFullChat : () => navigate(ROUTES.EMPLOYEE.POLICIES)}
-          className="text-[11px] font-medium text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer shrink-0"
+          className="text-[11px] font-medium text-slate-700 hover:text-slate-900 flex items-center gap-1 cursor-pointer shrink-0"
         >
-          <span>Open Policy & Chat</span>
-          <ArrowRight className="w-3 h-3" />
+          <span>Handbook</span>
+          <ArrowRight className="w-3 h-3 text-slate-400" />
         </button>
       </div>
 
@@ -104,12 +104,12 @@ export const EmployeePolicyAssistant: React.FC<EmployeePolicyAssistantProps> = (
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder='e.g. "Can I expense a cab after 10 pm?" or "Is beer covered?"'
-            className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-slate-400 focus:bg-white transition-colors"
+            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200/70 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-slate-400 focus:bg-white transition-colors"
           />
         </div>
         <button
           type="submit"
-          className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-medium cursor-pointer shadow-xs transition-colors shrink-0"
+          className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium cursor-pointer shadow-2xs transition-colors shrink-0"
         >
           Check
         </button>
@@ -117,13 +117,13 @@ export const EmployeePolicyAssistant: React.FC<EmployeePolicyAssistantProps> = (
 
       {/* Sample Quick Chips */}
       <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-        <span className="text-[11px] text-slate-400">Ask:</span>
+        <span className="text-[10px] text-slate-400 uppercase tracking-wider">Examples:</span>
         {sampleQuestions.map((q, idx) => (
           <button
             key={idx}
             type="button"
             onClick={() => handleAsk(undefined, q)}
-            className="text-[11px] px-2.5 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+            className="text-[11px] px-2 py-0.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-md text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
           >
             {q}
           </button>
@@ -133,14 +133,12 @@ export const EmployeePolicyAssistant: React.FC<EmployeePolicyAssistantProps> = (
       {/* Result Card */}
       {result && (
         <div
-          className={`p-3.5 rounded-xl border text-xs transition-all ${
+          className={`p-3 rounded-lg border text-xs transition-all ${
             statusType === 'excluded'
-              ? 'bg-rose-50/70 border-rose-200 text-rose-950'
+              ? 'bg-rose-50/60 border-rose-200/80 text-rose-950'
               : statusType === 'silent'
-              ? 'bg-amber-50/70 border-amber-200 text-amber-950'
-              : statusType === 'threshold'
-              ? 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
-              : 'bg-emerald-50/70 border-emerald-200 text-emerald-950'
+              ? 'bg-amber-50/60 border-amber-200/80 text-amber-950'
+              : 'bg-emerald-50/60 border-emerald-200/80 text-emerald-950'
           }`}
         >
           <div className="flex items-start gap-2.5">
@@ -159,35 +157,33 @@ export const EmployeePolicyAssistant: React.FC<EmployeePolicyAssistantProps> = (
 
             <div className="space-y-1.5 flex-1">
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded font-mono-code ${
+                <span className={`text-[10px] font-mono-code font-semibold uppercase px-1.5 py-0.2 rounded ${
                   statusType === 'excluded'
                     ? 'bg-rose-100 text-rose-800'
                     : statusType === 'silent'
                     ? 'bg-amber-100 text-amber-800'
-                    : statusType === 'threshold'
-                    ? 'bg-emerald-100 text-emerald-800'
                     : 'bg-emerald-100 text-emerald-800'
                 }`}>
                   {statusType === 'excluded'
                     ? 'Not Covered'
                     : statusType === 'silent'
-                    ? 'Policy is Silent'
+                    ? 'Policy Silent'
                     : statusType === 'threshold'
                     ? 'Review Required'
                     : 'Eligible & Capped'}
                 </span>
                 {result.citedRule && (
-                  <span className="text-[11px] font-semibold text-slate-800">
+                  <span className="text-[11px] font-medium text-slate-800">
                     {result.citedRule.title}
                   </span>
                 )}
               </div>
 
-              <p className="leading-relaxed font-medium">{result.answer}</p>
+              <p className="leading-relaxed font-normal">{result.answer}</p>
 
               {result.citedRule?.sourceQuote && (
-                <div className="pt-1 text-[11px] font-mono-code text-slate-600 border-t border-black/5">
-                  Policy Section: {result.citedRule.section}
+                <div className="pt-1 text-[11px] font-mono-code text-slate-500 border-t border-black/5">
+                  Section: {result.citedRule.section}
                 </div>
               )}
             </div>

@@ -34,70 +34,19 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(expenseRoutes);
 
-const PRIMARY_GEMINI_MODEL = 'gemini-3.6-flash';
-const FALLBACK_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+import { geminiKeyManager, getAI, generateContentWithQuotaFallback } from './src/utils/geminiKeyManager';
 
-// Lazy initialize GoogleGenAI with aistudio-build user agent
-let aiClient: GoogleGenAI | null = null;
-let currentKey: string | null = null;
-
-function getAI(): GoogleGenAI | null {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.VITE_FIREBASE_API_KEY;
-  if (!apiKey) return null;
-  if (!aiClient || currentKey !== apiKey) {
-    currentKey = apiKey;
-    aiClient = new GoogleGenAI({
-      apiKey: apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
-      },
-    });
-  }
-  return aiClient;
-}
-
-/**
- * Execute Gemini model call with automatic fallback model & quota exhaustion protection.
- */
-async function generateContentWithQuotaFallback(ai: GoogleGenAI, params: { contents: any; config?: any }) {
-  try {
-    return await ai.models.generateContent({
-      model: PRIMARY_GEMINI_MODEL,
-      contents: params.contents,
-      config: params.config,
-    });
-  } catch (err: any) {
-    const errString = String(err?.message || err || '');
-    const isQuotaError =
-      err?.status === 429 ||
-      /429|resource_exhausted|quota|exceeded|rate limit/i.test(errString);
-
-    if (isQuotaError) {
-      console.warn(`[Gemini AI] Quota/Rate limit reached for ${PRIMARY_GEMINI_MODEL}. Attempting fallback model ${FALLBACK_GEMINI_MODEL}...`);
-      try {
-        return await ai.models.generateContent({
-          model: FALLBACK_GEMINI_MODEL,
-          contents: params.contents,
-          config: params.config,
-        });
-      } catch (fallbackErr: any) {
-        console.warn(`[Gemini AI] Fallback model ${FALLBACK_GEMINI_MODEL} also exhausted. Switching to smart heuristic response.`);
-        throw new Error('QUOTA_EXHAUSTED');
-      }
-    }
-    throw err;
-  }
-}
+const PRIMARY_GEMINI_MODEL = geminiKeyManager.primaryModel;
+const FALLBACK_GEMINI_MODEL = geminiKeyManager.fallbackModel;
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+  const poolStatus = geminiKeyManager.getKeyPoolStatus();
   res.json({
     status: 'ok',
-    aiConfigured: Boolean(apiKey),
+    aiConfigured: poolStatus.totalKeys > 0,
     model: PRIMARY_GEMINI_MODEL,
+    keyPool: poolStatus,
     timestamp: new Date().toISOString(),
   });
 });

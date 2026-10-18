@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Expense } from '../../types/expense';
 import { getAllExpenses, applyReviewerDecision } from '../../services/expenseService';
-import { getActiveEmployee } from '../../services/employeeService';
+import { getActiveEmployee, getEmployeeDisplayName } from '../../services/employeeService';
 
 export const ExportView: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>(() => getAllExpenses());
@@ -46,6 +46,7 @@ export const ExportView: React.FC = () => {
         const q = searchQuery.toLowerCase();
         return (
           exp.id.toLowerCase().includes(q) ||
+          (exp.employeeName || '').toLowerCase().includes(q) ||
           exp.employeeId.toLowerCase().includes(q) ||
           (exp.extracted?.merchant?.value || '').toLowerCase().includes(q) ||
           (exp.extracted?.lineItems?.[0]?.category || '').toLowerCase().includes(q)
@@ -159,7 +160,7 @@ export const ExportView: React.FC = () => {
         escapeCsvCell(exp.id),
         escapeCsvCell(exp.expenseDate),
         escapeCsvCell(exp.submittedAt.split('T')[0]),
-        escapeCsvCell(exp.employeeId),
+        escapeCsvCell(exp.employeeName || getEmployeeDisplayName(exp.employeeId)),
         escapeCsvCell(category),
         escapeCsvCell(merchant),
         (exp.normalizedCurrency.sourceAmount ?? (exp.normalizedCurrency.sourceAmountMinor / 100)).toFixed(2),
@@ -205,7 +206,7 @@ export const ExportView: React.FC = () => {
       const category = exp.extracted?.lineItems?.[0]?.category || 'Travel & Meals Expense';
       const merchant = exp.extracted?.merchant?.value || 'Merchant';
       const amt = ((exp.verdict?.approvedAmountMinor || exp.normalizedCurrency.targetAmountMinor) / 100).toFixed(2);
-      const narration = `Reimbursement for claim ${exp.id} - ${merchant} (${exp.employeeId})`;
+      const narration = `Reimbursement for claim ${exp.id} - ${merchant} (${exp.employeeName || getEmployeeDisplayName(exp.employeeId)})`;
 
       return [
         escapeCsvCell(exp.expenseDate),
@@ -255,15 +256,14 @@ export const ExportView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight flex items-center gap-2.5">
-            <FileSpreadsheet className="w-6 h-6 text-emerald-600" />
-            Batch Reimbursement & Accounting Export
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+            Accounting & ERP Export
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Export approved corporate expense batches with full rule citations for general ledger & ERP integration.
           </p>
         </div>
@@ -272,133 +272,133 @@ export const ExportView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleExportStandardCSV}
-            className="px-3.5 py-2 bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+            className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <Download className="w-4 h-4" />
-            <span>Download Standard CSV</span>
+            <Download className="w-3.5 h-3.5" />
+            <span>Download CSV</span>
           </button>
 
           <button
             onClick={handleExportTallyCSV}
-            className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+            className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 rounded-lg text-xs font-medium shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+            <FileSpreadsheet className="w-3.5 h-3.5 text-slate-500" />
             <span>Tally ERP Format</span>
           </button>
 
           <button
             onClick={handleMarkSelectedPaid}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer"
+            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <CreditCard className="w-4 h-4" />
+            <CreditCard className="w-3.5 h-3.5" />
             <span>Mark Paid ({selectedIds.size > 0 ? selectedIds.size : 'All Eligible'})</span>
           </button>
         </div>
       </div>
 
       {actionNotice && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-medium flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="p-3 bg-emerald-50 border border-emerald-200/70 rounded-lg text-xs text-emerald-800 font-medium flex items-center gap-2">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
           <span>{actionNotice}</span>
         </div>
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5">
-        <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
-          <span className="text-[10px] font-mono-code uppercase tracking-wider text-[#64748B] font-semibold">
-            Ready for Payout (Approved)
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs">
+          <span className="text-[11px] uppercase tracking-wider text-slate-500 font-medium block">
+            Ready for Payout
           </span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-emerald-700">
+            <span className="text-lg font-bold text-slate-900 font-mono-code">
               ₹{stats.approvedTotal.toLocaleString()}
             </span>
-            <span className="text-xs text-[#64748B]">
+            <span className="text-xs text-slate-500">
               ({stats.approvedCount} claims)
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-[#64748B]">
-            Includes touchless auto-approved & reviewer approvals
+          <p className="mt-1 text-[11px] text-slate-400">
+            Auto-approved and audited claims
           </p>
         </div>
 
-        <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
-          <span className="text-[10px] font-mono-code uppercase tracking-wider text-[#64748B] font-semibold">
-            Historical Disbursed (Paid)
+        <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs">
+          <span className="text-[11px] uppercase tracking-wider text-slate-500 font-medium block">
+            Disbursed (Paid)
           </span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-emerald-700">
+            <span className="text-lg font-bold text-slate-900 font-mono-code">
               ₹{stats.paidTotal.toLocaleString()}
             </span>
-            <span className="text-xs text-[#64748B]">
+            <span className="text-xs text-slate-500">
               ({stats.paidCount} claims)
             </span>
           </div>
-          <p className="mt-1 text-[11px] text-[#64748B]">
-            Reimbursements successfully marked as settled
+          <p className="mt-1 text-[11px] text-slate-400">
+            Successfully settled disbursements
           </p>
         </div>
 
-        <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
-          <span className="text-[10px] font-mono-code uppercase tracking-wider text-[#64748B] font-semibold">
-            Base Currency & Provenance
+        <div className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-2xs">
+          <span className="text-[11px] uppercase tracking-wider text-slate-500 font-medium block">
+            Base Currency & Audit
           </span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-[#0F172A]">INR (₹)</span>
-            <span className="text-xs text-emerald-700 font-semibold">100% Audited</span>
+            <span className="text-lg font-bold text-slate-900 font-mono-code">INR (₹)</span>
+            <span className="text-xs text-emerald-700 font-medium">100% Audited</span>
           </div>
-          <p className="mt-1 text-[11px] text-[#64748B]">
-            All transactions normalized at transaction-date FX
+          <p className="mt-1 text-[11px] text-slate-400">
+            Reconciled with transaction FX rates
           </p>
         </div>
       </div>
 
       {/* Table & Filter Controls */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-[#F1F5F9] pb-3">
+      <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-2.5">
           {/* Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 bg-slate-100 p-0.5 rounded-lg">
             <button
               onClick={() => setStatusFilter('approved')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                 statusFilter === 'approved'
-                  ? 'bg-[#0F172A] text-white shadow-xs'
-                  : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC]'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Approved for Payout ({stats.approvedCount})
+              Approved ({stats.approvedCount})
             </button>
             <button
               onClick={() => setStatusFilter('paid')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                 statusFilter === 'paid'
-                  ? 'bg-[#0F172A] text-white shadow-xs'
-                  : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC]'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Paid / Disbursed ({stats.paidCount})
+              Paid ({stats.paidCount})
             </button>
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                 statusFilter === 'all'
-                  ? 'bg-[#0F172A] text-white shadow-xs'
-                  : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC]'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              All Batch Claims ({expenses.length})
+              All ({expenses.length})
             </button>
           </div>
 
           {/* Search Box */}
-          <div className="relative min-w-[240px]">
+          <div className="relative min-w-[220px]">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by claim ID, merchant, employee..."
-              className="w-full pl-8 pr-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs focus:outline-none focus:border-emerald-500"
+              placeholder="Search claims..."
+              className="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-200/80 rounded-md text-xs text-slate-900 focus:outline-none focus:bg-white"
             />
           </div>
         </div>
@@ -465,7 +465,7 @@ export const ExportView: React.FC = () => {
                         {exp.expenseDate}
                       </td>
                       <td className="py-2.5 px-3 font-medium text-[#334155]">
-                        {exp.employeeId}
+                        {exp.employeeName || getEmployeeDisplayName(exp.employeeId)}
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="font-semibold text-[#0F172A] truncate max-w-[180px]">

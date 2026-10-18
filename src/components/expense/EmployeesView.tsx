@@ -603,7 +603,7 @@ export const EmployeesView: React.FC = () => {
       </div>
 
       {/* Employees Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {filteredEmployees.map((data) => {
           const emp = data.employee;
           const initials = (emp.identity?.name || 'Employee')
@@ -620,119 +620,92 @@ export const EmployeesView: React.FC = () => {
                 setInspectEmployee(emp);
                 setDrawerTab('finance');
               }}
-              className="bg-white border border-slate-200/90 hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5 rounded-2xl p-4 sm:p-5 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative"
+              className="bg-white border border-slate-200/80 hover:border-slate-300 hover:shadow-xs rounded-xl p-3.5 transition-all duration-150 cursor-pointer flex flex-col justify-between group"
             >
               <div>
                 {/* Header: Avatar, Name & Role */}
-                <div className="flex items-start justify-between gap-3 mb-2.5">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700 shrink-0 shadow-2xs group-hover:border-emerald-200 transition-colors">
+                <div className="flex items-start justify-between gap-2.5 mb-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200/70 flex items-center justify-center text-xs font-bold text-slate-700 shrink-0">
                       {initials}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-sm text-slate-900 group-hover:text-emerald-700 transition-colors truncate">
-                        {emp.identity.name}
-                      </h3>
-                      <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                        {emp.department} • {emp.homeCity}
-                      </p>
-                      <p className="text-[10px] text-slate-400 truncate mt-0.5 font-normal">
-                        {emp.identity.email}
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-semibold text-xs sm:text-[13px] text-slate-900 group-hover:text-emerald-700 transition-colors truncate">
+                          {emp.identity.name}
+                        </h3>
+                        {data.isCustomAllowance && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" title="Custom allowance profile active" />
+                        )}
+                        {data.reimbursementHold && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" title="Reimbursement hold active" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                        {emp.department} · {emp.homeCity}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <div className="flex items-center gap-1">
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide ${
-                        emp.role === 'finance'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}>
-                        {emp.role === 'finance' ? 'Finance' : emp.grade}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEmployeeToDelete(emp);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
-                        title={`Delete ${emp.identity.name}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {data.isCustomAllowance && (
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
-                        <Sparkles className="w-2.5 h-2.5" />
-                        <span>Custom Cap</span>
-                      </span>
-                    )}
-
-                    {data.reimbursementHold && (
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
-                        <Lock className="w-2.5 h-2.5" />
-                        <span>Hold</span>
-                      </span>
-                    )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                      emp.role === 'finance'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                        : 'bg-slate-100 text-slate-600 border border-slate-200/60'
+                    }`}>
+                      {emp.role === 'finance' ? 'Finance' : emp.grade}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEmployeeToDelete(emp);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-rose-600 rounded transition-all cursor-pointer"
+                      title={`Delete ${emp.identity.name}`}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Compact Financial Stats Row */}
-                <div className="grid grid-cols-3 divide-x divide-slate-100 py-2.5 px-1.5 rounded-xl bg-slate-50/70 border border-slate-100 text-center my-3">
-                  <div className="px-1">
-                    <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Claims</div>
-                    <div className="font-bold text-xs text-slate-900 mt-0.5">{data.totalSubmitted}</div>
+                {/* Inline Compact Stats */}
+                <div className="flex items-center justify-between text-[11px] py-1.5 px-2 bg-slate-50/80 border border-slate-100 rounded-lg my-2 font-mono-code">
+                  <div className="flex items-center gap-1">
+                    <span className="text-slate-400 font-sans text-[10px]">Approved:</span>
+                    <span className="font-semibold text-emerald-700">₹{Math.round(data.approvedAmount).toLocaleString()}</span>
                   </div>
-                  <div className="px-1">
-                    <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Approved</div>
-                    <div className="font-bold text-xs text-emerald-700 font-mono-code mt-0.5">₹{Math.round(data.approvedAmount).toLocaleString()}</div>
+                  <div className="text-slate-400 font-sans text-[10px]">
+                    {data.totalSubmitted} claims
                   </div>
-                  <div className="px-1">
-                    <div className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Pending</div>
-                    <div className="font-bold text-xs text-amber-600 font-mono-code mt-0.5">₹{Math.round(data.inReviewAmount).toLocaleString()}</div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-semibold text-slate-700">{data.allowancePercent}%</span>
+                    <span className="text-slate-400 font-sans text-[10px]">used</span>
                   </div>
                 </div>
 
-                {/* Allowance Meter */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px] text-slate-500 font-medium">
-                    <span>Daily Cap (₹{Math.round(data.dailyCap).toLocaleString()}/day)</span>
-                    <span className="font-mono-code font-semibold text-slate-700">{data.allowancePercent}% used</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        data.allowancePercent > 80 ? 'bg-amber-500' : 'bg-emerald-500'
-                      }`}
-                      style={{ width: `${Math.max(4, Math.min(100, data.allowancePercent))}%` }}
-                    />
-                  </div>
+                {/* Mini Allowance Bar */}
+                <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      data.allowancePercent > 80 ? 'bg-amber-500' : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${Math.max(4, Math.min(100, data.allowancePercent))}%` }}
+                  />
                 </div>
               </div>
 
               {/* Card Footer */}
-              <div className="mt-3.5 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className={`text-[11px] font-medium flex items-center gap-1.5 ${
-                  data.rejectedCount > 0 ? 'text-amber-600' : 'text-slate-500'
-                }`}>
-                  {data.rejectedCount > 0 ? (
-                    <>
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span>{data.rejectedCount} flagged claims</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>Clear audit history</span>
-                    </>
-                  )}
+              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                <span className="text-slate-400 flex items-center gap-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${data.rejectedCount > 0 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                  <span className="text-slate-500 text-[11px]">
+                    {data.rejectedCount > 0 ? `${data.rejectedCount} flagged` : 'Compliant'}
+                  </span>
                 </span>
-                <span className="font-semibold text-emerald-600 group-hover:text-emerald-700 flex items-center gap-1 group-hover:translate-x-0.5 transition-all text-xs">
-                  <span>Edit & Audit</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                <span className="font-medium text-emerald-600 group-hover:text-emerald-700 flex items-center gap-0.5 group-hover:translate-x-0.5 transition-all text-[11px]">
+                  <span>Configure</span>
+                  <ChevronRight className="w-3 h-3" />
                 </span>
               </div>
             </div>
@@ -740,614 +713,551 @@ export const EmployeesView: React.FC = () => {
         })}
       </div>
 
-      {/* Floating Centered Responsive Modal for Selected Employee Mounted via createPortal */}
+      {/* Floating Centered Responsive Modal for Selected Employee */}
       {inspectEmployee &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-y-auto transition-all"
+            className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-y-auto transition-all"
             onClick={() => setInspectEmployee(null)}
           >
             <div
-              className="relative w-full max-w-3xl max-h-[92vh] sm:max-h-[88vh] bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto"
+              className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Modal Header */}
-              <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md flex items-start justify-between gap-3 shrink-0">
+              {/* Modal Header: Clean & Understated */}
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-sm sm:text-base font-bold text-emerald-700 shrink-0 shadow-2xs">
+                  <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200/70 flex items-center justify-center text-xs font-semibold text-slate-700 shrink-0">
                     {((inspectEmployee.identity?.name || 'Employee').split(' ').map((n) => n[0] || '').join('') || 'EM').slice(0, 2)}
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                      <h2 className="font-bold text-base sm:text-lg text-slate-900 truncate">
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-semibold text-base text-slate-900 truncate">
                         {inspectEmployee.identity.name}
                       </h2>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                        inspectEmployee.role === 'finance'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-200 text-slate-800'
-                      }`}>
-                        {inspectEmployee.role === 'finance' ? 'Auditor / Finance' : inspectEmployee.grade}
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">
+                        {inspectEmployee.role === 'finance' ? 'Auditor' : inspectEmployee.grade}
                       </span>
                       {inspectEmployee.financeProfile?.customAllowanceEnabled && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" />
-                          <span>Custom Allowances</span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200/60">
+                          Custom Policy
                         </span>
                       )}
                       {inspectEmployee.financeProfile?.reimbursementHold && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 flex items-center gap-1">
-                          <Lock className="w-3 h-3" />
-                          <span>Payout Hold</span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200/60">
+                          Hold Active
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 truncate mt-0.5">
-                      {inspectEmployee.identity.email} • {inspectEmployee.department} • {inspectEmployee.homeCity}
+                    <p className="text-xs text-slate-400 truncate mt-0.5">
+                      {inspectEmployee.identity.email} · {inspectEmployee.department} · {inspectEmployee.homeCity}
                     </p>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setInspectEmployee(null)}
-                  className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-800 hover:bg-slate-200/80 rounded-xl transition-colors cursor-pointer shrink-0"
+                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
                   title="Close (Esc)"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Navigation Tabs */}
-              <div className="px-4 sm:px-5 pt-2.5 border-b border-slate-200 flex items-center gap-1 sm:gap-2 bg-white overflow-x-auto shrink-0">
+              {/* Minimal Tab Bar */}
+              <div className="px-5 border-b border-slate-100 flex items-center gap-6 bg-white shrink-0">
                 <button
                   onClick={() => setDrawerTab('finance')}
-                  className={`pb-2.5 px-2.5 sm:px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  className={`py-3 text-xs font-medium border-b-2 transition-all cursor-pointer ${
                     drawerTab === 'finance'
-                      ? 'border-emerald-600 text-emerald-700'
-                      : 'border-transparent text-slate-500 hover:text-slate-900'
+                      ? 'border-slate-900 text-slate-900'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  <Sliders className="w-3.5 h-3.5" />
-                  <span>Finance & Allowances Editor</span>
+                  Policy & Allowances
                 </button>
                 <button
                   onClick={() => setDrawerTab('claims')}
-                  className={`pb-2.5 px-2.5 sm:px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  className={`py-3 text-xs font-medium border-b-2 transition-all cursor-pointer ${
                     drawerTab === 'claims'
-                      ? 'border-emerald-600 text-emerald-700'
-                      : 'border-transparent text-slate-500 hover:text-slate-900'
+                      ? 'border-slate-900 text-slate-900'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  <Receipt className="w-3.5 h-3.5" />
-                  <span>Submitted Claims ({inspectClaims.length})</span>
+                  Submitted Claims ({inspectClaims.length})
                 </button>
                 <button
                   onClick={() => setDrawerTab('analytics')}
-                  className={`pb-2.5 px-2.5 sm:px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  className={`py-3 text-xs font-medium border-b-2 transition-all cursor-pointer ${
                     drawerTab === 'analytics'
-                      ? 'border-emerald-600 text-emerald-700'
-                      : 'border-transparent text-slate-500 hover:text-slate-900'
+                      ? 'border-slate-900 text-slate-900'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  <span>Spend Analytics</span>
+                  Spend Analytics
                 </button>
               </div>
 
               {/* Tab Content */}
-              <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6 overscroll-contain">
-                {/* TAB 1: FINANCE & ALLOWANCES EDITOR */}
-                  {drawerTab === 'finance' && (
-                    <div className="space-y-6">
-                      {/* Notice Banner */}
-                      <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-3">
-                        <Info className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="flex-1 p-5 overflow-y-auto space-y-6 overscroll-contain">
+                {/* TAB 1: POLICY & ALLOWANCES (MINIMAL & PREMIUM) */}
+                {drawerTab === 'finance' && (
+                  <div className="space-y-6">
+                    {/* Section 1: Corporate Profile & Assignment */}
+                    <div>
+                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                        Corporate Assignment
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                          <p className="font-semibold text-slate-800">
-                            Auditor Allowance & Clearance Authority
-                          </p>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
-                            Modify per-diem allowances, monthly spend budgets, corporate grade, and audit clearance for this employee. All adjustments take effect immediately in the deterministic policy evaluator.
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Custom Allowances Override Toggle */}
-                      <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <span className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5">
-                              <Sparkles className="w-4 h-4 text-purple-600" />
-                              Custom Allowance Override Mode
-                            </span>
-                            <p className="text-[11px] text-slate-500 mt-0.5">
-                              Override company policy defaults with employee-specific daily and monthly spend caps.
-                            </p>
-                          </div>
-
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={formCustomAllowanceEnabled}
-                              onChange={(e) => setFormCustomAllowanceEnabled(e.target.checked)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                          <label className="block text-xs font-medium text-slate-700 mb-1">
+                            Department
                           </label>
-                        </div>
-
-                        {/* If custom is disabled, display policy defaults */}
-                        {!formCustomAllowanceEnabled && (
-                          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1.5">
-                            <div className="font-semibold text-slate-800 flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Currently Inheriting Company Policy Limits</span>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-[11px] font-mono-code">
-                              <div>Daily Meal Cap: <span className="font-bold text-slate-900">₹{inspectStats?.dailyCap.toLocaleString()}</span></div>
-                              <div>Per-Claim Limit: <span className="font-bold text-slate-900">₹2,000</span></div>
-                              <div>Monthly Cap: <span className="font-bold text-slate-900">₹{inspectStats?.monthlyAllowance.toLocaleString()}</span></div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Custom Allowances Input Grid */}
-                        {formCustomAllowanceEnabled && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
-                            {/* Daily Meal Cap */}
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                Daily Meal Allowance (₹/day)
-                              </label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">₹</span>
-                                <input
-                                  type="number"
-                                  value={formDailyMealAllowance}
-                                  onChange={(e) => setFormDailyMealAllowance(e.target.value)}
-                                  className="w-full pl-7 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                {['1500', '2000', '3000', '4000', '5000'].map((preset) => (
-                                  <button
-                                    key={preset}
-                                    type="button"
-                                    onClick={() => setFormDailyMealAllowance(preset)}
-                                    className="px-2 py-0.5 text-[10px] rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
-                                  >
-                                    ₹{Number(preset).toLocaleString()}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Monthly Spend Cap */}
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                Monthly Spend Cap (₹/month)
-                              </label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">₹</span>
-                                <input
-                                  type="number"
-                                  value={formMonthlySpendCap}
-                                  onChange={(e) => setFormMonthlySpendCap(e.target.value)}
-                                  className="w-full pl-7 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                {['30000', '50000', '60000', '100000'].map((preset) => (
-                                  <button
-                                    key={preset}
-                                    type="button"
-                                    onClick={() => setFormMonthlySpendCap(preset)}
-                                    className="px-2 py-0.5 text-[10px] rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
-                                  >
-                                    ₹{Number(preset).toLocaleString()}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Single Meal Per-Claim Cap */}
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                Per-Claim Single Meal Cap (₹/claim)
-                              </label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">₹</span>
-                                <input
-                                  type="number"
-                                  value={formPerClaimMealLimit}
-                                  onChange={(e) => setFormPerClaimMealLimit(e.target.value)}
-                                  className="w-full pl-7 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                {['1000', '1500', '2000', '3000'].map((preset) => (
-                                  <button
-                                    key={preset}
-                                    type="button"
-                                    onClick={() => setFormPerClaimMealLimit(preset)}
-                                    className="px-2 py-0.5 text-[10px] rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
-                                  >
-                                    ₹{Number(preset).toLocaleString()}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Client Dining Cap Per Attendee */}
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                Client Dining Allowance / Attendee (₹)
-                              </label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">₹</span>
-                                <input
-                                  type="number"
-                                  value={formClientDiningPerAttendee}
-                                  onChange={(e) => setFormClientDiningPerAttendee(e.target.value)}
-                                  className="w-full pl-7 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
-                                />
-                              </div>
-                              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                {['1500', '2500', '3500', '5000'].map((preset) => (
-                                  <button
-                                    key={preset}
-                                    type="button"
-                                    onClick={() => setFormClientDiningPerAttendee(preset)}
-                                    className="px-2 py-0.5 text-[10px] rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
-                                  >
-                                    ₹{Number(preset).toLocaleString()}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Corporate & Finance Attributes */}
-                      <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-4">
-                        <span className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5">
-                          <Building2 className="w-4 h-4 text-emerald-600" />
-                          Corporate Grade & Station Controls
-                        </span>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {/* Department */}
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                              Department
-                            </label>
-                            <select
-                              value={formDepartment}
-                              onChange={(e) => setFormDepartment(e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500"
-                            >
-                              {['Engineering', 'Sales', 'Marketing', 'Product', 'Operations', 'Finance & Audit', 'Executive', 'Legal', 'HR'].map(
-                                (dept) => (
-                                  <option key={dept} value={dept}>
-                                    {dept}
-                                  </option>
-                                )
-                              )}
-                            </select>
-                          </div>
-
-                          {/* Grade */}
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                              Corporate Grade
-                            </label>
-                            <select
-                              value={formGrade}
-                              onChange={(e) => setFormGrade(e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500"
-                            >
-                              {['L1', 'L2', 'L3', 'L4', 'L5', 'Executive', 'Staff', 'Principal', 'Director', 'VP', 'CFO', 'Finance Officer'].map(
-                                (g) => (
-                                  <option key={g} value={g}>
-                                    {g}
-                                  </option>
-                                )
-                              )}
-                            </select>
-                          </div>
-
-                          {/* Home City */}
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                              Home Station Hub
-                            </label>
-                            <select
-                              value={formHomeCity}
-                              onChange={(e) => setFormHomeCity(e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500"
-                            >
-                              {['Bengaluru', 'Mumbai', 'Delhi', 'Hyderabad', 'Pune', 'Chennai', 'Kolkata', 'Ahmedabad', 'Jaipur', 'Goa'].map(
-                                (c) => (
-                                  <option key={c} value={c}>
-                                    {c}
-                                  </option>
-                                )
-                              )}
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                          {/* City Tier Override */}
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                              City Tier Override
-                            </label>
-                            <select
-                              value={formCityTierOverride}
-                              onChange={(e) => setFormCityTierOverride(e.target.value)}
-                              className="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500"
-                            >
-                              <option value="default">Default from Home City ({policy.cityTiers[formHomeCity] || 'Tier-1'})</option>
-                              <option value="Tier-1">Tier-1 (₹3,000 / day default)</option>
-                              <option value="Tier-2">Tier-2 (₹1,800 / day default)</option>
-                              <option value="Tier-3">Tier-3 (₹1,200 / day default)</option>
-                              <option value="International">International Travel (₹6,500 / day)</option>
-                            </select>
-                          </div>
-
-                          {/* Role Clearance */}
-                          <div>
-                            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                              System Role Clearance
-                            </label>
-                            <select
-                              value={formRole}
-                              onChange={(e) => setFormRole(e.target.value as UserRole)}
-                              className="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500"
-                            >
-                              <option value="employee">Standard Employee</option>
-                              <option value="finance">Finance Auditor / Officer</option>
-                              <option value="admin">System Administrator</option>
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Audit Clearance & Payout Controls */}
-                      <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-2xs space-y-3.5">
-                        <span className="font-bold text-xs sm:text-sm text-slate-900 flex items-center gap-1.5">
-                          <Shield className="w-4 h-4 text-emerald-600" />
-                          Audit Clearance & Disbursement Controls
-                        </span>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {/* Auto-Approval Eligibility */}
-                          <div
-                            onClick={() => setFormAutoApproveEligible(!formAutoApproveEligible)}
-                            className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                              formAutoApproveEligible
-                                ? 'bg-emerald-50/50 border-emerald-300 text-emerald-950'
-                                : 'bg-slate-50 border-slate-200 text-slate-700'
-                            }`}
+                          <select
+                            value={formDepartment}
+                            onChange={(e) => setFormDepartment(e.target.value)}
+                            className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10 transition-colors"
                           >
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-xs">Touchless Auto-Approval</span>
-                              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                                formAutoApproveEligible ? 'bg-emerald-600 text-white' : 'border border-slate-300 text-slate-400'
-                              }`}>
-                                {formAutoApproveEligible && '✓'}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 mt-1">
-                              {formAutoApproveEligible
-                                ? 'Claims meeting risk threshold (<= 25) can be touchless approved.'
-                                : 'All claims require mandatory human auditor manual review.'}
-                            </p>
-                          </div>
-
-                          {/* Reimbursement Hold */}
-                          <div
-                            onClick={() => setFormReimbursementHold(!formReimbursementHold)}
-                            className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                              formReimbursementHold
-                                ? 'bg-amber-50/70 border-amber-300 text-amber-950'
-                                : 'bg-slate-50 border-slate-200 text-slate-700'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-xs">Reimbursement Payout Hold</span>
-                              <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                                formReimbursementHold ? 'bg-amber-600 text-white' : 'border border-slate-300 text-slate-400'
-                              }`}>
-                                {formReimbursementHold && '✓'}
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 mt-1">
-                              {formReimbursementHold
-                                ? 'Payouts frozen. Claims stay in pending audit hold.'
-                                : 'Active payouts. Approved claims are routed to ERP disbursement.'}
-                            </p>
-                          </div>
+                            {['Engineering', 'Sales', 'Marketing', 'Product', 'Operations', 'Finance & Audit', 'Executive', 'Legal', 'HR'].map(
+                              (dept) => (
+                                <option key={dept} value={dept}>
+                                  {dept}
+                                </option>
+                              )
+                            )}
+                          </select>
                         </div>
 
-                        {/* Internal Auditor Notes */}
                         <div>
-                          <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                            Auditor Internal Notes & Compliance Log
+                          <label className="block text-xs font-medium text-slate-700 mb-1">
+                            Corporate Grade
                           </label>
-                          <textarea
-                            value={formNotes}
-                            onChange={(e) => setFormNotes(e.target.value)}
-                            rows={2}
-                            placeholder="Add compliance notes, travel exceptions, or rationale for allowance overrides..."
-                            className="w-full p-2.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 resize-none"
-                          />
+                          <select
+                            value={formGrade}
+                            onChange={(e) => setFormGrade(e.target.value)}
+                            className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10 transition-colors"
+                          >
+                            {['L1', 'L2', 'L3', 'L4', 'L5', 'Executive', 'Staff', 'Principal', 'Director', 'VP', 'CFO', 'Finance Officer'].map(
+                              (g) => (
+                                <option key={g} value={g}>
+                                  {g}
+                                </option>
+                              )
+                            )}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-slate-700 mb-1">
+                            Home Station Hub
+                          </label>
+                          <select
+                            value={formHomeCity}
+                            onChange={(e) => setFormHomeCity(e.target.value)}
+                            className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10 transition-colors"
+                          >
+                            {['Bengaluru', 'Mumbai', 'Delhi', 'Hyderabad', 'Pune', 'Chennai', 'Kolkata', 'Ahmedabad', 'Jaipur', 'Goa'].map(
+                              (c) => (
+                                <option key={c} value={c}>
+                                  {c}
+                                </option>
+                              )
+                            )}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-700 mb-1">
+                            City Tier Override
+                          </label>
+                          <select
+                            value={formCityTierOverride}
+                            onChange={(e) => setFormCityTierOverride(e.target.value)}
+                            className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10 transition-colors"
+                          >
+                            <option value="default">Default from Home Station ({policy.cityTiers[formHomeCity] || 'Tier-1'})</option>
+                            <option value="Tier-1">Tier-1 (₹3,000 / day standard)</option>
+                            <option value="Tier-2">Tier-2 (₹1,800 / day standard)</option>
+                            <option value="Tier-3">Tier-3 (₹1,200 / day standard)</option>
+                            <option value="International">International (₹6,500 / day)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-slate-700 mb-1">
+                            System Role Clearance
+                          </label>
+                          <select
+                            value={formRole}
+                            onChange={(e) => setFormRole(e.target.value as UserRole)}
+                            className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10 transition-colors"
+                          >
+                            <option value="employee">Standard Employee</option>
+                            <option value="finance">Finance Auditor / Officer</option>
+                            <option value="admin">System Administrator</option>
+                          </select>
                         </div>
                       </div>
                     </div>
-                  )}
 
-                  {/* TAB 2: SUBMITTED CLAIMS */}
-                  {drawerTab === 'claims' && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700">
-                          Claims History ({inspectClaims.length} records)
-                        </span>
-                        <span className="text-xs font-mono-code font-bold text-emerald-700">
-                          Total: ₹{inspectClaims.reduce((acc, c) => acc + (c.verdict?.approvedAmountMinor || c.normalizedCurrency.targetAmountMinor) / 100, 0).toLocaleString()}
-                        </span>
+                    <div className="border-t border-slate-100" />
+
+                    {/* Section 2: Spend Allowances & Caps */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <div className="text-xs font-medium text-slate-900">
+                            Custom Spend Allowances
+                          </div>
+                          <p className="text-[11px] text-slate-400">
+                            Override corporate per-diem and monthly caps for this employee.
+                          </p>
+                        </div>
+
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formCustomAllowanceEnabled}
+                            onChange={(e) => setFormCustomAllowanceEnabled(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-slate-900"></div>
+                        </label>
                       </div>
 
-                      {inspectClaims.length === 0 ? (
-                        <div className="text-center py-12 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl">
-                          No claims submitted by this employee yet.
+                      {/* If custom is disabled, clean minimal readout */}
+                      {!formCustomAllowanceEnabled && (
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600">
+                          <div className="flex items-center gap-6">
+                            <div>
+                              <div className="text-[10px] text-slate-400 font-medium">Daily Meal</div>
+                              <div className="font-semibold text-slate-800 font-mono-code">₹{inspectStats?.dailyCap.toLocaleString()}/day</div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 font-medium">Single Meal Cap</div>
+                              <div className="font-semibold text-slate-800 font-mono-code">₹2,000/claim</div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 font-medium">Monthly Cap</div>
+                              <div className="font-semibold text-slate-800 font-mono-code">₹{inspectStats?.monthlyAllowance.toLocaleString()}/mo</div>
+                            </div>
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-medium">
+                            Inheriting policy baseline
+                          </span>
                         </div>
-                      ) : (
-                        <div className="space-y-2">
-                          {inspectClaims.map((exp) => (
-                            <div
-                              key={exp.id}
-                              className="p-3.5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-colors flex items-center justify-between gap-3 shadow-2xs"
-                            >
-                              <div className="min-w-0">
-                                <div className="font-bold text-xs text-slate-900 truncate flex items-center gap-2">
-                                  <span>{exp.extracted?.merchant?.value || exp.id}</span>
-                                  {exp.verdict?.riskBand === 'high' && (
-                                    <span className="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[9px] font-bold">
-                                      High Risk
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-[11px] text-slate-500 mt-0.5">
-                                  {exp.expenseDate} • {exp.extracted?.lineItems?.[0]?.category || 'General'}
-                                </div>
-                              </div>
+                      )}
 
-                              <div className="text-right shrink-0">
-                                <div className="font-bold text-xs font-mono-code text-slate-900">
-                                  ₹{(exp.normalizedCurrency.targetAmountMinor / 100).toLocaleString()}
-                                </div>
-                                <span
-                                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block mt-0.5 ${
-                                    exp.status === 'auto_approved'
-                                      ? 'bg-emerald-100 text-emerald-800'
-                                      : exp.status === 'approved'
-                                      ? 'bg-emerald-50 text-emerald-700'
-                                      : exp.status === 'rejected'
-                                      ? 'bg-rose-50 text-rose-700'
-                                      : 'bg-amber-50 text-amber-700'
-                                  }`}
+                      {/* Custom Allowances Grid */}
+                      {formCustomAllowanceEnabled && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">
+                              Daily Meal Allowance (₹/day)
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">₹</span>
+                              <input
+                                type="number"
+                                value={formDailyMealAllowance}
+                                onChange={(e) => setFormDailyMealAllowance(e.target.value)}
+                                className="w-full h-9 pl-6 pr-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
+                              />
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-400">
+                              <span>Quick presets:</span>
+                              {['2000', '3000', '5000'].map((preset) => (
+                                <button
+                                  key={preset}
+                                  type="button"
+                                  onClick={() => setFormDailyMealAllowance(preset)}
+                                  className="text-slate-600 hover:text-slate-900 underline cursor-pointer"
                                 >
-                                  {exp.status.replace('_', ' ')}
-                                </span>
+                                  ₹{Number(preset).toLocaleString()}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">
+                              Monthly Spend Cap (₹/month)
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">₹</span>
+                              <input
+                                type="number"
+                                value={formMonthlySpendCap}
+                                onChange={(e) => setFormMonthlySpendCap(e.target.value)}
+                                className="w-full h-9 pl-6 pr-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
+                              />
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-1 text-[10px] text-slate-400">
+                              <span>Quick presets:</span>
+                              {['40000', '60000', '100000'].map((preset) => (
+                                <button
+                                  key={preset}
+                                  type="button"
+                                  onClick={() => setFormMonthlySpendCap(preset)}
+                                  className="text-slate-600 hover:text-slate-900 underline cursor-pointer"
+                                >
+                                  ₹{Number(preset).toLocaleString()}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">
+                              Single Meal Limit (₹/claim)
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">₹</span>
+                              <input
+                                type="number"
+                                value={formPerClaimMealLimit}
+                                onChange={(e) => setFormPerClaimMealLimit(e.target.value)}
+                                className="w-full h-9 pl-6 pr-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-slate-700 mb-1">
+                              Client Dining / Attendee (₹)
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">₹</span>
+                              <input
+                                type="number"
+                                value={formClientDiningPerAttendee}
+                                onChange={(e) => setFormClientDiningPerAttendee(e.target.value)}
+                                className="w-full h-9 pl-6 pr-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-slate-100" />
+
+                    {/* Section 3: Compliance & Payout Rules */}
+                    <div className="space-y-3">
+                      <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                        Audit Governance
+                      </div>
+
+                      {/* Row 1: Touchless Auto-Approval */}
+                      <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/60">
+                        <div>
+                          <div className="text-xs font-medium text-slate-900">Touchless Auto-Approval</div>
+                          <div className="text-[11px] text-slate-400">
+                            Automatically approve low-risk claims (risk score ≤ 25) without manual auditor action.
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                          <input
+                            type="checkbox"
+                            checked={formAutoApproveEligible}
+                            onChange={(e) => setFormAutoApproveEligible(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-slate-900"></div>
+                        </label>
+                      </div>
+
+                      {/* Row 2: Reimbursement Hold */}
+                      <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/60">
+                        <div>
+                          <div className="text-xs font-medium text-slate-900">Reimbursement Payout Hold</div>
+                          <div className="text-[11px] text-slate-400">
+                            Hold disbursements for this employee while retaining full submission records.
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-4">
+                          <input
+                            type="checkbox"
+                            checked={formReimbursementHold}
+                            onChange={(e) => setFormReimbursementHold(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                        </label>
+                      </div>
+
+                      {/* Auditor Compliance Notes */}
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">
+                          Auditor Notes
+                        </label>
+                        <textarea
+                          value={formNotes}
+                          onChange={(e) => setFormNotes(e.target.value)}
+                          rows={2}
+                          placeholder="Internal compliance notes or rationale for custom limits..."
+                          className="w-full p-2.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10 resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: SUBMITTED CLAIMS (CLEAN LIST) */}
+                {drawerTab === 'claims' && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-slate-500">
+                        {inspectClaims.length} total submissions
+                      </span>
+                      <span className="font-mono-code font-semibold text-slate-900">
+                        Total: ₹{inspectClaims.reduce((acc, c) => acc + (c.verdict?.approvedAmountMinor || c.normalizedCurrency.targetAmountMinor) / 100, 0).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {inspectClaims.length === 0 ? (
+                      <div className="text-center py-12 text-slate-400 text-xs">
+                        No claims filed by this employee yet.
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                        {inspectClaims.map((exp) => (
+                          <div
+                            key={exp.id}
+                            className="p-3 bg-white hover:bg-slate-50/70 transition-colors flex items-center justify-between gap-3 text-xs"
+                          >
+                            <div className="min-w-0">
+                              <div className="font-medium text-slate-900 truncate">
+                                {exp.extracted?.merchant?.value || exp.id}
                               </div>
+                              <div className="text-[11px] text-slate-400 mt-0.5">
+                                {exp.expenseDate} · {exp.extracted?.lineItems?.[0]?.category || 'General'}
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <div className="font-semibold font-mono-code text-slate-900">
+                                ₹{(exp.normalizedCurrency.targetAmountMinor / 100).toLocaleString()}
+                              </div>
+                              <span
+                                className={`text-[10px] font-medium px-1.5 py-0.2 rounded-full inline-block mt-0.5 ${
+                                  exp.status === 'auto_approved'
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : exp.status === 'approved'
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : exp.status === 'rejected'
+                                    ? 'bg-rose-50 text-rose-700'
+                                    : 'bg-amber-50 text-amber-700'
+                                }`}
+                              >
+                                {exp.status.replace('_', ' ')}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB 3: SPEND ANALYTICS (MINIMAL) */}
+                {drawerTab === 'analytics' && (
+                  <div className="space-y-5">
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <span className="text-slate-400 text-[10px] uppercase tracking-wider font-medium">Reimbursed</span>
+                        <div className="font-bold text-base text-slate-900 mt-0.5 font-mono-code">
+                          ₹{inspectStats?.approvedAmount.toLocaleString()}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">{inspectClaims.length} submissions</div>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                        <span className="text-slate-400 text-[10px] uppercase tracking-wider font-medium">Monthly Budget</span>
+                        <div className="font-bold text-base text-slate-900 mt-0.5 font-mono-code">
+                          ₹{inspectStats?.monthlyAllowance.toLocaleString()}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          {inspectStats?.isCustomAllowance ? 'Custom limit' : 'Policy baseline'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl border border-slate-100 space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-medium text-slate-700">Allowance Consumption</span>
+                        <span className="font-mono-code text-slate-500">{inspectStats?.allowancePercent}% used</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            (inspectStats?.allowancePercent || 0) > 80 ? 'bg-amber-500' : 'bg-emerald-500'
+                          }`}
+                          style={{ width: `${Math.max(4, inspectStats?.allowancePercent || 0)}%` }}
+                        />
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-mono-code text-right">
+                        ₹{Math.max(0, (inspectStats?.monthlyAllowance || 0) - (inspectStats?.approvedAmount || 0)).toLocaleString()} remaining
+                      </div>
+                    </div>
+
+                    {/* Top Categories */}
+                    {inspectStats?.topCategories && inspectStats.topCategories.length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium text-slate-700">Top Categories</span>
+                        <div className="space-y-1.5">
+                          {inspectStats.topCategories.map(([cat, amtMinor]) => (
+                            <div key={cat} className="flex items-center justify-between text-xs py-1 px-2 rounded-lg bg-slate-50">
+                              <span className="text-slate-600">{cat}</span>
+                              <span className="font-mono-code font-semibold text-slate-900">
+                                ₹{(amtMinor / 100).toLocaleString()}
+                              </span>
                             </div>
                           ))}
                         </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* TAB 3: SPEND ANALYTICS */}
-                  {drawerTab === 'analytics' && (
-                    <div className="space-y-5">
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                          <span className="text-slate-400 text-[10px] uppercase font-mono-code">Total Reimbursed</span>
-                          <div className="font-bold text-base text-emerald-700 mt-1 font-mono-code">
-                            ₹{inspectStats?.approvedAmount.toLocaleString()}
-                          </div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">Across {inspectClaims.length} submissions</div>
-                        </div>
-
-                        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-                          <span className="text-slate-400 text-[10px] uppercase font-mono-code">Monthly Allowance Cap</span>
-                          <div className="font-bold text-base text-slate-900 mt-1 font-mono-code">
-                            ₹{inspectStats?.monthlyAllowance.toLocaleString()}
-                          </div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">
-                            {inspectStats?.isCustomAllowance ? 'Custom override' : 'Policy baseline'}
-                          </div>
-                        </div>
                       </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
-                      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-                        <span className="font-bold text-xs text-slate-900">Allowance Consumption</span>
-                        <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              (inspectStats?.allowancePercent || 0) > 80 ? 'bg-amber-500' : 'bg-emerald-600'
-                            }`}
-                            style={{ width: `${Math.max(4, inspectStats?.allowancePercent || 0)}%` }}
-                          />
-                        </div>
-                        <div className="flex justify-between text-xs text-slate-500 font-mono-code">
-                          <span>{inspectStats?.allowancePercent}% Consumed</span>
-                          <span>₹{Math.max(0, (inspectStats?.monthlyAllowance || 0) - (inspectStats?.approvedAmount || 0)).toLocaleString()} Available</span>
-                        </div>
-                      </div>
-
-                      {/* Top Categories */}
-                      {inspectStats?.topCategories && inspectStats.topCategories.length > 0 && (
-                        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-                          <span className="font-bold text-xs text-slate-900">Top Spend Categories</span>
-                          <div className="space-y-2">
-                            {inspectStats.topCategories.map(([cat, amtMinor]) => (
-                              <div key={cat} className="flex items-center justify-between text-xs">
-                                <span className="text-slate-700">{cat}</span>
-                                <span className="font-mono-code font-bold text-slate-900">
-                                  ₹{(amtMinor / 100).toLocaleString()}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-              {/* Modal Footer Actions */}
-              <div className="p-3.5 sm:p-4 border-t border-slate-200 bg-slate-50/80 sticky bottom-0 z-10 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
-                <div className="flex items-center gap-2 flex-wrap">
+              {/* Modal Footer: Clean, Minimal, Non-Bloated */}
+              <div className="px-5 py-3.5 border-t border-slate-100 bg-white flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setEmployeeToDelete(inspectEmployee)}
-                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="text-xs text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                    <span>Delete User</span>
+                    Delete employee
                   </button>
-
+                  <span className="text-slate-200">·</span>
                   <button
                     type="button"
                     onClick={handleResetEmployeeFinance}
-                    className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="text-xs text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Reset Defaults</span>
+                    Reset defaults
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2 justify-end">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setInspectEmployee(null)}
-                    className="flex-1 sm:flex-none px-4 py-2 border border-slate-200 hover:bg-white text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-center"
+                    className="h-8 px-3 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                   >
-                    Close
+                    Cancel
                   </button>
 
                   <button
                     type="button"
                     onClick={handleSaveEmployeeFinance}
-                    className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer text-center"
+                    className="h-8 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium shadow-xs transition-colors cursor-pointer"
                   >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>Save Changes</span>
+                    Save Changes
                   </button>
                 </div>
               </div>
@@ -1360,128 +1270,125 @@ export const EmployeesView: React.FC = () => {
       {isOrgAllowancesOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
+            className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4 transition-all"
             onClick={() => setIsOrgAllowancesOpen(false)}
           >
             <div
-              className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+              className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200/90 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
-                    <Sliders className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base text-slate-900">
-                      Company Expense Allowances & Caps
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Configure corporate daily meal allowances, city tier multipliers, and audit thresholds.
-                    </p>
-                  </div>
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-base text-slate-900">
+                    Company Policy Allowances
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Baseline daily per-diem limits and touchless audit thresholds.
+                  </p>
                 </div>
 
                 <button
                   onClick={() => setIsOrgAllowancesOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-800 rounded-xl hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+              <div className="p-5 space-y-5 max-h-[75vh] overflow-y-auto">
                 {/* City Tier Allowances */}
-                <div className="space-y-3">
-                  <span className="font-bold text-xs text-slate-900 uppercase tracking-wider block">
-                    Daily Meal Allowance By City Tier
-                  </span>
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
+                    Daily Meal Allowance by City Tier
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Tier-1 Cities (₹/day)
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Tier-1 (₹/day)
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">₹</span>
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">₹</span>
                         <input
                           type="number"
                           value={orgTier1Cap}
                           onChange={(e) => setOrgTier1Cap(e.target.value)}
-                          className="w-full pl-7 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
+                          className="w-full h-9 pl-6 pr-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                         />
                       </div>
-                      <span className="text-[10px] text-slate-400 mt-0.5 block">Mumbai, Delhi, BLR</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">BLR, BOM, DEL</span>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Tier-2 Cities (₹/day)
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Tier-2 (₹/day)
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">₹</span>
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">₹</span>
                         <input
                           type="number"
                           value={orgTier2Cap}
                           onChange={(e) => setOrgTier2Cap(e.target.value)}
-                          className="w-full pl-7 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
+                          className="w-full h-9 pl-6 pr-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                         />
                       </div>
-                      <span className="text-[10px] text-slate-400 mt-0.5 block">Pune, Kolkata, HYD</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">PUN, CCU, HYD</span>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Tier-3 Cities (₹/day)
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Tier-3 (₹/day)
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">₹</span>
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">₹</span>
                         <input
                           type="number"
                           value={orgTier3Cap}
                           onChange={(e) => setOrgTier3Cap(e.target.value)}
-                          className="w-full pl-7 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
+                          className="w-full h-9 pl-6 pr-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                         />
                       </div>
-                      <span className="text-[10px] text-slate-400 mt-0.5 block">Jaipur, Goa, Others</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">Others</span>
                     </div>
                   </div>
                 </div>
 
+                <div className="border-t border-slate-100" />
+
                 {/* Per-Claim & Attendee Caps */}
-                <div className="space-y-3 pt-4 border-t border-slate-200">
-                  <span className="font-bold text-xs text-slate-900 uppercase tracking-wider block">
-                    Transaction & Client Dining Limits
-                  </span>
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
+                    Transaction Limits
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Single Meal Limit (₹/claim)
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Single Meal Cap (₹/claim)
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">₹</span>
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">₹</span>
                         <input
                           type="number"
                           value={orgSingleMealCap}
                           onChange={(e) => setOrgSingleMealCap(e.target.value)}
-                          className="w-full pl-7 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
+                          className="w-full h-9 pl-6 pr-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                         />
                       </div>
-                      <span className="text-[10px] text-slate-400 mt-0.5 block">Max without prior approval</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">Standard single receipt limit</span>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Client Dining Allowance / Attendee (₹)
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Client Dining / Attendee (₹)
                       </label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400">₹</span>
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">₹</span>
                         <input
                           type="number"
                           value={orgClientAttendeeCap}
                           onChange={(e) => setOrgClientAttendeeCap(e.target.value)}
-                          className="w-full pl-7 pr-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
+                          className="w-full h-9 pl-6 pr-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                         />
                       </div>
                       <span className="text-[10px] text-slate-400 mt-0.5 block">Multiplied by attendee count</span>
@@ -1489,48 +1396,50 @@ export const EmployeesView: React.FC = () => {
                   </div>
                 </div>
 
+                <div className="border-t border-slate-100" />
+
                 {/* Audit & Auto-Approval Thresholds */}
-                <div className="space-y-3 pt-4 border-t border-slate-200">
-                  <span className="font-bold text-xs text-slate-900 uppercase tracking-wider block">
-                    Touchless Auto-Approval Governance
-                  </span>
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2.5">
+                    Touchless Auto-Approval Rules
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Max Risk Score (0..100)
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Max Risk Score
                       </label>
                       <input
                         type="number"
                         value={orgRiskThreshold}
                         onChange={(e) => setOrgRiskThreshold(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
+                        className="w-full h-9 px-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                       />
-                      <span className="text-[10px] text-slate-400 mt-0.5 block">Default: 25</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">Threshold: &le; 25</span>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Min Confidence (%)
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Min Confidence
                       </label>
                       <input
                         type="number"
                         value={orgMinConfidence}
                         onChange={(e) => setOrgMinConfidence(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
+                        className="w-full h-9 px-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                       />
-                      <span className="text-[10px] text-slate-400 mt-0.5 block">Default: 80%</span>
+                      <span className="text-[10px] text-slate-400 mt-0.5 block">Min: 80%</span>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                        Submission Deadline
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Submission Window
                       </label>
                       <input
                         type="number"
                         value={orgSubmissionDays}
                         onChange={(e) => setOrgSubmissionDays(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
+                        className="w-full h-9 px-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                       />
                       <span className="text-[10px] text-slate-400 mt-0.5 block">Days from receipt</span>
                     </div>
@@ -1538,21 +1447,20 @@ export const EmployeesView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 border-t border-slate-200 bg-slate-50/80 flex items-center justify-end gap-2.5">
+              <div className="px-5 py-3.5 border-t border-slate-100 bg-white flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsOrgAllowancesOpen(false)}
-                  className="px-4 py-2 border border-slate-200 hover:bg-white text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                  className="h-8 px-3 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveOrgAllowances}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  className="h-8 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium shadow-xs transition-colors cursor-pointer"
                 >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Update Corporate Policy</span>
+                  Save Policy
                 </button>
               </div>
             </div>
@@ -1564,43 +1472,36 @@ export const EmployeesView: React.FC = () => {
       {isAddUserModalOpen &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-y-auto transition-all"
+            className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 md:p-6 overflow-y-auto transition-all"
             onClick={() => setIsAddUserModalOpen(false)}
           >
             <div
-              className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-auto"
+              className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200/90 overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
-              <div className="p-5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
-                    <UserPlus className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base text-slate-900">
-                      Add New Corporate Employee
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Register a team member, set corporate role, station hub, and allowance meters.
-                    </p>
-                  </div>
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-base text-slate-900">
+                    Add New Employee
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Register a corporate user and configure their spend policy.
+                  </p>
                 </div>
 
                 <button
                   onClick={() => setIsAddUserModalOpen(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-800 rounded-xl hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Form Content */}
               <form onSubmit={handleCreateEmployee}>
-                <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
                         Full Name *
                       </label>
                       <input
@@ -1608,13 +1509,13 @@ export const EmployeesView: React.FC = () => {
                         required
                         value={addName}
                         onChange={(e) => setAddName(e.target.value)}
-                        placeholder="e.g. David Zhang"
-                        className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500"
+                        placeholder="David Zhang"
+                        className="w-full h-9 px-3 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
                         Corporate Email *
                       </label>
                       <input
@@ -1622,21 +1523,21 @@ export const EmployeesView: React.FC = () => {
                         required
                         value={addEmail}
                         onChange={(e) => setAddEmail(e.target.value)}
-                        placeholder="e.g. david.zhang@acme.com"
-                        className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code"
+                        placeholder="david.zhang@acme.com"
+                        className="w-full h-9 px-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
                         Department
                       </label>
                       <select
                         value={addDepartment}
                         onChange={(e) => setAddDepartment(e.target.value)}
-                        className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500"
+                        className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                       >
                         {['Engineering', 'Sales', 'Marketing', 'Product', 'Operations', 'Finance & Audit', 'Executive', 'Legal', 'HR'].map(
                           (dept) => (
@@ -1649,13 +1550,13 @@ export const EmployeesView: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Corporate Grade
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Grade
                       </label>
                       <select
                         value={addGrade}
                         onChange={(e) => setAddGrade(e.target.value)}
-                        className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500"
+                        className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                       >
                         {['L1', 'L2', 'L3', 'L4', 'L5', 'Executive', 'Staff', 'Principal', 'Director', 'VP', 'CFO', 'Finance Officer'].map(
                           (g) => (
@@ -1668,13 +1569,13 @@ export const EmployeesView: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                        Home Station Hub
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Station Hub
                       </label>
                       <select
                         value={addHomeCity}
                         onChange={(e) => setAddHomeCity(e.target.value)}
-                        className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500"
+                        className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                       >
                         {['Bengaluru', 'Mumbai', 'Delhi', 'Hyderabad', 'Pune', 'Chennai', 'Kolkata', 'Ahmedabad', 'Jaipur', 'Goa'].map(
                           (c) => (
@@ -1688,26 +1589,25 @@ export const EmployeesView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
                       Clearance Role
                     </label>
                     <select
                       value={addRole}
                       onChange={(e) => setAddRole(e.target.value as UserRole)}
-                      className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-emerald-500"
+                      className="w-full h-9 px-2.5 text-xs rounded-lg border border-slate-200 bg-white text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                     >
-                      <option value="employee">Standard Employee (Submits expense claims)</option>
-                      <option value="finance">Finance Auditor / Officer (Reviews claims & audits)</option>
-                      <option value="admin">System Administrator (Full access)</option>
+                      <option value="employee">Standard Employee (Expense Submissions)</option>
+                      <option value="finance">Finance Auditor / Officer (Review & Approvals)</option>
+                      <option value="admin">System Administrator (Full Access)</option>
                     </select>
                   </div>
 
                   {/* Custom Allowances Setup */}
-                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+                  <div className="p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                        Configure Custom Spend Caps
+                      <span className="text-xs font-medium text-slate-900">
+                        Custom Spend Limits
                       </span>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -1716,70 +1616,68 @@ export const EmployeesView: React.FC = () => {
                           onChange={(e) => setAddCustomAllowance(e.target.checked)}
                           className="sr-only peer"
                         />
-                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-slate-900"></div>
                       </label>
                     </div>
 
                     {addCustomAllowance ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
+                          <label className="block text-[11px] font-medium text-slate-600 mb-1">
                             Daily Meal Allowance (₹/day)
                           </label>
                           <input
                             type="number"
                             value={addDailyCap}
                             onChange={(e) => setAddDailyCap(e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
+                            className="w-full h-9 px-3 text-xs rounded-lg bg-white border border-slate-200 focus:outline-none focus:border-slate-900 font-mono-code"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-bold text-slate-600 uppercase mb-1">
-                            Monthly Spend Budget (₹/mo)
+                          <label className="block text-[11px] font-medium text-slate-600 mb-1">
+                            Monthly Budget (₹/month)
                           </label>
                           <input
                             type="number"
                             value={addMonthlyCap}
                             onChange={(e) => setAddMonthlyCap(e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-emerald-500 font-mono-code font-bold"
+                            className="w-full h-9 px-3 text-xs rounded-lg bg-white border border-slate-200 focus:outline-none focus:border-slate-900 font-mono-code"
                           />
                         </div>
                       </div>
                     ) : (
-                      <p className="text-[11px] text-slate-500">
-                        Will inherit corporate tier allowances based on assigned home station ({policy.cityTiers[addHomeCity] || 'Tier-1'}).
+                      <p className="text-[11px] text-slate-400">
+                        Inherits company tier allowances for {policy.cityTiers[addHomeCity] || 'Tier-1'}.
                       </p>
                     )}
                   </div>
 
                   {/* Auto-Approval Checkbox */}
-                  <label className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer pt-1">
+                  <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer pt-0.5">
                     <input
                       type="checkbox"
                       checked={addAutoApprove}
                       onChange={(e) => setAddAutoApprove(e.target.checked)}
-                      className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                      className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 w-3.5 h-3.5"
                     />
-                    <span>Eligible for Touchless Auto-Approval (claims below ₹10k with risk &le; 25)</span>
+                    <span>Eligible for touchless auto-approval (risk score &le; 25)</span>
                   </label>
                 </div>
 
-                {/* Footer */}
-                <div className="p-4 border-t border-slate-200 bg-slate-50/80 flex items-center justify-end gap-2.5">
+                <div className="px-5 py-3.5 border-t border-slate-100 bg-white flex items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => setIsAddUserModalOpen(false)}
-                    className="px-4 py-2 border border-slate-200 hover:bg-white text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                    className="h-8 px-3 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                    className="h-8 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium shadow-xs transition-colors cursor-pointer"
                   >
-                    <UserPlus className="w-3.5 h-3.5" />
-                    <span>Create Employee Profile</span>
+                    Create Employee
                   </button>
                 </div>
               </form>
@@ -1792,44 +1690,40 @@ export const EmployeesView: React.FC = () => {
       {employeeToDelete &&
         createPortal(
           <div
-            className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all"
+            className="fixed inset-0 z-[60] bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4 transition-all"
             onClick={() => setEmployeeToDelete(null)}
           >
             <div
-              className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-6 space-y-4 my-auto"
+              className="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-200/90 overflow-hidden animate-in fade-in zoom-in-95 duration-150 p-5 space-y-3.5 my-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto">
-                <Trash2 className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                <Trash2 className="w-5 h-5" />
               </div>
 
               <div className="text-center space-y-1">
-                <h3 className="font-bold text-base text-slate-900">
-                  Delete Employee Account?
+                <h3 className="font-semibold text-sm text-slate-900">
+                  Delete Employee Record?
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Are you sure you want to delete <span className="font-semibold text-slate-800">{employeeToDelete.identity.name}</span> (<span className="font-mono-code">{employeeToDelete.identity.email}</span>) from the corporate employee directory?
-                </p>
-                <p className="text-[11px] text-rose-600 font-medium pt-1">
-                  This user will no longer be able to submit expense claims or access allowance meters.
+                  Remove <span className="font-medium text-slate-800">{employeeToDelete.identity.name}</span> (<span className="text-slate-600">{employeeToDelete.identity.email}</span>) from the corporate directory?
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => setEmployeeToDelete(null)}
-                  className="flex-1 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer text-center"
+                  className="flex-1 h-8 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirmDeleteEmployee}
-                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer text-center"
+                  className="flex-1 h-8 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Confirm Delete</span>
+                  Delete
                 </button>
               </div>
             </div>

@@ -38,7 +38,7 @@ import {
   bundleExpensesIntoTrips,
 } from '../../engine';
 import { getActivePolicy } from '../../services/policyService';
-import { getActiveEmployee } from '../../services/employeeService';
+import { getActiveEmployee, getEmployeeDisplayName } from '../../services/employeeService';
 import {
   getAllExpenses,
   submitExpense,
@@ -64,6 +64,8 @@ import {
   CURRENT_FX_METRICS,
   CURRENT_FX_RATES_TO_INR,
 } from '../../utils/currencyConverter';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../routes/routeConfig';
 
 interface SubmitExpenseViewProps {
   onSuccess: () => void;
@@ -96,6 +98,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
   onSuccess,
   onCancel,
 }) => {
+  const navigate = useNavigate();
   const activeEmp = getActiveEmployee();
   const policy = getActivePolicy();
 
@@ -1235,6 +1238,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
         id: `exp_${Date.now()}`,
         orgId: 'org_acme',
         employeeId: activeEmp.id,
+        employeeName: activeEmp.identity?.name || getEmployeeDisplayName(activeEmp.id),
         status: 'draft',
         channel: 'upload',
         expenseDate: date,
@@ -1663,16 +1667,16 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                 <button
                   type="button"
                   onClick={() => loadDemoScenario('duplicate_raw' as any)}
-                  className="px-3 py-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-purple-700 transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors cursor-pointer"
                 >
-                  <span>🛡️ Duplicate Raw Image</span>
+                  <span>Duplicate Raw Image</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => loadDemoScenario('duplicate_anchor' as any)}
-                  className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-medium text-indigo-700 transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors cursor-pointer"
                 >
-                  <span>🛡️ Duplicate Anchor JSON</span>
+                  <span>Duplicate Anchor JSON</span>
                 </button>
               </div>
             </div>
@@ -2222,7 +2226,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
             <CheckCircle2 className="w-6 h-6" />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             <span className="text-xs font-mono-code font-bold uppercase tracking-wider text-emerald-600">
               Claim Ref #{submittedClaim?.id ? submittedClaim.id.slice(-6).toUpperCase() : 'CLAIM'}
             </span>
@@ -2235,6 +2239,12 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
             <p className="text-sm text-slate-500">
               {vendor} • {date} • {city}
             </p>
+            <div className="pt-0.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full text-xs font-medium">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Added directly to All Organization Claims</span>
+              </span>
+            </div>
           </div>
 
           {/* Amount Box */}
@@ -2314,6 +2324,14 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
               className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition-all cursor-pointer"
             >
               Done & View Expenses
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(ROUTES.AUDITOR.ALL_EXPENSES)}
+              className="px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
+            >
+              <span>View in All Claims</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-500" />
             </button>
           </div>
         </motion.div>

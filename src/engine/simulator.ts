@@ -48,7 +48,7 @@ export function simulatePolicyChange(options: SimulationOptions): SimulationResu
     const emp = empMap.get(exp.employeeId) || {
       id: exp.employeeId,
       orgId: exp.orgId,
-      identity: { email: `${exp.employeeId}@example.com`, name: exp.employeeId },
+      identity: { email: `${exp.employeeId}@example.com`, name: exp.employeeName || exp.employeeId },
       role: 'employee',
       department: 'General',
       grade: 'L4',

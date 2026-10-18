@@ -369,6 +369,7 @@ export interface Expense {
   id: string;
   orgId: string;
   employeeId: string;
+  employeeName?: string;
   tripId?: string;
   status: ClaimStatus;
   channel: 'upload' | 'camera' | 'paste' | 'batch' | 'email';

@@ -208,6 +208,15 @@ async function seed() {
       claimToSave.employeeAlias = 'emp_101';
       claimToSave.employeeName = 'Alice Walker';
       claimToSave.employeeEmail = 'employee@keepr.com';
+    } else {
+      const demoNames: Record<string, string> = {
+        emp_102: 'Bob Martin',
+        emp_103: 'Carol Danvers',
+        emp_104: 'David Miller',
+        emp_105: 'Elena Rostova',
+        emp_106: 'Frank Castle',
+      };
+      claimToSave.employeeName = claim.employeeName || demoNames[claim.employeeId] || 'Alice Walker';
     }
 
     // Save to org expenses

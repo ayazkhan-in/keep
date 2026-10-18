@@ -64,17 +64,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { user, logout } = useAuth();
 
-  // Legacy items grouped inside "Manage" dropdown
+  // Auxiliary corporate tools grouped inside "Manage Tools"
   const manageItems: NavItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
     { id: 'invoices', label: 'Invoices', icon: FileSpreadsheet },
     { id: 'create-invoice', label: 'Create Invoice', icon: FilePlus2 },
-    { id: 'warranties', label: 'Warranties', icon: ShieldCheck },
-    { id: 'returns', label: 'Returns', icon: RotateCcw, badge: riskCount > 0 ? `${riskCount}` : undefined },
-    { id: 'vault', label: 'Vault', icon: Vault },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'timeline', label: 'Timeline', icon: Clock },
+    { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
+    { id: 'vault', label: 'Document Vault', icon: Vault },
   ];
 
   const isManageItemActive = manageItems.some((item) => item.id === activeView);

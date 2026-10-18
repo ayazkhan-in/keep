@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import { PromptTemplate } from '@langchain/core/prompts';
-import { GoogleGenAI } from '@google/genai';
 import { PurchaseItem } from '../types';
+import { geminiKeyManager } from '../utils/geminiKeyManager';
 
 /**
  * Creates and returns a Nodemailer SMTP transporter using configuration from environment variables.
@@ -100,44 +100,17 @@ export async function sendWarrantyExpiryAlert(
       warrantyTerms: purchase.warranty?.terms || 'Standard limited manufacturer hardware warranty.',
     });
 
-    if (apiKey) {
+    if (geminiKeyManager.getKeyCount() > 0) {
       try {
-        const ai = new GoogleGenAI({
-          apiKey,
-          httpOptions: {
-            headers: {
-              'User-Agent': 'aistudio-build',
-            },
-          },
+        const res = await geminiKeyManager.generateContent({
+          contents: formattedPrompt,
+          models: ['gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash'],
         });
-
-        const tryModels = [
-          'gemini-3.1-flash-lite',
-          'gemini-2.5-flash',
-          'gemini-2.0-flash',
-        ];
-        let responseText = '';
-
-        for (const m of tryModels) {
-          try {
-            const res = await ai.models.generateContent({
-              model: m,
-              contents: formattedPrompt,
-            });
-            if (res.text) {
-              responseText = res.text;
-              break;
-            }
-          } catch (modelErr: any) {
-            console.warn(`[LangChain Model ${m} busy/unavailable]:`, modelErr.message);
-          }
-        }
-
-        if (responseText) {
-          htmlContent = responseText.replace(/```html/g, '').replace(/```/g, '').trim();
+        if (res?.text) {
+          htmlContent = res.text.replace(/```html/g, '').replace(/```/g, '').trim();
         }
       } catch (genErr: any) {
-        console.warn('[LangChain Prompt Generation Notice]:', genErr.message);
+        console.warn('[LangChain Prompt Generation Notice]:', genErr?.message || genErr);
       }
     }
 

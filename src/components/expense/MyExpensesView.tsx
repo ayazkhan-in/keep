@@ -88,31 +88,31 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
   ).length;
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-5">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight">
-            My Expense Claims
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+            Expense Claims
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-0.5">
-            Logged in as <strong>{activeEmp.identity.name}</strong> ({activeEmp.department} • {activeEmp.grade} • {activeEmp.homeCity})
+          <p className="text-xs text-slate-500 mt-0.5">
+            {activeEmp.identity.name} • {activeEmp.department} • {activeEmp.grade}
           </p>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={handleGoToCaps}
-            className="flex-1 sm:flex-none px-3.5 py-2 bg-white hover:bg-slate-50 text-[#334155] border border-[#CBD5E1] rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-2xs text-center"
+            className="flex-1 sm:flex-none px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 rounded-lg text-xs font-medium transition-colors cursor-pointer shadow-2xs text-center"
           >
-            <span>View My Caps</span>
+            <span>View Limits</span>
           </button>
           <button
             onClick={handleGoToSubmit}
-            className="flex-1 sm:flex-none px-3.5 py-2 bg-[#0F172A] hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
+            className="flex-1 sm:flex-none px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Submit Receipt</span>
+            <span>Submit Claim</span>
           </button>
         </div>
       </div>
@@ -121,51 +121,51 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
       <EmployeePolicyAssistant />
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs">
-          <span className="text-[11px] sm:text-xs text-[#64748B] font-medium block">Total Claims</span>
-          <span className="text-lg sm:text-xl font-bold text-[#0F172A] block mt-1">{expenses.length}</span>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+          <span className="text-[11px] text-slate-500 font-medium block">Total Claims</span>
+          <span className="text-lg font-bold text-slate-900 block mt-1 font-mono-code">{expenses.length}</span>
         </div>
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs">
-          <span className="text-[11px] sm:text-xs text-[#64748B] font-medium block">Total Claimed</span>
-          <span className="text-lg sm:text-xl font-bold text-[#0F172A] block mt-1">₹{totalClaimed.toLocaleString()}</span>
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+          <span className="text-[11px] text-slate-500 font-medium block">Total Claimed</span>
+          <span className="text-lg font-bold text-slate-900 block mt-1 font-mono-code">₹{totalClaimed.toLocaleString()}</span>
         </div>
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-emerald-200 bg-emerald-50/30 shadow-2xs">
-          <span className="text-[11px] sm:text-xs text-emerald-800 font-medium block truncate">Approved Reimb.</span>
-          <span className="text-lg sm:text-xl font-bold text-emerald-700 block mt-1">₹{totalApproved.toLocaleString()}</span>
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+          <span className="text-[11px] text-slate-500 font-medium block truncate">Approved Reimbursed</span>
+          <span className="text-lg font-bold text-emerald-700 block mt-1 font-mono-code">₹{totalApproved.toLocaleString()}</span>
         </div>
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-amber-200 bg-amber-50/30 shadow-2xs">
-          <span className="text-[11px] sm:text-xs text-amber-900 font-medium block">Pending Action</span>
-          <span className="text-lg sm:text-xl font-bold text-amber-800 block mt-1">{pendingCount}</span>
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+          <span className="text-[11px] text-slate-500 font-medium block">Pending Action</span>
+          <span className="text-lg font-bold text-slate-900 block mt-1 font-mono-code">{pendingCount}</span>
         </div>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-[#E2E8F0] shadow-2xs">
+      <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-[#94A3B8] absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search claims by vendor, category, or ID..."
-            className="w-full pl-9 pr-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs focus:outline-hidden focus:border-blue-500"
+            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200/70 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-slate-400 focus:bg-white transition-colors"
           />
         </div>
       </div>
 
       {/* Claims List */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {filtered.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl border border-[#E2E8F0] p-6">
-            <FileText className="w-8 h-8 text-[#94A3B8] mx-auto mb-2" />
-            <h4 className="text-sm font-semibold text-[#0F172A]">No claims found</h4>
-            <p className="text-xs text-[#64748B] mt-1 mb-4">
+          <div className="text-center py-12 bg-white rounded-xl border border-slate-200/80 p-6">
+            <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <h4 className="text-sm font-semibold text-slate-900">No claims found</h4>
+            <p className="text-xs text-slate-500 mt-1 mb-4">
               Upload a receipt or invoice to submit your first corporate reimbursement.
             </p>
             <button
               onClick={handleGoToSubmit}
-              className="px-3.5 py-2 bg-[#0F172A] text-white rounded-xl text-xs font-semibold cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
+              className="px-3.5 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-medium cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Submit First Receipt</span>
@@ -180,28 +180,28 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
             return (
               <div
                 key={exp.id}
-                className={`bg-white rounded-2xl border transition-all shadow-2xs overflow-hidden ${
-                  isSelected ? 'border-[#0F172A] ring-1 ring-[#0F172A]' : 'border-[#E2E8F0] hover:border-slate-300'
+                className={`bg-white rounded-xl border transition-all shadow-2xs overflow-hidden ${
+                  isSelected ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200/80 hover:border-slate-300'
                 }`}
               >
                 <div
-                  className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer"
+                  className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer"
                   onClick={() => setSelectedExpense(isSelected ? null : exp)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center shrink-0">
-                      <FileText className="w-5 h-5 text-[#475569]" />
+                    <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200/60 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-slate-500" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-[#0F172A]">
+                        <span className="text-xs font-semibold text-slate-900">
                           {exp.extracted?.merchant?.value || exp.corrected?.merchant || 'Unknown Merchant'}
                         </span>
-                        <span className="text-[10px] font-mono-code px-2 py-0.5 rounded bg-[#F1F5F9] text-[#64748B]">
+                        <span className="text-[10px] font-mono-code px-1.5 py-0.2 rounded bg-slate-100 text-slate-500">
                           {exp.id}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-[#64748B] mt-0.5">
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
                         <span>{exp.expenseDate}</span>
                         <span>•</span>
                         <span>{exp.extracted?.lineItems?.[0]?.category || 'General'}</span>
@@ -214,11 +214,11 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
                   {/* Right side amounts and status */}
                   <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                     <div className="text-right">
-                      <span className="text-sm font-bold text-[#0F172A] block">
+                      <span className="text-xs sm:text-sm font-bold text-slate-900 font-mono-code block">
                         ₹{claimed.toLocaleString()}
                       </span>
                       {exp.status === 'partially_approved' && (
-                        <span className="text-[11px] font-semibold text-emerald-700 block">
+                        <span className="text-[10px] font-medium text-emerald-700 block font-mono-code">
                           ₹{approved.toLocaleString()} approved
                         </span>
                       )}
@@ -226,11 +226,11 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
 
                     {/* Status Dot & Pill */}
                     <span
-                      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md border capitalize ${
+                      className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-md border capitalize ${
                         exp.status === 'auto_approved' || exp.status === 'approved'
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60'
                           : exp.status === 'partially_approved'
-                          ? 'bg-blue-50 text-blue-700 border-blue-200/60'
+                          ? 'bg-amber-50 text-amber-800 border-amber-200/60'
                           : exp.status === 'needs_info'
                           ? 'bg-amber-50 text-amber-800 border-amber-200/60'
                           : exp.status === 'rejected'
@@ -243,7 +243,7 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
                           exp.status === 'auto_approved' || exp.status === 'approved'
                             ? 'bg-emerald-500'
                             : exp.status === 'partially_approved'
-                            ? 'bg-blue-500'
+                            ? 'bg-amber-500'
                             : exp.status === 'needs_info'
                             ? 'bg-amber-500'
                             : exp.status === 'rejected'
@@ -255,7 +255,7 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
                     </span>
 
                     <ChevronRight
-                      className={`w-4 h-4 text-[#94A3B8] transition-transform ${
+                      className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
                         isSelected ? 'rotate-90' : ''
                       }`}
                     />

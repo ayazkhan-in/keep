@@ -10,7 +10,7 @@ export interface ExpectedLabel {
   notes: string;
 }
 
-export const SYNTHETIC_EXPENSES: Expense[] = [
+const RAW_SYNTHETIC_EXPENSES: Expense[] = [
   // -------------------------------------------------------------------------
   // 1 & 2. Exact Duplicate (Same SHA-256)
   // -------------------------------------------------------------------------
@@ -774,6 +774,25 @@ export const SYNTHETIC_EXPENSES: Expense[] = [
     };
   }),
 ];
+
+const SYNTHETIC_EMPLOYEE_NAME_MAP: Record<string, string> = {
+  emp_101: 'Alice Walker',
+  emp_102: 'Bob Martin',
+  emp_103: 'Carol Danvers',
+  emp_104: 'David Miller',
+  emp_105: 'Elena Rostova',
+  emp_106: 'Frank Castle',
+  pXmBbGDnDwTsrErsGuad8r4Gz4S2: 'Alice Walker',
+  nEqzcEzb0zPDjsvy4tfL8tm2QHl1: 'Alice Walker',
+  '3OcwLiDA6vURaNXWvXXv8ZONgQs2': 'Frank Castle',
+  NaFwF6pXaHfTJJWhOyD4NjHbBLQ2: 'Frank Castle',
+};
+
+export const SYNTHETIC_EXPENSES: Expense[] = RAW_SYNTHETIC_EXPENSES.map((claim) => ({
+  ...claim,
+  employeeName: claim.employeeName || SYNTHETIC_EMPLOYEE_NAME_MAP[claim.employeeId] || 'Alice Walker',
+}));
+
 
 /**
  * Expected ground truth labels for the 60 synthetic claims

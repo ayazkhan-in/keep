@@ -288,6 +288,66 @@ export function getRelatedEmployeeIdentifiers(idOrEmail: string): string[] {
   return [idOrEmail];
 }
 
+/**
+ * Resolves an employee identifier (ID, email, or Employee object) to their actual human name.
+ * Never exposes synthetic IDs like 'emp_105' or random hashes to users or views.
+ */
+export function getEmployeeDisplayName(
+  employeeIdOrEmp: string | Employee | undefined | null,
+  fallback?: string
+): string {
+  if (!employeeIdOrEmp) return fallback || 'Employee';
+  if (typeof employeeIdOrEmp === 'object') {
+    return employeeIdOrEmp.identity?.name || fallback || 'Employee';
+  }
+  const idOrEmail = String(employeeIdOrEmp).trim();
+  if (!idOrEmail) return fallback || 'Employee';
+
+  // Fast direct lookup for known standard demo employees & seeded UIDs
+  const KNOWN_NAMES: Record<string, string> = {
+    emp_101: 'Alice Walker',
+    emp_102: 'Bob Martin',
+    emp_103: 'Carol Danvers',
+    emp_104: 'David Miller',
+    emp_105: 'Elena Rostova',
+    emp_106: 'Frank Castle',
+    pXmBbGDnDwTsrErsGuad8r4Gz4S2: 'Alice Walker',
+    nEqzcEzb0zPDjsvy4tfL8tm2QHl1: 'Alice Walker',
+    '3OcwLiDA6vURaNXWvXXv8ZONgQs2': 'Frank Castle',
+    NaFwF6pXaHfTJJWhOyD4NjHbBLQ2: 'Frank Castle',
+    'employee@keepr.com': 'Alice Walker',
+    'alice.walker@acme.com': 'Alice Walker',
+    'bob.martin@acme.com': 'Bob Martin',
+    'carol.danvers@acme.com': 'Carol Danvers',
+    'david.miller@acme.com': 'David Miller',
+    'elena.rostova@acme.com': 'Elena Rostova',
+    'frank.castle@acme.com': 'Frank Castle',
+    'auditor@keepr.com': 'Frank Castle',
+  };
+
+  const direct = KNOWN_NAMES[idOrEmail] || KNOWN_NAMES[idOrEmail.toLowerCase()];
+  if (direct) return direct;
+
+  const all = getAllEmployeesList();
+  const related = getRelatedEmployeeIdentifiers(idOrEmail);
+  const found = all.find(
+    (e) =>
+      e.id === idOrEmail ||
+      e.identity.email.toLowerCase() === idOrEmail.toLowerCase() ||
+      related.includes(e.id) ||
+      related.includes(e.identity.email.toLowerCase())
+  );
+  if (found && found.identity?.name) return found.identity.name;
+
+  // If the string already contains a space and is not a hash or emp_ id, treat it as a formatted name
+  if (idOrEmail.includes(' ') && !idOrEmail.startsWith('emp_') && !idOrEmail.includes('@')) {
+    return idOrEmail;
+  }
+
+  return fallback || idOrEmail;
+}
+
+
 export function deleteEmployee(employeeId: string): boolean {
   const all = getAllEmployeesList();
   const toDelete = all.find(

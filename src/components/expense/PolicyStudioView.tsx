@@ -474,6 +474,7 @@ export const PolicyStudioView: React.FC = () => {
       id: `exp_sandbox_${Date.now()}`,
       orgId: 'org_acme',
       employeeId: 'emp_101',
+      employeeName: 'Alice Walker',
       status: 'submitted',
       channel: 'upload',
       expenseDate: '2026-10-15',

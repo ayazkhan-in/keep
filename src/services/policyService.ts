@@ -5,6 +5,7 @@ import {
   PolicyGapSuggestion,
   StructuredConflictWarning,
   Expense,
+  CityTier,
 } from '../types/expense';
 import { detectPolicyConflicts } from '../engine/policySchema';
 import { parsePolicyFromText } from '../engine/policyIngestion';
@@ -395,7 +396,7 @@ export function updatePolicyAllowances(updates: PolicyAllowanceUpdates): PolicyV
     cityTiers: {
       ...active.cityTiers,
       ...((updates.cityTiers as any) || {}),
-    },
+    } as Record<string, CityTier>,
     settings: {
       ...active.settings,
       autoApproveRiskThreshold: updates.autoApproveRiskThreshold ?? active.settings.autoApproveRiskThreshold,
