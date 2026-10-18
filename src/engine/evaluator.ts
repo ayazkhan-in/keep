@@ -252,9 +252,21 @@ export function evaluateExpense(options: EvaluatorOptions): Verdict {
   const capRules = policy.rules.filter((r) => r.enabled && r.type === 'cap');
 
   const employeeCityTier =
+    employee.financeProfile?.cityTierOverride ||
     expense.context?.cityTier ||
     (city ? policy.cityTiers[city] : undefined) ||
     'Tier-1';
+
+  // Check if auditor placed a reimbursement hold on this employee
+  if (employee.financeProfile?.reimbursementHold) {
+    flags.push({
+      code: 'EMP_REIMBURSEMENT_HOLD',
+      label: 'Auditor Reimbursement Hold Active',
+      severity: 'high',
+      explanation: 'Auditor has placed a temporary finance hold on reimbursements for this employee.',
+      weight: 35,
+    });
+  }
 
   let minRemainingAllowanceMinor = Infinity;
   let mostRestrictiveCapRule: PolicyRule | null = null;
@@ -280,8 +292,18 @@ export function evaluateExpense(options: EvaluatorOptions): Verdict {
       if (!match) continue;
     }
 
-    // Base cap limit
+    // Base cap limit (honor custom allowances if set by auditor)
     let capLimitMinor = rule.parameters.capAmountMinor ?? 0;
+    if (employee.financeProfile?.customAllowanceEnabled) {
+      if (rule.parameters.capPeriod === 'day' && rule.conditions.category?.includes('meals') && employee.financeProfile.dailyMealAllowanceMinor) {
+        capLimitMinor = employee.financeProfile.dailyMealAllowanceMinor;
+      } else if (rule.parameters.capPeriod === 'per_claim' && rule.conditions.category?.includes('meals') && employee.financeProfile.perClaimMealLimitMinor) {
+        capLimitMinor = employee.financeProfile.perClaimMealLimitMinor;
+      } else if (rule.parameters.perAttendeeMultiplier && employee.financeProfile.clientDiningPerAttendeeMinor) {
+        capLimitMinor = employee.financeProfile.clientDiningPerAttendeeMinor;
+      }
+    }
+
     if (rule.parameters.perAttendeeMultiplier && (expense.context?.attendeeCount || 0) > 1) {
       capLimitMinor *= expense.context!.attendeeCount!;
     }
@@ -520,7 +542,9 @@ export function evaluateExpense(options: EvaluatorOptions): Verdict {
     const isAutoApprovable =
       riskScore <= policy.settings.autoApproveRiskThreshold &&
       overallConfidence >= policy.settings.autoApproveMinConfidence &&
-      !duplicateSuspected;
+      !duplicateSuspected &&
+      employee.financeProfile?.autoApproveEligible !== false &&
+      !employee.financeProfile?.reimbursementHold;
 
     if (isAutoApprovable) {
       decision = 'auto_approve';

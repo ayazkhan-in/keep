@@ -18,6 +18,21 @@ export interface Organization {
   updatedAt: string;
 }
 
+export interface EmployeeFinanceProfile {
+  customAllowanceEnabled?: boolean;
+  dailyMealAllowanceMinor?: number; // integer minor units (e.g. 300000 = ₹3,000)
+  monthlySpendCapMinor?: number; // integer minor units (e.g. 6000000 = ₹60,000)
+  perClaimMealLimitMinor?: number; // integer minor units (e.g. 200000 = ₹2,000)
+  clientDiningPerAttendeeMinor?: number; // integer minor units (e.g. 250000 = ₹2,500)
+  mileageRateMinor?: number; // integer minor units per km (e.g. 1500 = ₹15/km)
+  cityTierOverride?: CityTier;
+  autoApproveEligible?: boolean; // true = eligible for touchless auto-approval, false = manual audit only
+  reimbursementHold?: boolean; // true = payouts temporarily frozen
+  notes?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
 export interface Employee {
   id: string;
   orgId: string;
@@ -31,6 +46,7 @@ export interface Employee {
   homeCity: string;
   managerId?: string;
   avatarUrl?: string;
+  financeProfile?: EmployeeFinanceProfile;
 }
 
 export type ValueSource = 'ocr' | 'computed' | 'user' | 'metadata';

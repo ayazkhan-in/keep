@@ -278,15 +278,17 @@ const STORAGE_KEY_DRAFT_POLICY = 'keepr_draft_policy_v1';
 const STORAGE_KEY_ARCHIVED_POLICIES = 'keepr_archived_policies_v1';
 const STORAGE_KEY_POLICY_AUDIT = 'keepr_policy_audit_log_v1';
 
+let memoryActivePolicy: PolicyVersion | null = null;
+
 function safeGetItem(key: string): string | null {
-  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+  if (typeof localStorage !== 'undefined') {
     return localStorage.getItem(key);
   }
   return null;
 }
 
 function safeSetItem(key: string, value: string): void {
-  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+  if (typeof localStorage !== 'undefined') {
     localStorage.setItem(key, value);
   }
 }
@@ -298,12 +300,113 @@ export function getActivePolicy(): PolicyVersion {
   } catch (err) {
     console.error('Failed reading active policy from storage:', err);
   }
+  if (memoryActivePolicy) return memoryActivePolicy;
   return DEFAULT_ACME_POLICY;
 }
 
 export function saveActivePolicy(policy: PolicyVersion): void {
   policy.conflictWarnings = detectPolicyConflicts(policy);
+  memoryActivePolicy = policy;
   safeSetItem(STORAGE_KEY_ACTIVE_POLICY, JSON.stringify(policy));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('keepr:policy-updated', { detail: policy }));
+  }
+}
+
+export function subscribePolicy(callback: (policy: PolicyVersion) => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+
+  const handler = () => {
+    callback(getActivePolicy());
+  };
+
+  window.addEventListener('keepr:policy-updated', handler);
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY_ACTIVE_POLICY) {
+      handler();
+    }
+  });
+
+  return () => {
+    window.removeEventListener('keepr:policy-updated', handler);
+  };
+}
+
+export interface PolicyAllowanceUpdates {
+  tier1MealCapMinor?: number;
+  tier2MealCapMinor?: number;
+  tier3MealCapMinor?: number;
+  intlMealCapMinor?: number;
+  singleMealCapMinor?: number;
+  clientAttendeeCapMinor?: number;
+  financeThresholdMinor?: number;
+  cfoThresholdMinor?: number;
+  autoApproveRiskThreshold?: number;
+  autoApproveMinConfidence?: number;
+  lateSubmissionWindowDays?: number;
+  cityTiers?: Record<string, string>;
+}
+
+export function updatePolicyAllowances(updates: PolicyAllowanceUpdates): PolicyVersion {
+  const active = getActivePolicy();
+
+  const updatedRules = active.rules.map((rule) => {
+    if (rule.id === 'rule_cap_tier1_daily_meal' && updates.tier1MealCapMinor !== undefined) {
+      return {
+        ...rule,
+        parameters: { ...rule.parameters, capAmountMinor: updates.tier1MealCapMinor },
+      };
+    }
+    if (rule.id === 'rule_cap_tier2_daily_meal' && updates.tier2MealCapMinor !== undefined) {
+      return {
+        ...rule,
+        parameters: { ...rule.parameters, capAmountMinor: updates.tier2MealCapMinor },
+      };
+    }
+    if (rule.id === 'rule_cap_tier3_daily_meal' && updates.tier3MealCapMinor !== undefined) {
+      return {
+        ...rule,
+        parameters: { ...rule.parameters, capAmountMinor: updates.tier3MealCapMinor },
+      };
+    }
+    if (rule.id === 'rule_cap_tx_meal' && updates.singleMealCapMinor !== undefined) {
+      return {
+        ...rule,
+        parameters: { ...rule.parameters, capAmountMinor: updates.singleMealCapMinor },
+      };
+    }
+    if (rule.id === 'rule_cap_client_attendee' && updates.clientAttendeeCapMinor !== undefined) {
+      return {
+        ...rule,
+        parameters: { ...rule.parameters, capAmountMinor: updates.clientAttendeeCapMinor },
+      };
+    }
+    if (rule.id === 'rule_threshold_finance' && updates.financeThresholdMinor !== undefined) {
+      return {
+        ...rule,
+        parameters: { ...rule.parameters, thresholdAmountMinor: updates.financeThresholdMinor },
+      };
+    }
+    return rule;
+  });
+
+  const updatedPolicy: PolicyVersion = {
+    ...active,
+    cityTiers: {
+      ...active.cityTiers,
+      ...(updates.cityTiers || {}),
+    },
+    settings: {
+      ...active.settings,
+      autoApproveRiskThreshold: updates.autoApproveRiskThreshold ?? active.settings.autoApproveRiskThreshold,
+      autoApproveMinConfidence: updates.autoApproveMinConfidence ?? active.settings.autoApproveMinConfidence,
+      lateSubmissionWindowDays: updates.lateSubmissionWindowDays ?? active.settings.lateSubmissionWindowDays,
+    },
+    rules: updatedRules,
+  };
+
+  saveActivePolicy(updatedPolicy);
+  return updatedPolicy;
 }
 
 export function getDraftPolicy(): PolicyVersion {
