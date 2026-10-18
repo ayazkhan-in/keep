@@ -130,7 +130,6 @@ export function subscribeExpenses(
 
       if (merged.length > 0) {
         saveAllExpenses(merged);
-        notifyExpenseSubscribers(merged);
       } else {
         onUpdate(getAllExpenses());
       }
@@ -275,6 +274,8 @@ export function getExpenseById(expenseId: string): Expense | undefined {
   return getAllExpenses().find((e) => e.id === expenseId);
 }
 
+let isReplayingLedger = false;
+
 /**
  * Replays chronological ledger for an organization / employee to ensure all
  * caps and allowances reflect exact order of events.
@@ -283,88 +284,98 @@ export function replayLedger(expenses: Expense[]): {
   ledger: ExpenseLedger;
   reflowCount: number;
 } {
-  const policy = getActivePolicy();
-  const ledger = new ExpenseLedger();
-  let reflowCount = 0;
+  if (isReplayingLedger) {
+    return { ledger: new ExpenseLedger(), reflowCount: 0 };
+  }
+  isReplayingLedger = true;
 
-  // Sort chronologically: expenseDate ASC, submittedAt ASC, id ASC
-  const sorted = [...expenses].sort((a, b) => {
-    if (a.expenseDate !== b.expenseDate) return a.expenseDate.localeCompare(b.expenseDate);
-    if (a.submittedAt !== b.submittedAt) return a.submittedAt.localeCompare(b.submittedAt);
-    return a.id.localeCompare(b.id);
-  });
+  try {
+    const policy = getActivePolicy();
+    const ledger = new ExpenseLedger();
+    let reflowCount = 0;
 
-  for (const exp of sorted) {
-    const employee = getAllEmployeesList().find((emp) => emp.id === exp.employeeId) || {
-      id: exp.employeeId,
-      orgId: exp.orgId,
-      identity: { email: `${exp.employeeId}@acme.com`, name: exp.employeeId },
-      role: 'employee' as const,
-      department: 'Engineering',
-      grade: 'L4',
-      homeCity: 'Bengaluru',
-    };
-
-    // Calculate verdict with updated ledger state
-    const priorVerdict = exp.verdict;
-    const newVerdict = evaluateExpense({
-      expense: exp,
-      policy,
-      employee,
-      ledger,
-      reviewerOverride: exp.reviewerAction?.overrideAmountMinor !== undefined
-        ? {
-            overrideAmountMinor: exp.reviewerAction.overrideAmountMinor,
-            reason: exp.reviewerAction.reason,
-            reviewerId: exp.reviewerAction.reviewerId,
-          }
-        : undefined,
+    // Sort chronologically: expenseDate ASC, submittedAt ASC, id ASC
+    const sorted = [...expenses].sort((a, b) => {
+      if (a.expenseDate !== b.expenseDate) return a.expenseDate.localeCompare(b.expenseDate);
+      if (a.submittedAt !== b.submittedAt) return a.submittedAt.localeCompare(b.submittedAt);
+      return a.id.localeCompare(b.id);
     });
 
-    // Check if materially reflowed
-    if (
-      priorVerdict &&
-      (priorVerdict.approvedAmountMinor !== newVerdict.approvedAmountMinor ||
-        priorVerdict.decision !== newVerdict.decision)
-    ) {
-      reflowCount++;
-      logAuditEvent({
+    for (const exp of sorted) {
+      const employee = getAllEmployeesList().find((emp) => emp.id === exp.employeeId) || {
+        id: exp.employeeId,
         orgId: exp.orgId,
+        identity: { email: `${exp.employeeId}@acme.com`, name: exp.employeeId },
+        role: 'employee' as const,
+        department: 'Engineering',
+        grade: 'L4',
+        homeCity: 'Bengaluru',
+      };
+
+      // Calculate verdict with updated ledger state
+      const priorVerdict = exp.verdict;
+      const newVerdict = evaluateExpense({
+        expense: exp,
+        policy,
+        employee,
+        ledger,
+        reviewerOverride: exp.reviewerAction?.overrideAmountMinor !== undefined
+          ? {
+              overrideAmountMinor: exp.reviewerAction.overrideAmountMinor,
+              reason: exp.reviewerAction.reason,
+              reviewerId: exp.reviewerAction.reviewerId,
+            }
+          : undefined,
+      });
+
+      // Check if materially reflowed
+      if (
+        priorVerdict &&
+        (priorVerdict.approvedAmountMinor !== newVerdict.approvedAmountMinor ||
+          priorVerdict.decision !== newVerdict.decision)
+      ) {
+        reflowCount++;
+        logAuditEvent({
+          orgId: exp.orgId,
+          expenseId: exp.id,
+          actor: { id: 'system', name: 'Deterministic Ledger Engine', role: 'admin' },
+          action: 'LEDGER_REFLOW',
+          entity: 'ledger',
+          details: {
+            priorApprovedMinor: priorVerdict.approvedAmountMinor,
+            newApprovedMinor: newVerdict.approvedAmountMinor,
+            reason: 'Cumulative spend allowance reflowed due to chronological receipt order.',
+          },
+          changeSummary: `Reimbursement updated from ${(priorVerdict.approvedAmountMinor / 100).toFixed(2)} to ${(newVerdict.approvedAmountMinor / 100).toFixed(2)}.`,
+        });
+      }
+
+      exp.verdict = newVerdict;
+      exp.status = newVerdict.status;
+
+      // Record in ledger
+      ledger.record({
         expenseId: exp.id,
-        actor: { id: 'system', name: 'Deterministic Ledger Engine', role: 'admin' },
-        action: 'LEDGER_REFLOW',
-        entity: 'ledger',
-        details: {
-          priorApprovedMinor: priorVerdict.approvedAmountMinor,
-          newApprovedMinor: newVerdict.approvedAmountMinor,
-          reason: 'Cumulative spend allowance reflowed due to chronological receipt order.',
-        },
-        changeSummary: `Reimbursement updated from ${(priorVerdict.approvedAmountMinor / 100).toFixed(2)} to ${(newVerdict.approvedAmountMinor / 100).toFixed(2)}.`,
+        employeeId: exp.employeeId,
+        expenseDate: exp.expenseDate,
+        submittedAt: exp.submittedAt,
+        category: normalizeExpenseCategory(exp.context?.category || exp.extracted?.lineItems?.[0]?.category || 'General'),
+        city: exp.context?.city,
+        tripId: exp.context?.tripId,
+        approvedAmountMinor: newVerdict.approvedAmountMinor,
+        status: newVerdict.status,
+        verdictDecision: newVerdict.decision,
+        isOverride: Boolean(exp.reviewerAction?.overrideAmountMinor !== undefined),
       });
     }
 
-    exp.verdict = newVerdict;
-    exp.status = newVerdict.status;
-
-    // Record in ledger
-    ledger.record({
-      expenseId: exp.id,
-      employeeId: exp.employeeId,
-      expenseDate: exp.expenseDate,
-      submittedAt: exp.submittedAt,
-      category: normalizeExpenseCategory(exp.context?.category || exp.extracted?.lineItems?.[0]?.category || 'General'),
-      city: exp.context?.city,
-      tripId: exp.context?.tripId,
-      approvedAmountMinor: newVerdict.approvedAmountMinor,
-      status: newVerdict.status,
-      verdictDecision: newVerdict.decision,
-      isOverride: Boolean(exp.reviewerAction?.overrideAmountMinor !== undefined),
-    });
+    if (reflowCount > 0) {
+      saveAllExpenses(sorted);
+    }
+    return { ledger, reflowCount };
+  } finally {
+    isReplayingLedger = false;
   }
-
-  saveAllExpenses(sorted);
-  notifyExpenseSubscribers(sorted);
-  return { ledger, reflowCount };
 }
 
 /**

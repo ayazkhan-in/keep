@@ -32,83 +32,109 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    // Failsafe timer: NEVER block the entire application on auth initialization for more than 400ms
+    const failsafeTimer = setTimeout(() => {
+      setLoading(false);
+    }, 400);
+
     const unsubscribe = subscribeToAuthChanges(async (currentUser) => {
+      clearTimeout(failsafeTimer);
       setUser(currentUser);
+
       if (currentUser) {
-        try {
-          // Fetch user profile from Firestore
-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            const role: UserRole =
-              data.role ||
-              (currentUser.email?.includes('auditor') || currentUser.email?.includes('finance')
-                ? 'finance'
-                : 'employee');
-            const name = data.displayName || currentUser.displayName || (role === 'finance' ? 'Frank Castle' : 'Alice Walker');
+        // 1. Immediately provision active profile so the app loads with 0ms UI delay
+        const isFinance =
+          currentUser.email?.includes('auditor') || currentUser.email?.includes('finance');
+        const role: UserRole = isFinance ? 'finance' : 'employee';
+        const name = currentUser.displayName || (isFinance ? 'Frank Castle' : 'Alice Walker');
 
-            setActiveRole(role);
-            setActiveEmployeeProfile({
-              id: currentUser.uid,
-              orgId: data.orgId || 'org_acme',
-              identity: {
+        setActiveRole(role);
+        setActiveEmployeeProfile({
+          id: currentUser.uid,
+          orgId: 'org_acme',
+          identity: {
+            email: currentUser.email || '',
+            name,
+          },
+          role: role,
+          department: isFinance ? 'Finance & Audit' : 'Engineering',
+          grade: isFinance ? 'Finance Officer' : 'L4',
+          homeCity: 'Bengaluru',
+        });
+
+        // Immediately unblock the UI!
+        setLoading(false);
+
+        // 2. Fetch/provision Firestore profile asynchronously in background without blocking
+        (async () => {
+          try {
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Firestore timeout')), 2000)
+            );
+            const userDocPromise = getDoc(doc(db, 'users', currentUser.uid));
+            const userDoc = (await Promise.race([userDocPromise, timeoutPromise])) as any;
+
+            if (userDoc?.exists?.()) {
+              const data = userDoc.data();
+              const remoteRole: UserRole =
+                data.role ||
+                (currentUser.email?.includes('auditor') || currentUser.email?.includes('finance')
+                  ? 'finance'
+                  : 'employee');
+              const remoteName = data.displayName || currentUser.displayName || (remoteRole === 'finance' ? 'Frank Castle' : 'Alice Walker');
+
+              setActiveRole(remoteRole);
+              setActiveEmployeeProfile({
+                id: currentUser.uid,
+                orgId: data.orgId || 'org_acme',
+                identity: {
+                  email: currentUser.email || '',
+                  name: remoteName,
+                },
+                role: remoteRole,
+                department: data.department || (remoteRole === 'finance' ? 'Finance & Audit' : 'Engineering'),
+                grade: data.grade || (remoteRole === 'finance' ? 'Finance Officer' : 'L4'),
+                homeCity: data.homeCity || 'Bengaluru',
+              });
+            } else {
+              // New user registration profile in background
+              const profile = {
+                uid: currentUser.uid,
                 email: currentUser.email || '',
-                name,
-              },
-              role: role,
-              department: data.department || (role === 'finance' ? 'Finance & Audit' : 'Engineering'),
-              grade: data.grade || (role === 'finance' ? 'Finance Officer' : 'L4'),
-              homeCity: data.homeCity || 'Bengaluru',
-            });
-          } else {
-            // New user registered: provision default profile
-            const isFinance =
-              currentUser.email?.includes('auditor') || currentUser.email?.includes('finance');
-            const role: UserRole = isFinance ? 'finance' : 'employee';
-            const name = currentUser.displayName || (isFinance ? 'Frank Castle' : 'Alice Walker');
-            const profile = {
-              uid: currentUser.uid,
-              email: currentUser.email || '',
-              displayName: name,
-              role: role,
-              orgId: 'org_acme',
-              department: isFinance ? 'Finance & Audit' : 'Engineering',
-              grade: isFinance ? 'Finance Officer' : 'L4',
-              homeCity: 'Bengaluru',
-              createdAt: new Date().toISOString(),
-            };
+                displayName: name,
+                role: role,
+                orgId: 'org_acme',
+                department: isFinance ? 'Finance & Audit' : 'Engineering',
+                grade: isFinance ? 'Finance Officer' : 'L4',
+                homeCity: 'Bengaluru',
+                createdAt: new Date().toISOString(),
+              };
 
-            await setDoc(doc(db, 'users', currentUser.uid), profile);
-            await setDoc(doc(db, 'orgs', 'org_acme', 'employees', currentUser.uid), {
-              id: currentUser.uid,
-              orgId: 'org_acme',
-              identity: { email: currentUser.email || '', name },
-              role: role,
-              department: profile.department,
-              grade: profile.grade,
-              homeCity: profile.homeCity,
-            });
-
-            setActiveRole(role);
-            setActiveEmployeeProfile({
-              id: currentUser.uid,
-              orgId: 'org_acme',
-              identity: { email: currentUser.email || '', name },
-              role: role,
-              department: profile.department,
-              grade: profile.grade,
-              homeCity: profile.homeCity,
-            });
+              setDoc(doc(db, 'users', currentUser.uid), profile).catch(() => {});
+              setDoc(doc(db, 'orgs', 'org_acme', 'employees', currentUser.uid), {
+                id: currentUser.uid,
+                orgId: 'org_acme',
+                identity: { email: currentUser.email || '', name },
+                role: role,
+                department: profile.department,
+                grade: profile.grade,
+                homeCity: profile.homeCity,
+              }).catch(() => {});
+            }
+          } catch (e) {
+            // Background sync error - non-critical, user is already active
           }
-        } catch (e) {
-          console.warn('Error syncing auth profile with Firestore:', e);
-        }
+        })();
       } else {
         clearActiveEmployeeProfile();
+        setLoading(false);
       }
-      setLoading(false);
     });
-    return () => unsubscribe();
+
+    return () => {
+      clearTimeout(failsafeTimer);
+      unsubscribe();
+    };
   }, []);
 
   const handleLogout = async () => {

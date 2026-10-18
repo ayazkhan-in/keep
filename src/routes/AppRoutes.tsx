@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { ROUTES, getDefaultPortalRoute } from './routeConfig';
@@ -56,8 +56,15 @@ export const AppRoutes: React.FC = () => {
   const { loading } = useAuth();
   const { currentRole } = useWorkspace();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  if (loading) {
+  // Public marketing & auth pages should load immediately with zero latency
+  const isPublicRoute =
+    location.pathname === '/' ||
+    location.pathname === ROUTES.HOME ||
+    location.pathname === ROUTES.AUTH;
+
+  if (loading && !isPublicRoute) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-[#0F172A] text-white">
         <div className="flex flex-col items-center gap-3">

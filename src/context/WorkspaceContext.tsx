@@ -20,12 +20,6 @@ import {
   updateInvoiceInDb,
   deleteInvoiceFromDb,
 } from '../services/invoiceService';
-import {
-  getAllExpenses,
-  saveAllExpenses,
-  replayLedger,
-  subscribeExpenses,
-} from '../services/expenseService';
 import { getActiveRole, setActiveRole } from '../services/employeeService';
 import { useAuth } from './AuthContext';
 import { getPathToView, VIEW_TO_PATH, ROUTES } from '../routes/routeConfig';
@@ -146,15 +140,6 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       navigate(ROUTES.EMPLOYEE.EXPENSES);
     }
   }, [navigate]);
-
-  // Real-time synchronization of corporate expense claims from database
-  useEffect(() => {
-    const unsubscribeExpenses = subscribeExpenses((allExpenses) => {
-      // Replay ledger on fresh database updates
-      replayLedger(allExpenses);
-    });
-    return () => unsubscribeExpenses();
-  }, []);
 
   // Purchases state & local cache
   const [purchases, setPurchases] = useState<PurchaseItem[]>(() => {
