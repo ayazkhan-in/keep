@@ -709,8 +709,10 @@ keep/
 ### Environment Variables (`.env`)
 
 ```ini
-# Google Gemini API
+# Google Gemini API (Supports single key, fallback keys, or comma-separated pool for automatic failover)
+GEMINI_API_KEYS=key1,key2,key3
 GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY_FALLBACK=your_fallback_gemini_key_here
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
 
 # Firebase Configuration
