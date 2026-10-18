@@ -57,6 +57,13 @@ import {
   createDuplicateRejectionIssue,
   registerReceipt,
 } from '../../utils/receiptDuplicateDetector';
+import {
+  convertReceiptToInr,
+  convertAmountToInr,
+  ConversionMetrics,
+  CURRENT_FX_METRICS,
+  CURRENT_FX_RATES_TO_INR,
+} from '../../utils/currencyConverter';
 
 interface SubmitExpenseViewProps {
   onSuccess: () => void;
@@ -116,6 +123,9 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
   const [total, setTotal] = useState('2400');
   const [tax, setTax] = useState('200');
   const [currency, setCurrency] = useState('INR');
+  const [conversionMetrics, setConversionMetrics] = useState<ConversionMetrics | null>(null);
+  const [originalCurrency, setOriginalCurrency] = useState<string>('INR');
+  const [originalPrice, setOriginalPrice] = useState<number | null>(null);
   const [category, setCategory] = useState('meals');
   const [city, setCity] = useState('Bengaluru');
 
@@ -399,6 +409,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
         },
         normalizedCurrency: normalized,
         context: {
+          category,
           city,
           cityTier: policy.cityTiers[city] || 'Tier-1',
           isTravel,
@@ -473,23 +484,57 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
   // Demo Scenarios Loader
   const loadDemoScenario = (
     type:
+      | 'royal_indiana'
       | 'meal_alcohol'
       | 'client_dining'
       | 'hotel'
       | 'hardware'
       | 'travel_transit'
       | 'office_operational'
+      | 'usd_receipt'
+      | 'eur_receipt'
       | 'blurry_issue'
       | 'duplicate_raw'
       | 'duplicate_anchor'
   ) => {
     setReceiptIssue(null);
+    setConversionMetrics(null);
+    setOriginalCurrency('INR');
+    setOriginalPrice(null);
     if (type === 'blurry_issue' || type === 'duplicate_raw' || type === 'duplicate_anchor') {
       setHasEncounteredError(true);
     } else {
       setHasEncounteredError(false);
     }
-    if (type === 'meal_alcohol') {
+    if (type === 'royal_indiana') {
+      setVendor('Royal Indiana Grand');
+      setDate('2026-10-17');
+      setTotal('4640');
+      setTax('464');
+      setCurrency('INR');
+      setCategory('meals');
+      setCity('Mumbai');
+      setIsTravel(true);
+      setClientName('');
+      setPurpose('Daily Meal lunch in Mumbai (Tier-1 City • ₹3,000 Daily Cap)');
+      setLineItems([
+        { id: '1', description: 'Murgh Tandoori (Full)', quantity: 1, unitPrice: 750, amount: 750, category: 'meals', confidence: 0.98, itemFlags: [] },
+        { id: '2', description: 'Butter Chicken (Large)', quantity: 1, unitPrice: 680, amount: 680, category: 'meals', confidence: 0.98, itemFlags: [] },
+        { id: '3', description: 'Mutton Rogan Josh', quantity: 1, unitPrice: 780, amount: 780, category: 'meals', confidence: 0.98, itemFlags: [] },
+        { id: '4', description: 'Paneer Lababdar', quantity: 1, unitPrice: 490, amount: 490, category: 'meals', confidence: 0.98, itemFlags: [] },
+        { id: '5', description: 'Veg Biryani (Double)', quantity: 1, unitPrice: 450, amount: 450, category: 'meals', confidence: 0.98, itemFlags: [] },
+        { id: '6', description: 'Butter Naan (x5)', quantity: 5, unitPrice: 90, amount: 450, category: 'meals', confidence: 0.98, itemFlags: [] },
+        { id: '7', description: 'Garlic Naan (x2)', quantity: 2, unitPrice: 110, amount: 220, category: 'meals', confidence: 0.98, itemFlags: [] },
+        { id: '8', description: 'Jeera Rice', quantity: 1, unitPrice: 220, amount: 220, category: 'meals', confidence: 0.98, itemFlags: [] },
+        { id: '9', description: 'Mango Lassi (x4)', quantity: 4, unitPrice: 150, amount: 600, category: 'meals', confidence: 0.98, itemFlags: [] },
+      ]);
+      setConfidence({ vendor: 0.99, date: 0.98, total: 0.99, currency: 0.99, category: 0.98 });
+      setInferred({ vendor: false, date: false, total: false, currency: false, category: false, trip: true });
+      setReceiptImage('/abstract.png');
+      setReceiptFileName('royal_indiana_grand_mumbai.jpg');
+      setReceiptSha256('f7412ab4c81045e0d4d8ef8704efc586b4a2a4724b17a02242171018921868499');
+      setReceiptDHash('4c8f2a1b9e0d3f7b');
+    } else if (type === 'meal_alcohol') {
       setVendor('Toit Brewpub Indiranagar');
       setDate('2026-10-22');
       setTotal('2400');
@@ -668,6 +713,125 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       );
       setCurrentStep(1);
       return;
+    } else if (type === 'usd_receipt') {
+      const origAmount = 24.50;
+      const rate = CURRENT_FX_RATES_TO_INR.USD || 95.08;
+      const inrAmount = Number((origAmount * rate).toFixed(2));
+      const origTax = 1.80;
+      const inrTax = Number((origTax * rate).toFixed(2));
+
+      setVendor('Blue Bottle Coffee & Bakery');
+      setDate('2026-10-22');
+      setTotal(String(inrAmount));
+      setTax(String(inrTax));
+      setCurrency('INR');
+      setCategory('meals');
+      setCity('Bengaluru');
+      setIsTravel(false);
+      setClientName('');
+      setPurpose('Team breakfast meeting (USD receipt converted to INR)');
+      setLineItems([
+        {
+          id: '1',
+          description: 'Avocado Toast & Poached Egg ($16.00)',
+          quantity: 1,
+          unitPrice: Number((16.00 * rate).toFixed(2)),
+          amount: Number((16.00 * rate).toFixed(2)),
+          category: 'meals',
+          confidence: 0.98,
+          itemFlags: [],
+        },
+        {
+          id: '2',
+          description: 'Single Origin Pour Over Coffee ($8.50)',
+          quantity: 1,
+          unitPrice: Number((8.50 * rate).toFixed(2)),
+          amount: Number((8.50 * rate).toFixed(2)),
+          category: 'meals',
+          confidence: 0.97,
+          itemFlags: [],
+        },
+      ]);
+      setConfidence({ vendor: 0.98, date: 0.98, total: 0.99, currency: 0.99, category: 0.98 });
+      setInferred({ vendor: false, date: false, total: false, currency: false, category: false, trip: false });
+      setReceiptImage('/abstract.png');
+      setReceiptFileName('blue_bottle_sf_usd.jpg');
+      setReceiptSha256('d1a93e4c81045e0d4d8ef8704efc586b4a2a4724b17a02242171018921868401');
+      setReceiptDHash('5a8b1c2d3e4f5a6b');
+      setOriginalCurrency('USD');
+      setOriginalPrice(origAmount);
+      setConversionMetrics({
+        isConverted: true,
+        originalCurrency: 'USD',
+        targetCurrency: 'INR',
+        rate: 95.08,
+        rateFormatted: '1 USD = ₹95.08 INR',
+        originalPrice: origAmount,
+        convertedPriceInr: inrAmount,
+        originalTax: origTax,
+        convertedTaxInr: inrTax,
+        appliedAt: new Date().toISOString(),
+      });
+    } else if (type === 'eur_receipt') {
+      const origAmount = 85.00;
+      const rate = CURRENT_FX_RATES_TO_INR.EUR || 106.87;
+      const inrAmount = Number((origAmount * rate).toFixed(2));
+      const origTax = 10.00;
+      const inrTax = Number((origTax * rate).toFixed(2));
+
+      setVendor('Le Bistro Parisien');
+      setDate('2026-10-22');
+      setTotal(String(inrAmount));
+      setTax(String(inrTax));
+      setCurrency('INR');
+      setCategory('meals');
+      setCity('Bengaluru');
+      setIsTravel(false);
+      setClientName('Global Partners Europe');
+      setAttendeeCount('2');
+      setPurpose('Client appreciation dinner (EUR receipt converted to INR)');
+      setLineItems([
+        {
+          id: '1',
+          description: 'Dinner Tasting Menu 2 Guests (€60.00)',
+          quantity: 2,
+          unitPrice: Number((30.00 * rate).toFixed(2)),
+          amount: Number((60.00 * rate).toFixed(2)),
+          category: 'meals',
+          confidence: 0.98,
+          itemFlags: [],
+        },
+        {
+          id: '2',
+          description: 'Mineral Water & Espresso (€15.00)',
+          quantity: 2,
+          unitPrice: Number((7.50 * rate).toFixed(2)),
+          amount: Number((15.00 * rate).toFixed(2)),
+          category: 'meals',
+          confidence: 0.97,
+          itemFlags: [],
+        },
+      ]);
+      setConfidence({ vendor: 0.98, date: 0.98, total: 0.99, currency: 0.99, category: 0.98 });
+      setInferred({ vendor: false, date: false, total: false, currency: false, category: false, trip: false });
+      setReceiptImage('/abstract.png');
+      setReceiptFileName('le_bistro_paris_eur.jpg');
+      setReceiptSha256('e2b84c81045e0d4d8ef8704efc586b4a2a4724b17a02242171018921868402');
+      setReceiptDHash('6b7a2c3d4e5f6b7c');
+      setOriginalCurrency('EUR');
+      setOriginalPrice(origAmount);
+      setConversionMetrics({
+        isConverted: true,
+        originalCurrency: 'EUR',
+        targetCurrency: 'INR',
+        rate: 106.87,
+        rateFormatted: '1 EUR = ₹106.87 INR',
+        originalPrice: origAmount,
+        convertedPriceInr: inrAmount,
+        originalTax: origTax,
+        convertedTaxInr: inrTax,
+        appliedAt: new Date().toISOString(),
+      });
     } else if (type === 'blurry_issue') {
       setVendor('Unknown Merchant');
       setDate('2026-10-22');
@@ -773,7 +937,18 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
 
       const data = await res.json();
       if (data && data.extracted) {
-        const ext = data.extracted;
+        // Run convertReceiptToInr for complete calculations in INR
+        const ext = convertReceiptToInr(data.extracted);
+
+        if (ext.conversionMetrics && ext.conversionMetrics.isConverted) {
+          setConversionMetrics(ext.conversionMetrics);
+          setOriginalCurrency(ext.conversionMetrics.originalCurrency);
+          setOriginalPrice(ext.conversionMetrics.originalPrice);
+        } else {
+          setConversionMetrics(null);
+          setOriginalCurrency('INR');
+          setOriginalPrice(null);
+        }
 
         // Check if server rejected as duplicate
         if (data.duplicate || ext.isDuplicate) {
@@ -831,9 +1006,23 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
         if (ext.purchaseDate) setDate(ext.purchaseDate);
         if (ext.price) {
           setTotal(String(ext.price));
-          setTax(ext.tax ? String(ext.tax) : String(Math.round(ext.price * 0.08)));
+          setTax(ext.tax !== undefined ? String(ext.tax) : String(Math.round(ext.price * 0.08)));
         }
-        if (ext.currency) setCurrency(ext.currency);
+        setCurrency('INR');
+
+        // City & Travel auto-detection
+        if (ext.city) {
+          setCity(ext.city);
+          if (ext.city.toLowerCase() !== activeEmp.homeCity.toLowerCase()) {
+            setIsTravel(true);
+          }
+        } else if (ext.address && ext.address.toLowerCase().includes('mumbai')) {
+          setCity('Mumbai');
+          setIsTravel(true);
+        } else if (ext.vendor && ext.vendor.toLowerCase().includes('royal indiana')) {
+          setCity('Mumbai');
+          setIsTravel(true);
+        }
 
         // Versatile category handling
         if (ext.category) {
@@ -945,7 +1134,18 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
 
       const data = await res.json();
       if (data && data.extracted) {
-        const ext = data.extracted;
+        const ext = convertReceiptToInr(data.extracted);
+
+        if (ext.conversionMetrics && ext.conversionMetrics.isConverted) {
+          setConversionMetrics(ext.conversionMetrics);
+          setOriginalCurrency(ext.conversionMetrics.originalCurrency);
+          setOriginalPrice(ext.conversionMetrics.originalPrice);
+        } else {
+          setConversionMetrics(null);
+          setOriginalCurrency('INR');
+          setOriginalPrice(null);
+        }
+
         if (ext.primaryIssue) {
           setHasEncounteredError(true);
           setReceiptIssue(ext.primaryIssue);
@@ -958,7 +1158,16 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
         if (ext.vendor) setVendor(ext.vendor);
         if (ext.purchaseDate) setDate(ext.purchaseDate);
         if (ext.price) setTotal(String(ext.price));
-        if (ext.currency) setCurrency(ext.currency);
+        setCurrency('INR');
+        if (ext.city) {
+          setCity(ext.city);
+          if (ext.city.toLowerCase() !== activeEmp.homeCity.toLowerCase()) {
+            setIsTravel(true);
+          }
+        } else if (ext.vendor && ext.vendor.toLowerCase().includes('royal indiana')) {
+          setCity('Mumbai');
+          setIsTravel(true);
+        }
         if (ext.category) {
           const catLower = ext.category.toLowerCase();
           if (catLower.includes('meal') || catLower.includes('entertainment') || catLower.includes('food')) {
@@ -1047,6 +1256,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
         },
         normalizedCurrency: normalized,
         context: {
+          category,
           city,
           cityTier: policy.cityTiers[city] || 'Tier-1',
           isTravel,
@@ -1200,7 +1410,9 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
   const isMathMismatched = Math.abs(lineItemsSum - totalNum) > 1;
 
   const excludedItems = (dryRunVerdict?.ruleImpacts || []).filter((r) => r.impactType === 'exclusion');
-  const excludedAmountTotal = excludedItems.reduce((acc, curr) => acc + curr.impactAmountMinor, 0) / 100;
+  const excludedAmountTotal = dryRunVerdict?.excludedAmountMinor !== undefined
+    ? dryRunVerdict.excludedAmountMinor / 100
+    : excludedItems.reduce((acc, curr) => acc + curr.impactAmountMinor, 0) / 100;
   const approvedReimbursement = dryRunVerdict ? dryRunVerdict.approvedAmountMinor / 100 : 0;
   const isAutoApproved = dryRunVerdict?.decision === 'auto_approve';
   const isPartial = dryRunVerdict?.decision === 'partial';
@@ -1386,6 +1598,13 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
+                  onClick={() => loadDemoScenario('royal_indiana')}
+                  className="px-3 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg text-xs font-semibold text-amber-900 transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+                >
+                  <span>🍛 Royal Indiana Grand (₹4,640 Meal • ₹3,000 Cap)</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => loadDemoScenario('meal_alcohol')}
                   className="px-3 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors cursor-pointer"
                 >
@@ -1429,6 +1648,20 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                 </button>
                 <button
                   type="button"
+                  onClick={() => loadDemoScenario('usd_receipt')}
+                  className="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-medium text-emerald-800 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <span>💵 USD Receipt ($24.50 → ₹2,329.46)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadDemoScenario('eur_receipt')}
+                  className="px-3 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-medium text-blue-800 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <span>💶 EUR Receipt (€85.00 → ₹9,083.95)</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => loadDemoScenario('duplicate_raw' as any)}
                   className="px-3 py-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-purple-700 transition-colors cursor-pointer flex items-center gap-1"
                 >
@@ -1466,6 +1699,39 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-5">
+            {/* Auto-Converted Currency Metric Card */}
+            {conversionMetrics && conversionMetrics.isConverted && (
+              <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50/50 to-emerald-50 border border-emerald-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600/10 border border-emerald-600/20 flex items-center justify-center text-emerald-700 font-bold text-lg shrink-0">
+                    ₹
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-emerald-950 uppercase tracking-wide">
+                        Converted to INR
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100/90 text-emerald-800 font-mono-code font-bold text-[11px] border border-emerald-300/60">
+                        {conversionMetrics.rateFormatted}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono-code text-[10px]">
+                        Original: {conversionMetrics.originalCurrency} {conversionMetrics.originalCurrency === 'USD' ? '$' : conversionMetrics.originalCurrency === 'EUR' ? '€' : ''}{conversionMetrics.originalPrice.toFixed(2)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-800/90 mt-1">
+                      Receipt currency detected as <strong className="font-semibold text-emerald-950">{conversionMetrics.originalCurrency}</strong>. Converted into INR for all calculation checks, policy limits, tax accounting, and ledger booking.
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right sm:border-l sm:border-emerald-200/80 sm:pl-4 shrink-0 w-full sm:w-auto">
+                  <span className="text-[10px] text-emerald-700/80 uppercase font-mono-code block">Active INR Total</span>
+                  <span className="text-base font-bold font-mono-code text-emerald-950">
+                    ₹{conversionMetrics.convertedPriceInr.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Primary Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -1493,7 +1759,14 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1.5">Total Amount</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1.5">
+                  Total Amount (INR)
+                  {conversionMetrics?.isConverted && (
+                    <span className="ml-2 font-normal text-emerald-700 font-mono-code text-[11px]">
+                      (Original: {conversionMetrics.originalCurrency} {conversionMetrics.originalPrice.toFixed(2)})
+                    </span>
+                  )}
+                </label>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -1503,7 +1776,27 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                   />
                   <select
                     value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
+                    onChange={(e) => {
+                      const newCurr = e.target.value;
+                      setCurrency(newCurr);
+                      if (newCurr !== 'INR') {
+                        const rate = CURRENT_FX_RATES_TO_INR[newCurr] || 1.0;
+                        const origVal = parseFloat(total) || 0;
+                        const inrVal = Number((origVal * rate).toFixed(2));
+                        setConversionMetrics({
+                          isConverted: true,
+                          originalCurrency: newCurr,
+                          targetCurrency: 'INR',
+                          rate,
+                          rateFormatted: CURRENT_FX_METRICS[newCurr]?.rateLabel || `1 ${newCurr} = ₹${rate} INR`,
+                          originalPrice: origVal,
+                          convertedPriceInr: inrVal,
+                          appliedAt: new Date().toISOString(),
+                        });
+                      } else {
+                        setConversionMetrics(null);
+                      }
+                    }}
                     className="w-24 text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 font-mono-code font-semibold"
                   >
                     <option value="INR">INR (₹)</option>
@@ -1827,14 +2120,14 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                   {isInReview && <Clock className="w-4 h-4 text-slate-600" />}
 
                   {isAutoApproved && 'Touchless Auto-Approved'}
-                  {isPartial && 'Partially Approved'}
+                  {isPartial && 'Partially Approved (Capped to Policy Limit)'}
                   {isNeedsInfo && 'Action Required: Needs Info'}
                   {isInReview && 'Finance Review Required'}
                 </span>
               </div>
 
               <div className="text-right">
-                <span className="text-xs text-slate-500 block mb-0.5">Approved Amount</span>
+                <span className="text-xs text-slate-500 block mb-0.5">Disbursed Reimbursement</span>
                 <span className="text-lg font-bold font-mono-code text-emerald-600">
                   ₹{approvedReimbursement.toFixed(2)}
                 </span>
@@ -1850,17 +2143,22 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
 
               {excludedAmountTotal > 0 && (
                 <div className="flex justify-between text-rose-600 font-medium">
-                  <span>Excluded Non-Reimbursable:</span>
-                  <span className="font-mono-code">- ₹{excludedAmountTotal.toFixed(2)}</span>
+                  <span>Excluded Excess / Non-Reimbursable:</span>
+                  <span className="font-mono-code font-semibold">- ₹{excludedAmountTotal.toFixed(2)}</span>
                 </div>
               )}
 
+              <div className="flex justify-between text-emerald-700 font-semibold pt-1 border-t border-slate-100">
+                <span>Payable / Disbursed Amount (Up to Cap):</span>
+                <span className="font-mono-code font-bold">₹{approvedReimbursement.toFixed(2)}</span>
+              </div>
+
               {excludedItems.length > 0 && (
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                  <span className="text-[11px] font-semibold text-slate-700 block">Exclusion Details:</span>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 mt-2">
+                  <span className="text-[11px] font-semibold text-slate-700 block">Exclusion Details & Cap Deductions:</span>
                   {excludedItems.map((rule, idx) => (
                     <p key={idx} className="text-[11px] text-slate-600">
-                      • {rule.title}: ₹{(rule.impactAmountMinor / 100).toFixed(2)} ({rule.explanation})
+                      • <strong className="text-slate-800">{rule.title}:</strong> ₹{(rule.impactAmountMinor / 100).toFixed(2)} ({rule.explanation})
                     </p>
                   ))}
                 </div>
@@ -1930,7 +2228,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
             </span>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               {finalVerdict.decision === 'auto_approve' && 'Claim Auto-Approved!'}
-              {finalVerdict.decision === 'partial' && 'Claim Partially Approved'}
+              {finalVerdict.decision === 'partial' && 'Claim Partially Approved (Capped to Policy Limit)'}
               {finalVerdict.decision === 'needs_info' && 'Action Required: Needs Info'}
               {finalVerdict.decision === 'review' && 'Submitted for Review'}
             </h1>
@@ -1940,11 +2238,27 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
           </div>
 
           {/* Amount Box */}
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center text-xs">
-            <span className="text-slate-600">Reimbursement Approved:</span>
-            <span className="font-mono-code font-bold text-sm text-emerald-600">
-              ₹{(finalVerdict.approvedAmountMinor / 100).toFixed(2)} INR
-            </span>
+          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs text-left">
+            <div className="flex justify-between items-center text-slate-600">
+              <span>Total Claimed:</span>
+              <span className="font-mono-code font-semibold text-slate-800">
+                ₹{(finalVerdict.totalAmountMinor / 100).toFixed(2)} INR
+              </span>
+            </div>
+            {finalVerdict.excludedAmountMinor && finalVerdict.excludedAmountMinor > 0 ? (
+              <div className="flex justify-between items-center text-rose-600 font-medium">
+                <span>Excluded Excess (Above Policy Cap):</span>
+                <span className="font-mono-code font-bold">
+                  - ₹{(finalVerdict.excludedAmountMinor / 100).toFixed(2)} INR
+                </span>
+              </div>
+            ) : null}
+            <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+              <span className="font-bold text-slate-900">Disbursed Reimbursement (Up to Cap):</span>
+              <span className="font-mono-code font-bold text-base text-emerald-600">
+                ₹{(finalVerdict.approvedAmountMinor / 100).toFixed(2)} INR
+              </span>
+            </div>
           </div>
 
           {/* Interactive Fix-it reply thread if Needs Info */}

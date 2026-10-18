@@ -1,4 +1,4 @@
-import { Employee, UserRole } from '../types/expense';
+import { Employee, UserRole, EmployeeFinanceProfile } from '../types/expense';
 
 export const DEMO_EMPLOYEES: Employee[] = [
   {
@@ -376,8 +376,8 @@ export function updateEmployee(employeeId: string, updates: Partial<Employee>): 
     ...existingOverride,
     ...updates,
     identity: {
-      ...(existingOverride.identity || {}),
-      ...(updates.identity || {}),
+      name: updates.identity?.name || existingOverride.identity?.name || '',
+      email: updates.identity?.email || existingOverride.identity?.email || '',
     },
     financeProfile: {
       ...(existingOverride.financeProfile || {}),

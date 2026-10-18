@@ -85,6 +85,7 @@ export type CityTier = 'Tier-1' | 'Tier-2' | 'Tier-3' | 'International';
 
 export interface ExpenseContext {
   tripId?: string;
+  category?: string;
   city?: string;
   cityTier?: CityTier;
   isTravel?: boolean;
@@ -139,6 +140,8 @@ export interface Verdict {
   totalAmountMinor: number;
   eligibleAmountMinor: number;
   approvedAmountMinor: number;
+  disbursedAmountMinor?: number; // integer minor units disbursed up to policy cap
+  excludedAmountMinor?: number; // integer minor units excluded from reimbursement
   rejectedAmountMinor: number;
   pendingAmountMinor: number;
   ruleImpacts: RuleCitation[];

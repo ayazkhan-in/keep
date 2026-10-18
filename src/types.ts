@@ -163,6 +163,9 @@ export interface PurchaseItem {
   taxDeductible?: boolean;
   rawImageHash?: string;
   anchorJsonHash?: string;
+  originalPrice?: number;
+  originalCurrency?: string;
+  conversionMetrics?: any;
 }
 
 export interface AIActionItem {

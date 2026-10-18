@@ -414,5 +414,194 @@ describe('Receipt Scanner Versatility & Quality Issues Suite', () => {
       expect(serverReceiptRegistry.anchorJsonHashes.size).toBe(0);
     });
   });
+
+  describe('Currency Reading & INR Conversion Suite', () => {
+    it('uses current FX conversion metrics (1 USD = 95.08 INR, 1 EUR = 106.87 INR)', async () => {
+      const { CURRENT_FX_RATES_TO_INR, CURRENT_FX_METRICS } = await import('../src/utils/currencyConverter');
+
+      expect(CURRENT_FX_RATES_TO_INR.USD).toBe(95.08);
+      expect(CURRENT_FX_RATES_TO_INR.EUR).toBe(106.87);
+      expect(CURRENT_FX_RATES_TO_INR.INR).toBe(1.0);
+
+      expect(CURRENT_FX_METRICS.USD.rateToInr).toBe(95.08);
+      expect(CURRENT_FX_METRICS.USD.rateLabel).toBe('1 USD = ₹95.08 INR');
+
+      expect(CURRENT_FX_METRICS.EUR.rateToInr).toBe(106.87);
+      expect(CURRENT_FX_METRICS.EUR.rateLabel).toBe('1 EUR = ₹106.87 INR');
+    });
+
+    it('correctly normalizes currency symbols and text codes', async () => {
+      const { normalizeCurrencyCode } = await import('../src/utils/currencyConverter');
+
+      expect(normalizeCurrencyCode('$')).toBe('USD');
+      expect(normalizeCurrencyCode('usd')).toBe('USD');
+      expect(normalizeCurrencyCode('Dollar')).toBe('USD');
+
+      expect(normalizeCurrencyCode('€')).toBe('EUR');
+      expect(normalizeCurrencyCode('eur')).toBe('EUR');
+      expect(normalizeCurrencyCode('Euro')).toBe('EUR');
+
+      expect(normalizeCurrencyCode('₹')).toBe('INR');
+      expect(normalizeCurrencyCode('inr')).toBe('INR');
+      expect(normalizeCurrencyCode('Rs')).toBe('INR');
+      expect(normalizeCurrencyCode('Rupees')).toBe('INR');
+    });
+
+    it('reads a Dollar (USD) receipt and converts all calculations into INR at 95.08', async () => {
+      const { convertReceiptToInr } = await import('../src/utils/currencyConverter');
+
+      const rawDollarReceipt = {
+        name: 'Blue Bottle Coffee & Bakery',
+        vendor: 'Blue Bottle Coffee',
+        currency: 'USD',
+        price: 24.50,
+        subtotal: 20.00,
+        tax: 1.80,
+        tip: 2.70,
+        purchaseDate: '2026-10-18',
+        lineItems: [
+          { name: 'Avocado Toast & Poached Egg', quantity: 1, unitPrice: 16.00, amount: 16.00 },
+          { name: 'Single Origin Pour Over Coffee', quantity: 2, unitPrice: 4.25, amount: 8.50 },
+        ],
+      };
+
+      const converted: any = convertReceiptToInr(rawDollarReceipt);
+
+      // Calculations are in INR
+      expect(converted.currency).toBe('INR');
+      // 24.50 * 95.08 = 2329.46
+      expect(converted.price).toBe(2329.46);
+      expect(converted.total).toBe(2329.46);
+      // Tax: 1.80 * 95.08 = 171.14
+      expect(converted.tax).toBe(171.14);
+      // Tip: 2.70 * 95.08 = 256.72
+      expect(converted.tip).toBe(256.72);
+
+      // Line items are converted to INR
+      expect(converted.lineItems[0].amount).toBe(1521.28); // 16 * 95.08
+      expect(converted.lineItems[0].originalAmount).toBe(16.00);
+      expect(converted.lineItems[1].amount).toBe(808.18); // 8.50 * 95.08
+      expect(converted.lineItems[1].originalAmount).toBe(8.50);
+
+      // Original currency and price are preserved
+      expect(converted.originalCurrency).toBe('USD');
+      expect(converted.originalPrice).toBe(24.50);
+
+      // Conversion metrics metadata is attached
+      expect(converted.conversionMetrics.isConverted).toBe(true);
+      expect(converted.conversionMetrics.originalCurrency).toBe('USD');
+      expect(converted.conversionMetrics.targetCurrency).toBe('INR');
+      expect(converted.conversionMetrics.rate).toBe(95.08);
+      expect(converted.conversionMetrics.rateFormatted).toBe('1 USD = ₹95.08 INR');
+      expect(converted.conversionMetrics.convertedPriceInr).toBe(2329.46);
+    });
+
+    it('reads a Euro (EUR) receipt and converts all calculations into INR at 106.87', async () => {
+      const { convertReceiptToInr } = await import('../src/utils/currencyConverter');
+
+      const rawEuroReceipt = {
+        name: 'Le Bistro Parisien',
+        vendor: 'Le Bistro Parisien',
+        currency: 'EUR',
+        price: 85.00,
+        subtotal: 75.00,
+        tax: 10.00,
+        tip: 0,
+        purchaseDate: '2026-10-18',
+        lineItems: [
+          { name: 'Dinner Tasting Menu (2 Guests)', quantity: 2, unitPrice: 30.00, amount: 60.00 },
+          { name: 'Mineral Water & Espresso', quantity: 2, unitPrice: 7.50, amount: 15.00 },
+        ],
+      };
+
+      const converted: any = convertReceiptToInr(rawEuroReceipt);
+
+      // Calculations are in INR
+      expect(converted.currency).toBe('INR');
+      // 85.00 * 106.87 = 9083.95
+      expect(converted.price).toBe(9083.95);
+      expect(converted.total).toBe(9083.95);
+      // Tax: 10.00 * 106.87 = 1068.70
+      expect(converted.tax).toBe(1068.70);
+
+      // Line items are converted to INR
+      expect(converted.lineItems[0].amount).toBe(6412.20); // 60 * 106.87
+      expect(converted.lineItems[0].originalAmount).toBe(60.00);
+      expect(converted.lineItems[1].amount).toBe(1603.05); // 15 * 106.87
+      expect(converted.lineItems[1].originalAmount).toBe(15.00);
+
+      // Original currency and price are preserved
+      expect(converted.originalCurrency).toBe('EUR');
+      expect(converted.originalPrice).toBe(85.00);
+
+      // Conversion metrics metadata is attached
+      expect(converted.conversionMetrics.isConverted).toBe(true);
+      expect(converted.conversionMetrics.originalCurrency).toBe('EUR');
+      expect(converted.conversionMetrics.targetCurrency).toBe('INR');
+      expect(converted.conversionMetrics.rate).toBe(106.87);
+      expect(converted.conversionMetrics.rateFormatted).toBe('1 EUR = ₹106.87 INR');
+      expect(converted.conversionMetrics.convertedPriceInr).toBe(9083.95);
+    });
+
+    it('passes arithmetic integrity check with converted INR values', async () => {
+      const { convertReceiptToInr } = await import('../src/utils/currencyConverter');
+      const { verifyReceiptIntegrity } = await import('../src/engine');
+
+      const rawReceipt = {
+        name: 'Tech Conference Supplies',
+        vendor: 'Amazon US',
+        currency: 'USD',
+        price: 100.00,
+        tax: 0,
+        lineItems: [
+          { description: 'HDMI Cables', quantity: 2, unitPrice: 25.00, amount: 50.00 },
+          { description: 'USB-C Adapters', quantity: 2, unitPrice: 25.00, amount: 50.00 },
+        ],
+      };
+
+      const converted = convertReceiptToInr(rawReceipt);
+      expect(converted.price).toBe(9508.00); // 100 * 95.08
+
+      const integrity = verifyReceiptIntegrity({
+        printedTotal: converted.price,
+        tax: converted.tax || 0,
+        lineItems: converted.lineItems.map((li: any, idx: number) => ({
+          id: String(idx + 1),
+          description: li.description,
+          quantity: li.quantity,
+          unitPrice: li.unitPrice,
+          amount: li.amount,
+          category: 'supplies',
+          confidence: 0.95,
+          itemFlags: [],
+        })),
+        expenseDate: '2026-10-18',
+      });
+
+      expect(integrity.signals.mathMismatch).toBe(false);
+      expect(integrity.difference).toBe(0);
+      expect(integrity.signals.unitemizedBalance).toBe(0);
+    });
+
+    it('leaves INR receipts unchanged with 1:1 conversion metrics', async () => {
+      const { convertReceiptToInr } = await import('../src/utils/currencyConverter');
+
+      const inrReceipt = {
+        name: 'Toit Brewpub Indiranagar',
+        currency: 'INR',
+        price: 2400.00,
+        tax: 200.00,
+        lineItems: [
+          { name: 'Pizza', quantity: 1, unitPrice: 1400.00, amount: 1400.00 },
+        ],
+      };
+
+      const converted = convertReceiptToInr(inrReceipt);
+      expect(converted.currency).toBe('INR');
+      expect(converted.price).toBe(2400.00);
+      expect(converted.conversionMetrics.isConverted).toBe(false);
+      expect(converted.conversionMetrics.rate).toBe(1.0);
+    });
+  });
 });
 

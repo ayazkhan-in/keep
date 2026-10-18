@@ -12,6 +12,7 @@ import {
   calculateAnomalyRisk,
   normalizeCurrency,
   verifyReceiptIntegrity,
+  normalizeExpenseCategory,
 } from '../engine';
 import { getActivePolicy } from './policyService';
 import { DEMO_EMPLOYEES, getAllEmployeesList } from './employeeService';
@@ -234,7 +235,7 @@ export function replayLedger(expenses: Expense[]): {
       employeeId: exp.employeeId,
       expenseDate: exp.expenseDate,
       submittedAt: exp.submittedAt,
-      category: exp.extracted?.lineItems?.[0]?.category || 'General',
+      category: normalizeExpenseCategory(exp.context?.category || exp.extracted?.lineItems?.[0]?.category || 'General'),
       city: exp.context?.city,
       tripId: exp.context?.tripId,
       approvedAmountMinor: newVerdict.approvedAmountMinor,
@@ -309,7 +310,7 @@ export function submitExpense(newExpense: Expense): {
         employeeId: exp.employeeId,
         expenseDate: exp.expenseDate,
         submittedAt: exp.submittedAt,
-        category: exp.extracted?.lineItems?.[0]?.category || 'General',
+        category: normalizeExpenseCategory(exp.context?.category || exp.extracted?.lineItems?.[0]?.category || 'General'),
         city: exp.context?.city,
         tripId: exp.context?.tripId,
         approvedAmountMinor: exp.verdict!.approvedAmountMinor,
@@ -396,18 +397,37 @@ export function applyReviewerDecision(params: {
     reason: params.reason,
   };
 
+  const totalClaimedMinor = expense.normalizedCurrency?.targetAmountMinor || 0;
+
   if (params.action === 'override' && params.overrideAmountMinor !== undefined) {
-    expense.status = 'approved';
+    const isOverrideCapped = params.overrideAmountMinor < totalClaimedMinor;
+    expense.status = isOverrideCapped ? 'partially_approved' : 'approved';
     if (expense.verdict) {
       expense.verdict.approvedAmountMinor = params.overrideAmountMinor;
-      expense.verdict.decision = 'approve';
-      expense.verdict.status = 'approved';
+      expense.verdict.disbursedAmountMinor = params.overrideAmountMinor;
+      expense.verdict.excludedAmountMinor = Math.max(0, totalClaimedMinor - params.overrideAmountMinor);
+      expense.verdict.decision = isOverrideCapped ? 'partial' : 'approve';
+      expense.verdict.status = isOverrideCapped ? 'partially_approved' : 'approved';
     }
   } else if (params.action === 'approve') {
-    expense.status = 'approved';
+    // When approving, if the claim was capped or partially approved, approve for disbursement UP TO CAP
+    const isCapped = Boolean(
+      expense.verdict &&
+      (expense.verdict.approvedAmountMinor < totalClaimedMinor ||
+       (expense.verdict.excludedAmountMinor && expense.verdict.excludedAmountMinor > 0) ||
+       expense.verdict.decision === 'partial' ||
+       expense.verdict.status === 'partially_approved')
+    );
+    expense.status = isCapped ? 'partially_approved' : 'approved';
     if (expense.verdict) {
-      expense.verdict.decision = 'approve';
-      expense.verdict.status = 'approved';
+      expense.verdict.decision = isCapped ? 'partial' : 'approve';
+      expense.verdict.status = isCapped ? 'partially_approved' : 'approved';
+      if (expense.verdict.disbursedAmountMinor === undefined) {
+        expense.verdict.disbursedAmountMinor = expense.verdict.approvedAmountMinor;
+      }
+      if (expense.verdict.excludedAmountMinor === undefined) {
+        expense.verdict.excludedAmountMinor = Math.max(0, totalClaimedMinor - expense.verdict.approvedAmountMinor);
+      }
     }
   } else if (params.action === 'reject') {
     expense.status = 'rejected';

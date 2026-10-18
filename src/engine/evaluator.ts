@@ -1,4 +1,5 @@
 import {
+  CityTier,
   ClaimDecision,
   ClaimStatus,
   Employee,
@@ -10,6 +11,98 @@ import {
   Verdict,
 } from '../types/expense';
 import { ExpenseLedger } from './ledger';
+
+/**
+ * Normalizes user, OCR, or contextual categories into standard policy engine categories:
+ * - 'meals': food, dining, restaurant, lunch, dinner, breakfast, cafe, bistro, drinks, beverages, etc.
+ * - 'client entertainment': client dining, client entertainment, client dinner, etc.
+ * - 'travel': flights, airlines, airfare, hotels, lodging, rideshare, taxi, uber, train, transit, etc.
+ * - 'supplies': office, operational, equipment, hardware, supplies, coworking, etc.
+ * - 'software': subscriptions, saas, licenses, dev tools, cloud, etc.
+ */
+export function normalizeExpenseCategory(cat?: string): string {
+  if (!cat) return 'general';
+  const lower = cat.trim().toLowerCase();
+  // Check client entertainment first to avoid 'meals' capturing 'client meal'
+  if (lower.includes('client') || lower.includes('entertainment')) {
+    return 'client entertainment';
+  }
+  if (
+    lower.includes('meal') ||
+    lower.includes('food') ||
+    lower.includes('dining') ||
+    lower.includes('restaurant') ||
+    lower.includes('lunch') ||
+    lower.includes('dinner') ||
+    lower.includes('breakfast') ||
+    lower.includes('beverage') ||
+    lower.includes('cafe') ||
+    lower.includes('bistro') ||
+    lower.includes('bar') ||
+    lower.includes('catering') ||
+    lower.includes('snack') ||
+    lower.includes('bakery') ||
+    lower.includes('coffee')
+  ) {
+    return 'meals';
+  }
+  if (
+    lower.includes('travel') ||
+    lower.includes('transit') ||
+    lower.includes('flight') ||
+    lower.includes('airfare') ||
+    lower.includes('airline') ||
+    lower.includes('hotel') ||
+    lower.includes('lodging') ||
+    lower.includes('stay') ||
+    lower.includes('rideshare') ||
+    lower.includes('taxi') ||
+    lower.includes('uber') ||
+    lower.includes('lyft') ||
+    lower.includes('train') ||
+    lower.includes('rail') ||
+    lower.includes('car rental') ||
+    lower.includes('toll') ||
+    lower.includes('parking')
+  ) {
+    return 'travel';
+  }
+  if (
+    lower.includes('supplies') ||
+    lower.includes('office') ||
+    lower.includes('operational') ||
+    lower.includes('hardware') ||
+    lower.includes('equipment') ||
+    lower.includes('coworking') ||
+    lower.includes('wework')
+  ) {
+    return 'supplies';
+  }
+  if (
+    lower.includes('software') ||
+    lower.includes('saas') ||
+    lower.includes('subscription') ||
+    lower.includes('license')
+  ) {
+    return 'software';
+  }
+  return lower;
+}
+
+export function lookupCityTier(
+  city: string | undefined,
+  cityTiers: Record<string, CityTier>
+): CityTier | undefined {
+  if (!city) return undefined;
+  const clean = city.trim().toLowerCase();
+  for (const [tierCity, tier] of Object.entries(cityTiers)) {
+    const tcLower = tierCity.toLowerCase();
+    if (clean === tcLower || clean.includes(tcLower) || tcLower.includes(clean)) {
+      return tier;
+    }
+  }
+  return undefined;
+}
 
 export interface EvaluatorOptions {
   expense: Expense;
@@ -183,11 +276,12 @@ export function evaluateExpense(options: EvaluatorOptions): Verdict {
     }
   }
 
-  const expenseCategory = (
+  const rawCategory =
+    expense.context?.category ||
     expense.extracted?.lineItems?.[0]?.category ||
     lineItems[0]?.category ||
-    'General'
-  ).toLowerCase();
+    'General';
+  const expenseCategory = normalizeExpenseCategory(rawCategory);
 
   // -------------------------------------------------------------
   // 4. Missing Requirements check
@@ -199,9 +293,10 @@ export function evaluateExpense(options: EvaluatorOptions): Verdict {
   for (const rule of requirementRules) {
     // Condition check: category
     if (rule.conditions.category && rule.conditions.category.length > 0) {
-      const lineCategories = lineItems.map((li) => (li.category || '').toLowerCase());
-      const matchesCategory = rule.conditions.category.some(
-        (c) => c.toLowerCase() === expenseCategory || lineCategories.includes(c.toLowerCase())
+      const lineCategories = lineItems.map((li) => normalizeExpenseCategory(li.category));
+      const ruleCategories = rule.conditions.category.map((c) => normalizeExpenseCategory(c));
+      const matchesCategory = ruleCategories.some(
+        (c) => c === expenseCategory || lineCategories.includes(c)
       );
       if (!matchesCategory) continue;
     }
@@ -254,7 +349,7 @@ export function evaluateExpense(options: EvaluatorOptions): Verdict {
   const employeeCityTier =
     employee.financeProfile?.cityTierOverride ||
     expense.context?.cityTier ||
-    (city ? policy.cityTiers[city] : undefined) ||
+    lookupCityTier(city, policy.cityTiers) ||
     'Tier-1';
 
   // Check if auditor placed a reimbursement hold on this employee
@@ -288,16 +383,21 @@ export function evaluateExpense(options: EvaluatorOptions): Verdict {
       }
     }
     if (rule.conditions.category && rule.conditions.category.length > 0) {
-      const match = rule.conditions.category.some((c) => c.toLowerCase() === expenseCategory);
+      const ruleCategories = rule.conditions.category.map((c) => normalizeExpenseCategory(c));
+      const lineCategories = lineItems.map((li) => normalizeExpenseCategory(li.category));
+      const contextCategory = expense.context?.category ? normalizeExpenseCategory(expense.context.category) : undefined;
+      const match = ruleCategories.some(
+        (c) => c === expenseCategory || (contextCategory && c === contextCategory) || lineCategories.includes(c)
+      );
       if (!match) continue;
     }
 
     // Base cap limit (honor custom allowances if set by auditor)
     let capLimitMinor = rule.parameters.capAmountMinor ?? 0;
     if (employee.financeProfile?.customAllowanceEnabled) {
-      if (rule.parameters.capPeriod === 'day' && rule.conditions.category?.includes('meals') && employee.financeProfile.dailyMealAllowanceMinor) {
+      if (rule.parameters.capPeriod === 'day' && rule.conditions.category?.some((c) => normalizeExpenseCategory(c) === 'meals') && employee.financeProfile.dailyMealAllowanceMinor) {
         capLimitMinor = employee.financeProfile.dailyMealAllowanceMinor;
-      } else if (rule.parameters.capPeriod === 'per_claim' && rule.conditions.category?.includes('meals') && employee.financeProfile.perClaimMealLimitMinor) {
+      } else if (rule.parameters.capPeriod === 'per_claim' && rule.conditions.category?.some((c) => normalizeExpenseCategory(c) === 'meals') && employee.financeProfile.perClaimMealLimitMinor) {
         capLimitMinor = employee.financeProfile.perClaimMealLimitMinor;
       } else if (rule.parameters.perAttendeeMultiplier && employee.financeProfile.clientDiningPerAttendeeMinor) {
         capLimitMinor = employee.financeProfile.clientDiningPerAttendeeMinor;
@@ -379,16 +479,18 @@ export function evaluateExpense(options: EvaluatorOptions): Verdict {
     approvedMinor = Math.min(baseEligibleMinor, minRemainingAllowanceMinor);
     if (approvedMinor < baseEligibleMinor) {
       const capDeduction = baseEligibleMinor - approvedMinor;
+      // Policy Cap Enforcement: amount up to cap is disbursed; excess above cap is excluded from reimbursement
+      excludedMinor += capDeduction;
       rejectedMinor += capDeduction;
 
       ruleImpacts.push({
         ruleId: mostRestrictiveCapRule?.id || 'sys-cap-exceeded',
         section: mostRestrictiveCapRule?.section || 'Policy Section 4 - Cumulative Spend Caps',
-        title: `Cap Exceeded: ${mostRestrictiveCapRule?.title || 'Allowance Exceeded'}`,
+        title: `Cap Excluded: ${mostRestrictiveCapRule?.title || 'Allowance Exceeded'}`,
         sourceQuote: mostRestrictiveCapRule?.sourceQuote,
         impactAmountMinor: capDeduction,
-        impactType: 'cap',
-        explanation: `Claim exceeds remaining allowance by ${(capDeduction / 100).toFixed(2)} ${currency}. Deducted from reimbursement.`,
+        impactType: 'exclusion',
+        explanation: `Claim total of ${(totalMinor / 100).toFixed(2)} ${currency} exceeds the policy cap limit (${(minRemainingAllowanceMinor / 100).toFixed(2)} ${currency}). Only ${(approvedMinor / 100).toFixed(2)} ${currency} is disbursed; the remaining excess of ${(capDeduction / 100).toFixed(2)} ${currency} is excluded from reimbursement.`,
       });
     }
   }
@@ -534,12 +636,14 @@ export function evaluateExpense(options: EvaluatorOptions): Verdict {
         explanation: 'Escalated to Finance for review based on risk and verification signals.',
       });
     }
-  } else if (approvedMinor < totalMinor) {
+  } else if (approvedMinor < totalMinor || excludedMinor > 0) {
     decision = 'partial';
     status = 'partially_approved';
   } else {
-    // Check auto-approve requirements
+    // Check auto-approve requirements: strictly requires 100% full approval and 0 exclusions
     const isAutoApprovable =
+      approvedMinor === totalMinor &&
+      excludedMinor === 0 &&
       riskScore <= policy.settings.autoApproveRiskThreshold &&
       overallConfidence >= policy.settings.autoApproveMinConfidence &&
       !duplicateSuspected &&
@@ -573,6 +677,8 @@ export function evaluateExpense(options: EvaluatorOptions): Verdict {
     totalAmountMinor: totalMinor,
     eligibleAmountMinor: baseEligibleMinor,
     approvedAmountMinor: approvedMinor,
+    disbursedAmountMinor: approvedMinor,
+    excludedAmountMinor: excludedMinor,
     rejectedAmountMinor: rejectedMinor,
     pendingAmountMinor: pendingMinor,
     ruleImpacts,

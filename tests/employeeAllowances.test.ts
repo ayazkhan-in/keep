@@ -107,11 +107,14 @@ describe('Employee Allowances and Finance Editing', () => {
       expenseDate: '2026-10-19',
       submittedAt: '2026-10-19T10:00:00Z',
       normalizedCurrency: {
-        originalAmountMinor: 400000,
-        originalCurrency: 'INR',
+        sourceAmountMinor: 400000,
+        sourceCurrency: 'INR',
         targetAmountMinor: 400000,
         targetCurrency: 'INR',
         fxRate: 1.0,
+        fxDate: '2026-10-19',
+        fxSource: 'printed',
+        isInferred: false,
       },
       extracted: {
         merchant: { value: 'Leela Palace Dining', confidence: 0.95, inferred: false, source: 'ocr' },
@@ -136,6 +139,14 @@ describe('Employee Allowances and Finance Editing', () => {
         cityTier: 'Tier-1',
         isTravel: false,
         source: 'user',
+      },
+      channel: 'upload',
+      integritySignals: {
+        mathMismatch: false,
+        taxRateAnomalous: false,
+        missingDate: false,
+        inferredTotal: false,
+        unitemizedBalance: 0,
       },
     };
 
@@ -179,11 +190,14 @@ describe('Employee Allowances and Finance Editing', () => {
       expenseDate: '2026-10-19',
       submittedAt: '2026-10-19T10:00:00Z',
       normalizedCurrency: {
-        originalAmountMinor: 50000,
-        originalCurrency: 'INR',
+        sourceAmountMinor: 50000,
+        sourceCurrency: 'INR',
         targetAmountMinor: 50000,
         targetCurrency: 'INR',
         fxRate: 1.0,
+        fxDate: '2026-10-19',
+        fxSource: 'printed',
+        isInferred: false,
       },
       extracted: {
         merchant: { value: 'Cafe Coffee Day', confidence: 0.95, inferred: false, source: 'ocr' },
@@ -208,6 +222,14 @@ describe('Employee Allowances and Finance Editing', () => {
         cityTier: 'Tier-1',
         isTravel: false,
         source: 'user',
+      },
+      channel: 'upload',
+      integritySignals: {
+        mathMismatch: false,
+        taxRateAnomalous: false,
+        missingDate: false,
+        inferredTotal: false,
+        unitemizedBalance: 0,
       },
     };
 

@@ -42,6 +42,11 @@ import {
   registerReceipt,
   createDuplicateRejectionIssue,
 } from '../utils/receiptDuplicateDetector';
+import {
+  convertReceiptToInr,
+  ConversionMetrics,
+  CURRENT_FX_METRICS,
+} from '../utils/currencyConverter';
 
 interface ReceiptScannerModalProps {
   isOpen: boolean;
@@ -450,6 +455,10 @@ This file contains no financial transactions, prices, dates, or vendor informati
 
       const data = await res.json();
       if (data.extracted) {
+        // Guarantee conversion to INR for all calculations
+        const converted = convertReceiptToInr(data.extracted);
+        data.extracted = converted;
+
         // Check if server rejected as duplicate before advancing to review form
         if (data.duplicate || data.extracted.isDuplicate) {
           setExtractedData(null);
@@ -564,7 +573,10 @@ This file contains no financial transactions, prices, dates, or vendor informati
       category: (extractedData.category as CategoryType) || 'Electronics',
       purchaseDate,
       price: Number(extractedData.price) || 0,
-      currency: extractedData.currency || 'USD',
+      currency: extractedData.currency || 'INR',
+      originalCurrency: extractedData.originalCurrency || extractedData.currency || 'INR',
+      originalPrice: extractedData.originalPrice ?? Number(extractedData.price) ?? 0,
+      conversionMetrics: extractedData.conversionMetrics,
       orderNumber: extractedData.orderNumber || `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
       ...(extractedData.serialNumber ? { serialNumber: extractedData.serialNumber } : {}),
       paymentMethod: extractedData.paymentMethod || 'Credit Card (•••• 1004)',
@@ -1102,6 +1114,22 @@ This file contains no financial transactions, prices, dates, or vendor informati
                   {extractedData.operationalContext.servicePeriod && (
                     <span>Period: <strong>{extractedData.operationalContext.servicePeriod}</strong></span>
                   )}
+                </div>
+              )}
+
+              {extractedData.conversionMetrics?.isConverted && (
+                <div className="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50/50 to-emerald-50 border border-emerald-200 rounded-xl text-emerald-950 text-xs flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 font-mono-code font-bold text-[10px] text-emerald-800 border border-emerald-200">
+                      {extractedData.conversionMetrics.rateFormatted}
+                    </span>
+                    <span className="font-medium">
+                      Converted from {extractedData.conversionMetrics.originalCurrency} {extractedData.conversionMetrics.originalCurrency === 'USD' ? '$' : extractedData.conversionMetrics.originalCurrency === 'EUR' ? '€' : ''}{extractedData.conversionMetrics.originalPrice.toFixed(2)} to INR for all calculations
+                    </span>
+                  </div>
+                  <span className="font-mono-code font-bold text-emerald-900 text-sm">
+                    ₹{Number(extractedData.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
               )}
 

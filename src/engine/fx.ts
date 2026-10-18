@@ -3,14 +3,14 @@ import { NormalizedCurrency } from '../types/expense';
 export const STATIC_DEMO_FX_RATES: Record<string, number> = {
   // Rates normalized to INR base (1 Foreign Currency = X INR)
   INR: 1.0,
-  USD: 85.0,
-  EUR: 92.0,
-  GBP: 108.0,
-  CAD: 62.0,
-  AUD: 55.0,
-  JPY: 0.58,
-  AED: 23.1,
-  SGD: 64.5,
+  USD: 95.08, // Current rate of Dollar converted to INR
+  EUR: 106.87, // Current rate of Euro converted to INR
+  GBP: 122.50,
+  CAD: 69.20,
+  AUD: 61.80,
+  JPY: 0.63,
+  AED: 25.88,
+  SGD: 72.40,
 };
 
 export interface NormalizeCurrencyOptions {

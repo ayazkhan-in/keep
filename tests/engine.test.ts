@@ -12,6 +12,21 @@ import {
   simulatePolicyChange,
   bundleExpensesIntoTrips,
 } from '../src/engine';
+import { applyReviewerDecision, saveAllExpenses } from '../src/services/expenseService';
+
+if (typeof globalThis.localStorage === 'undefined') {
+  const store = new Map<string, string>();
+  globalThis.localStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => store.set(k, String(v)),
+    removeItem: (k: string) => store.delete(k),
+    clear: () => store.clear(),
+    key: (i: number) => Array.from(store.keys())[i] ?? null,
+    get length() {
+      return store.size;
+    },
+  } as any;
+}
 
 describe('Corporate Expense Reimbursement Pure Engine', () => {
   let samplePolicy: PolicyVersion;
@@ -127,7 +142,7 @@ describe('Corporate Expense Reimbursement Pure Engine', () => {
           priority: 32,
           enabled: true,
           sourceQuote: 'Single meal transactions are capped at ₹2,000 per claim.',
-          conditions: { category: ['meals'] },
+          conditions: { category: ['meals'], isTravel: false },
           parameters: {
             capAmountMinor: 200000, // ₹2,000
             capPeriod: 'per_claim',
@@ -823,5 +838,260 @@ describe('Corporate Expense Reimbursement Pure Engine', () => {
     expect(simulation.simulationId).toBeDefined();
     // Active cap was ₹2,000 per claim, so both cap at ₹2,000 because of per-claim cap
     expect(simulation.activeTotalReimbursedMinor).toBe(200000);
+  });
+
+  it('11. Enforces ₹3,000 daily meal cap on Royal Indiana Grand receipt of ₹4,640 (Mumbai Tier-1), disbursing only ₹3,000 and excluding ₹1,640, preventing auto-approval', () => {
+    // Royal Indiana Grand receipt from user
+    // Subtotal: ₹4,640.00, Mumbai (Tier-1 City), Date: 2026-10-17, Lunch / Daily Meal
+    // Line items extracted with category "Food"
+    const royalIndianaReceipt: Expense = {
+      id: 'exp_royal_indiana_1',
+      orgId: 'org_acme',
+      employeeId: 'emp_101',
+      status: 'submitted',
+      channel: 'upload',
+      expenseDate: '2026-10-17',
+      submittedAt: '2026-10-17T13:30:00Z',
+      extracted: {
+        merchant: { value: 'ROYAL INDIANA GRAND', confidence: 0.99, inferred: false, source: 'ocr' },
+        date: { value: '2026-10-17', confidence: 0.98, inferred: false, source: 'ocr' },
+        total: { value: 4640, confidence: 0.99, inferred: false, source: 'ocr' },
+        tax: { value: 464, confidence: 0.95, inferred: false, source: 'ocr' },
+        currency: { value: 'INR', confidence: 0.99, inferred: false, source: 'ocr' },
+        lineItems: [
+          { id: '1', description: 'Murgh Tandoori (Full)', quantity: 1, unitPrice: 750, amount: 750, category: 'Food', confidence: 0.98, itemFlags: [] },
+          { id: '2', description: 'Butter Chicken (Large)', quantity: 1, unitPrice: 680, amount: 680, category: 'Food', confidence: 0.98, itemFlags: [] },
+          { id: '3', description: 'Mutton Rogan Josh', quantity: 1, unitPrice: 780, amount: 780, category: 'Food', confidence: 0.98, itemFlags: [] },
+          { id: '4', description: 'Paneer Lababdar', quantity: 1, unitPrice: 490, amount: 490, category: 'Food', confidence: 0.98, itemFlags: [] },
+          { id: '5', description: 'Veg Biryani (Double)', quantity: 1, unitPrice: 450, amount: 450, category: 'Food', confidence: 0.98, itemFlags: [] },
+          { id: '6', description: 'Butter Naan', quantity: 5, unitPrice: 90, amount: 450, category: 'Food', confidence: 0.98, itemFlags: [] },
+          { id: '7', description: 'Garlic Naan', quantity: 2, unitPrice: 110, amount: 220, category: 'Food', confidence: 0.98, itemFlags: [] },
+          { id: '8', description: 'Jeera Rice', quantity: 1, unitPrice: 220, amount: 220, category: 'Food', confidence: 0.98, itemFlags: [] },
+          { id: '9', description: 'Mango Lassi', quantity: 4, unitPrice: 150, amount: 600, category: 'Beverage', confidence: 0.98, itemFlags: [] },
+        ],
+      },
+      normalizedCurrency: {
+        sourceCurrency: 'INR',
+        sourceAmountMinor: 464000,
+        targetCurrency: 'INR',
+        targetAmountMinor: 464000,
+        fxRate: 1.0,
+        fxDate: '2026-10-17',
+        fxSource: 'printed',
+        isInferred: false,
+      },
+      context: {
+        category: 'meals',
+        city: 'Mumbai',
+        cityTier: 'Tier-1',
+        isTravel: true,
+        source: 'user',
+      },
+      integritySignals: {
+        mathMismatch: false,
+        taxRateAnomalous: false,
+        missingDate: false,
+        inferredTotal: false,
+        unitemizedBalance: 0,
+      },
+    };
+
+    const verdict = evaluateExpense({
+      expense: royalIndianaReceipt,
+      policy: samplePolicy,
+      employee: sampleEmployee,
+      ledger,
+    });
+
+    // 1. Only amount UP TO policy cap of ₹3,000 (300000 minor) is disbursed
+    expect(verdict.approvedAmountMinor).toBe(300000);
+    expect(verdict.disbursedAmountMinor).toBe(300000);
+
+    // 2. The rest (₹4,640 - ₹3,000 = ₹1,640 / 164000 minor) is excluded
+    expect(verdict.excludedAmountMinor).toBe(164000);
+    expect(verdict.rejectedAmountMinor).toBe(164000);
+
+    // 3. Status must be partially_approved and decision partial (NEVER auto_approved!)
+    expect(verdict.decision).toBe('partial');
+    expect(verdict.status).toBe('partially_approved');
+    expect(verdict.autoApprovable).toBe(false);
+
+    // 4. Exclusion citation is recorded
+    const exclusionCitation = verdict.ruleImpacts.find((r) => r.impactType === 'exclusion');
+    expect(exclusionCitation).toBeDefined();
+    expect(exclusionCitation?.impactAmountMinor).toBe(164000);
+    expect(exclusionCitation?.title).toContain('Tier-1 City Daily Meal Cap');
+    expect(exclusionCitation?.explanation).toContain('exceeds the policy cap limit');
+  });
+
+  it('12. Applies universal cap enforcement across lodging/hotel caps, disbursing up to cap and excluding excess', () => {
+    // Policy with a Lodging Cap rule of ₹5,000 per day in Tier-2
+    const policyWithLodgingCap: PolicyVersion = {
+      ...samplePolicy,
+      rules: [
+        ...samplePolicy.rules,
+        {
+          id: 'rule_cap_hotel_tier2',
+          type: 'cap',
+          section: 'Section 4.4 - Lodging Allowances',
+          title: 'Tier-2 Hotel Daily Allowance',
+          priority: 33,
+          enabled: true,
+          sourceQuote: 'Lodging in Tier-2 cities is capped at ₹5,000 per night.',
+          conditions: {
+            category: ['travel'],
+            cityTier: ['Tier-2'],
+          },
+          parameters: {
+            capAmountMinor: 500000, // ₹5,000
+            capPeriod: 'day',
+            capScope: 'employee',
+          },
+        },
+      ],
+    };
+
+    const hotelExpense: Expense = {
+      id: 'exp_hotel_1',
+      orgId: 'org_acme',
+      employeeId: 'emp_101',
+      status: 'submitted',
+      channel: 'upload',
+      expenseDate: '2026-10-18',
+      submittedAt: '2026-10-18T10:00:00Z',
+      extracted: {
+        merchant: { value: 'The Westin Pune', confidence: 0.99, inferred: false, source: 'ocr' },
+        date: { value: '2026-10-18', confidence: 0.99, inferred: false, source: 'ocr' },
+        total: { value: 7500, confidence: 0.99, inferred: false, source: 'ocr' },
+        currency: { value: 'INR', confidence: 0.99, inferred: false, source: 'ocr' },
+        lineItems: [
+          { id: '1', description: 'Deluxe Room 1 Night', quantity: 1, unitPrice: 7500, amount: 7500, category: 'hotel', confidence: 0.98, itemFlags: [] },
+        ],
+      },
+      normalizedCurrency: {
+        sourceCurrency: 'INR',
+        sourceAmountMinor: 750000,
+        targetCurrency: 'INR',
+        targetAmountMinor: 750000,
+        fxRate: 1.0,
+        fxDate: '2026-10-18',
+        fxSource: 'printed',
+        isInferred: false,
+      },
+      context: {
+        category: 'travel',
+        city: 'Pune',
+        cityTier: 'Tier-2',
+        isTravel: true,
+        source: 'user',
+      },
+      integritySignals: {
+        mathMismatch: false,
+        taxRateAnomalous: false,
+        missingDate: false,
+        inferredTotal: false,
+        unitemizedBalance: 0,
+      },
+    };
+
+    const verdict = evaluateExpense({
+      expense: hotelExpense,
+      policy: policyWithLodgingCap,
+      employee: sampleEmployee,
+      ledger,
+    });
+
+    // Capped at ₹5,000 (500000 minor units disbursed); ₹2,500 (250000 minor units) excluded
+    expect(verdict.approvedAmountMinor).toBe(500000);
+    expect(verdict.disbursedAmountMinor).toBe(500000);
+    expect(verdict.excludedAmountMinor).toBe(250000);
+    expect(verdict.decision).toBe('partial');
+    expect(verdict.status).toBe('partially_approved');
+    expect(verdict.autoApprovable).toBe(false);
+  });
+
+  it('13. Reviewer approval of capped claim maintains partial approval, disbursing only up to cap and excluding excess', () => {
+    const cappedExpense: Expense = {
+      id: 'exp_royal_mumbai_review',
+      orgId: 'org_acme',
+      employeeId: 'emp_101',
+      status: 'submitted',
+      channel: 'upload',
+      expenseDate: '2026-10-17',
+      submittedAt: '2026-10-17T14:00:00Z',
+      extracted: {
+        merchant: { value: 'Royal Indiana Grand', confidence: 0.99, inferred: false, source: 'ocr' },
+        date: { value: '2026-10-17', confidence: 0.99, inferred: false, source: 'ocr' },
+        total: { value: 4640, confidence: 0.99, inferred: false, source: 'ocr' },
+        currency: { value: 'INR', confidence: 0.99, inferred: false, source: 'ocr' },
+        lineItems: [
+          { id: '1', description: 'Murgh Tandoori', quantity: 1, unitPrice: 750, amount: 750, category: 'food', confidence: 0.98, itemFlags: [] },
+          { id: '2', description: 'Butter Chicken', quantity: 1, unitPrice: 680, amount: 680, category: 'food', confidence: 0.98, itemFlags: [] },
+          { id: '3', description: 'Mutton Rogan Josh', quantity: 1, unitPrice: 780, amount: 780, category: 'food', confidence: 0.98, itemFlags: [] },
+          { id: '4', description: 'Paneer Lababdar', quantity: 1, unitPrice: 490, amount: 490, category: 'food', confidence: 0.98, itemFlags: [] },
+          { id: '5', description: 'Veg Biryani', quantity: 1, unitPrice: 450, amount: 450, category: 'food', confidence: 0.98, itemFlags: [] },
+          { id: '6', description: 'Butter Naan', quantity: 5, unitPrice: 90, amount: 450, category: 'food', confidence: 0.98, itemFlags: [] },
+          { id: '7', description: 'Garlic Naan', quantity: 2, unitPrice: 110, amount: 220, category: 'food', confidence: 0.98, itemFlags: [] },
+          { id: '8', description: 'Jeera Rice', quantity: 1, unitPrice: 220, amount: 220, category: 'food', confidence: 0.98, itemFlags: [] },
+          { id: '9', description: 'Mango Lassi', quantity: 4, unitPrice: 150, amount: 600, category: 'beverage', confidence: 0.98, itemFlags: [] },
+        ],
+      },
+      normalizedCurrency: {
+        sourceCurrency: 'INR',
+        sourceAmountMinor: 464000,
+        targetCurrency: 'INR',
+        targetAmountMinor: 464000,
+        fxRate: 1.0,
+        fxDate: '2026-10-17',
+        fxSource: 'printed',
+        isInferred: false,
+      },
+      context: {
+        category: 'meals',
+        city: 'Mumbai',
+        cityTier: 'Tier-1',
+        isTravel: true,
+        source: 'user',
+      },
+      integritySignals: {
+        mathMismatch: false,
+        taxRateAnomalous: false,
+        missingDate: false,
+        inferredTotal: false,
+        unitemizedBalance: 0,
+      },
+    };
+
+    const initialVerdict = evaluateExpense({
+      expense: cappedExpense,
+      policy: samplePolicy,
+      employee: sampleEmployee,
+      ledger,
+    });
+
+    cappedExpense.verdict = initialVerdict;
+    cappedExpense.status = initialVerdict.status;
+    saveAllExpenses([cappedExpense]);
+
+    const reviewerActor = {
+      id: 'rev_admin_1',
+      name: 'Finance Manager',
+      role: 'admin' as const,
+    };
+
+    // Reviewer clicks 'approve' on the capped claim
+    const approvedExpense = applyReviewerDecision({
+      expenseId: cappedExpense.id,
+      reviewer: reviewerActor,
+      action: 'approve',
+      reason: 'Approved up to allowable cap',
+    });
+
+    // Must be partially_approved and disburse ONLY up to cap (₹3,000), NOT auto-approve or fully approve ₹4,640
+    expect(approvedExpense.status).toBe('partially_approved');
+    expect(approvedExpense.verdict?.decision).toBe('partial');
+    expect(approvedExpense.verdict?.approvedAmountMinor).toBe(300000);
+    expect(approvedExpense.verdict?.disbursedAmountMinor).toBe(300000);
+    expect(approvedExpense.verdict?.excludedAmountMinor).toBe(164000);
   });
 });
