@@ -16,11 +16,11 @@ export const DEFAULT_ACME_POLICY: PolicyVersion = {
   orgId: 'org_acme',
   versionNumber: 1,
   status: 'active',
-  name: 'Acme Enterprise Travel & Expense Policy 2026',
-  sourceText: `ACME ENTERPRISE GLOBAL EXPENSE & REIMBURSEMENT POLICY (REV 2026.1)
+  name: 'JP Morgan Enterprise Travel & Expense Policy 2026',
+  sourceText: `JP MORGAN ENTERPRISE GLOBAL EXPENSE & REIMBURSEMENT POLICY (REV 2026.1)
 
 SECTION 1. GENERAL PRINCIPLES
-1.1 All business expenses must be ordinary, reasonable, and directly necessary for Acme business operations.
+1.1 All business expenses must be ordinary, reasonable, and directly necessary for JP Morgan business operations.
 1.2 Receipts must be submitted within 30 calendar days of the transaction date. Submissions beyond 30 days are subject to review.
 
 SECTION 2. INTEGRITY & DUPLICATE SUBMISSIONS
@@ -90,7 +90,7 @@ SECTION 5. APPROVAL THRESHOLDS & WORKFLOW
       enabled: false,
       isAmbiguous: true,
       ambiguityNote: "Policy says 'reasonable' meal costs but gives no number.",
-      sourceQuote: 'All business expenses must be ordinary, reasonable, and directly necessary for Acme business operations.',
+      sourceQuote: 'All business expenses must be ordinary, reasonable, and directly necessary for JP Morgan business operations.',
       sourceParagraphIndex: 2,
       conditions: {},
       parameters: {
@@ -486,7 +486,7 @@ export function getPolicyAuditLog(): PolicyAuditEntry[] {
       versionNumber: 1,
       policyName: DEFAULT_ACME_POLICY.name,
       changeNote: 'Initial baseline enterprise policy ingested from handbook REV 2026.1',
-      activatedBy: 'finance_admin@acme.com',
+      activatedBy: 'finance_admin@jpmorgan.com',
       activatedAt: '2026-01-01T00:00:00Z',
       reevaluatedPendingCount: 0,
       rulesCount: DEFAULT_ACME_POLICY.rules.length,
@@ -535,7 +535,7 @@ export function activateDraftPolicy(
     versionNumber: newActive.versionNumber,
     policyName: newActive.name,
     changeNote,
-    activatedBy: 'finance_controller@acme.com',
+    activatedBy: 'finance_controller@jpmorgan.com',
     activatedAt: new Date().toISOString(),
     reevaluatedPendingCount: reevaluatePending ? 4 : 0,
     rulesCount: newActive.rules.length,
@@ -552,7 +552,7 @@ export function createDraftFromActive(customName?: string): PolicyVersion {
     id: `pol_draft_${Date.now()}`,
     versionNumber: newVersionNum,
     status: 'draft',
-    name: customName || `Acme T&E Policy v${newVersionNum} (Draft)`,
+    name: customName || `JP Morgan T&E Policy v${newVersionNum} (Draft)`,
     createdAt: new Date().toISOString(),
     activatedAt: undefined,
     conflictWarnings: [],
@@ -758,7 +758,7 @@ export function dismissConflictWarning(
         warningText,
         note,
         dismissedAt: new Date().toISOString(),
-        dismissedBy: 'finance_admin@acme.com',
+        dismissedBy: 'finance_admin@jpmorgan.com',
       },
     ],
   };
@@ -974,7 +974,7 @@ export function queryPolicyGrounded(
       verdict: 'silent',
       verdictLabel: 'Policy is Silent (Manager Discretion)',
       sourceSection: 'Section 1.1 - General Principles',
-      sourceQuote: 'All business expenses must be ordinary, reasonable, and directly necessary for Acme business operations.',
+      sourceQuote: 'All business expenses must be ordinary, reasonable, and directly necessary for JP Morgan business operations.',
       tips: [
         'Obtain prior email confirmation from your reporting manager for overtime work',
         'Download the official itemized ride receipt (Uber/Ola/taxi) showing ride time and drop location',
@@ -1297,14 +1297,14 @@ export function queryPolicyGrounded(
   // Default Fallback
   return {
     answer:
-      'The company policy is silent on this specific item. Under Section 1.1, expenses must be ordinary, reasonable, and directly necessary for Acme business operations. We recommend checking with your manager or Finance prior to incurring this expense.',
+      'The company policy is silent on this specific item. Under Section 1.1, expenses must be ordinary, reasonable, and directly necessary for JP Morgan business operations. We recommend checking with your manager or Finance prior to incurring this expense.',
     isSilent: true,
     verdict: 'silent',
     verdictLabel: 'Policy is Silent (Manager Discretion)',
     sourceSection: 'Section 1.1 - General Principles',
-    sourceQuote: 'All business expenses must be ordinary, reasonable, and directly necessary for Acme business operations.',
+    sourceQuote: 'All business expenses must be ordinary, reasonable, and directly necessary for JP Morgan business operations.',
     tips: [
-      'Contact finance@acme.com for policy clarification',
+      'Contact finance@jpmorgan.com for policy clarification',
       'Obtain written email approval from your department head before booking',
     ],
     suggestedFollowUps: [

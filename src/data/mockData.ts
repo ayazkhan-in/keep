@@ -41,8 +41,8 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
       },
       {
         id: 'doc-1-w',
-        name: 'AppleCare_Proof_Of_Coverage.pdf',
-        type: 'warranty_card',
+        name: 'AppleCare_Corporate_Agreement.pdf',
+        type: 'invoice',
         fileUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80',
         previewUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=400&q=80',
         uploadDate: '2023-10-24',
@@ -52,7 +52,7 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     tags: ['Hardware', 'IT Dept', 'Production', 'Work Laptop'],
     notes: 'Configured with 36GB Unified Memory, 1TB SSD. Purchased for primary engineering workflow.',
     aiConfidence: 0.99,
-    aiExtractedNotes: 'Parsed from Apple Store email receipt. Verified 1-Year Limited Warranty active.',
+    aiExtractedNotes: 'Parsed from Apple Store email receipt. Verified corporate hardware procurement.',
     taxDeductible: true,
   },
   {
@@ -98,7 +98,7 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     tags: ['Office Furniture', 'Ergonomics', 'Home Studio'],
     notes: 'Mineral frame with satin aluminum base, PostureFit SL, fully adjustable arms.',
     aiConfidence: 0.98,
-    aiExtractedNotes: '12-Year Herman Miller manufacturer guarantee registered.',
+    aiExtractedNotes: 'Herman Miller corporate ergonomics procurement receipt verified.',
     taxDeductible: true,
   },
   {
@@ -141,9 +141,9 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
       }
     ],
     tags: ['Kitchen', 'Coffee', 'Home'],
-    notes: 'Brushed Stainless Steel. Solenoid valve intermittent pressure issue noticed recently.',
+    notes: 'Brushed Stainless Steel. Pantry equipment setup.',
     aiConfidence: 0.97,
-    aiExtractedNotes: 'Warranty expiring soon (14 days remaining). AI claim draft initiated.',
+    aiExtractedNotes: 'Office pantry appliance expense verified against facilities budget.',
     taxDeductible: false,
   },
   {
@@ -188,7 +188,7 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     tags: ['Audio', 'Travel', 'Noise-Cancelling'],
     notes: 'Silver finish. ANC performance tested on trans-continental flight.',
     aiConfidence: 0.99,
-    aiExtractedNotes: 'Return window closes in 2 days. Start return if fit is unsatisfactory.',
+    aiExtractedNotes: 'Itemized vendor receipt verified for corporate audio gear.',
     taxDeductible: true,
   },
   {
@@ -233,7 +233,7 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     tags: ['Living Room', 'Display', 'Entertainment'],
     notes: 'Mounted in living room with Vogel wall mount. Firmware updated to WebOS 23.',
     aiConfidence: 0.99,
-    aiExtractedNotes: '245 days remaining on active warranty.',
+    aiExtractedNotes: 'Verified corporate display procurement receipt.',
     taxDeductible: false,
   },
   {
@@ -278,7 +278,7 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     tags: ['Photography', 'Media', 'Studio Equipment'],
     notes: '33MP BSI Exmor R sensor, 4K 60p 10-bit recording.',
     aiConfidence: 0.99,
-    aiExtractedNotes: 'Warranty expiry in 2 days. Check shutter count before warranty period ends.',
+    aiExtractedNotes: 'Verified production equipment receipt. Approved under media budget.',
     taxDeductible: true,
   },
   {
@@ -365,7 +365,7 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
     tags: ['Hardware', 'Office', 'Peripherals'],
     notes: 'Refillable ink tank system with wireless ADF scanning.',
     aiConfidence: 0.98,
-    aiExtractedNotes: 'Active 2-year warranty valid until Sept 2025.',
+    aiExtractedNotes: 'Verified office printer receipt. Reimbursed under corporate hardware budget.',
     taxDeductible: true,
   },
   {
@@ -414,28 +414,28 @@ export const INITIAL_PURCHASES: PurchaseItem[] = [
 export const INITIAL_ACTIONS: AIActionItem[] = [
   {
     id: 'act-1',
-    type: 'return_closing',
+    type: 'policy_exception',
     severity: 'critical',
-    title: 'Return window closing for MacBook Pro 16" M3 Max',
-    description: 'Deadline in 3 days. Initiate return now to secure $3,499.00 refund.',
+    title: 'Night Travel Policy Threshold Exceeded',
+    description: 'Uber rideshare claim after 10 PM exceeds ₹1,500 night cap without pre-approved travel manifest.',
     purchaseId: 'pur-1',
-    actionLabel: 'Review →',
+    actionLabel: 'Review Claim →',
   },
   {
     id: 'act-2',
-    type: 'warranty_claim',
+    type: 'missing_info',
     severity: 'warning',
-    title: 'Warranty claim ready for Breville Barista Pro',
-    description: 'Detected intermittent pressure issue notes. AI drafted claim ready for Williams Sonoma / Breville review.',
+    title: 'Missing Attendee Roster on Client Meal',
+    description: 'Corporate policy requires itemized attendees and external client name for dining exceeding ₹2,500.',
     purchaseId: 'pur-3',
-    actionLabel: 'Review AI Claim →',
+    actionLabel: 'Resolve Info →',
   },
   {
     id: 'act-3',
     type: 'receipt_sync',
     severity: 'info',
-    title: 'Scan 2 new receipts from inbox',
-    description: 'Auto-detected from linked email account (Apple Store & AWS).',
+    title: 'Scan 2 new receipts ready for audit',
+    description: 'Auto-detected from corporate card feed (IndiGo Airlines & Blue Tokai).',
     actionLabel: 'Process →',
   }
 ];
@@ -444,21 +444,21 @@ export const INITIAL_INSIGHTS: SpendingInsight[] = [
   {
     id: 'ins-1',
     title: 'Subscription Shift Detected',
-    description: 'You spent 15% more on recurring software subscriptions than last month.',
+    description: 'Corporate cloud and dev tooling spend is up 15% following quarterly engineering headcount additions.',
     type: 'subscription',
     actionLabel: 'Review Subscriptions',
   },
   {
     id: 'ins-2',
-    title: 'Expiring Coverage Warning',
-    description: 'Warranty expiring in 14 days for "Breville Espresso Machine" and in 2 days for "Sony A7IV".',
-    type: 'warranty',
-    actionLabel: 'View Warranties',
+    title: 'Per Diem Policy Alert',
+    description: 'Daily meal spend in Bengaluru reached 92% of monthly allocated allowance threshold.',
+    type: 'policy',
+    actionLabel: 'View Allowances',
   },
   {
     id: 'ins-3',
     title: 'Tax Deductions Categorized',
-    description: '$5,434.99 of your recent purchases qualify as business deductions for Q4 tax filings.',
+    description: '$5,434.99 of verified business expense receipts categorized for quarterly GST/VAT compliance.',
     type: 'tax',
     actionLabel: 'Export Tax Packet',
   }

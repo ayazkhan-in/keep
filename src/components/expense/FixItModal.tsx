@@ -197,7 +197,7 @@ export const FixItModal: React.FC<FixItModalProps> = ({
               value={replyInput}
               onChange={(e) => setReplyInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}
-              placeholder="e.g. Dinner with Acme Partner, 2 attendees discussing Q4 expansion..."
+              placeholder="e.g. Dinner with JP Morgan Partner, 2 attendees discussing Q4 expansion..."
               className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:bg-white transition-colors"
             />
             <button

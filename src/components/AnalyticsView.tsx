@@ -40,8 +40,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     .filter((p) => p.taxDeductible)
     .reduce((acc, p) => acc + p.price, 0);
 
-  const protectedValue = purchases
-    .filter((p) => p.warranty.hasWarranty)
+  const compliantSpend = purchases
+    .filter((p) => !p.notes?.includes('EXCEEDED') && !p.notes?.includes('FLAGGED'))
     .reduce((acc, p) => acc + p.price, 0);
 
   // Group by category
@@ -98,9 +98,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
             category: p.category,
             price: p.price,
             purchaseDate: p.purchaseDate,
-            warrantyExpiry: p.warranty?.expiryDate,
-            returnDeadline: p.returnWindow?.deadlineDate,
             taxDeductible: p.taxDeductible,
+            notes: p.notes,
           })),
           chatHistory: chatMessages.slice(-4),
         }),
@@ -200,13 +199,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
         <div className="bg-white border border-[#E2E8F0] p-5 rounded-2xl shadow-2xs">
           <div className="flex justify-between items-center text-[#76777D] mb-1">
-            <span className="font-mono-code text-[11px] uppercase font-semibold">Protected Value</span>
+            <span className="font-mono-code text-[11px] uppercase font-semibold">Compliant Spend</span>
             <ShieldCheck className="w-4 h-4 text-[#10B981]" />
           </div>
           <p className="font-mono-code text-2xl font-bold text-[#0F172A] mt-2">
-            {formatPrice(protectedValue)}
+            {formatPrice(compliantSpend)}
           </p>
-          <p className="text-[11px] text-[#76777D] mt-1">Active warranty coverage</p>
+          <p className="text-[11px] text-[#76777D] mt-1">Verified policy compliance</p>
         </div>
 
         <div className="bg-white border border-[#E2E8F0] p-5 rounded-2xl shadow-2xs">
@@ -349,7 +348,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                   </div>
                   <div className="p-3 rounded-2xl bg-[#F9F9FB] border border-[#E2E8F0] flex items-center gap-2 text-[12px] text-[#76777D]">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Analyzing purchase intelligence...</span>
+                    <span>Auditing expense compliance...</span>
                   </div>
                 </div>
               )}
@@ -360,7 +359,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           <div className="mt-4 pt-3 border-t border-[#E2E8F0] space-y-2.5">
             <div className="flex flex-wrap gap-1.5">
               {[
-                'Which items can I still return?',
+                'Show non-compliant expenses',
                 'How much on software last quarter?',
                 'Show tax deductions',
               ].map((suggestion) => (
@@ -385,7 +384,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask anything about your purchases, warranties, or receipts..."
+                placeholder="Ask anything about your expenses, policies, or receipts..."
                 className="flex-1 px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl text-[12px] text-[#0F172A] focus:outline-none focus:border-[#0F172A] focus:bg-white transition-colors"
               />
               <button

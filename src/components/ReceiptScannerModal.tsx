@@ -326,7 +326,7 @@ Payment Terms: Paid in full via Corporate ACH`;
     } else if (type === 'staples') {
       mockPhoto = 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=800&q=80';
       mockContext = `STAPLES BUSINESS ADVANTAGE INVOICE
-Order: ORD-ST-88192 | Account: ACME-ENG-99
+Order: ORD-ST-88192 | Account: JPM-ENG-99
 Date: 2026-10-20
 2x Premium Multipurpose Copy Paper (Case of 10 Reams) - $70.00
 3x Ergonomic Memory Foam Keyboard Wrist Rests - $60.00

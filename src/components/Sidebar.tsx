@@ -271,10 +271,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-[12px] font-medium text-[#0F172A] leading-none truncate">
-              {user?.displayName || 'Acme Employee'}
+              {user?.displayName || 'JP Morgan Employee'}
             </span>
             <span className="text-[10px] font-mono-code text-[#76777D] mt-0.5 truncate">
-              {user?.email || 'employee@acme.com'}
+              {user?.email || 'employee@jpmorgan.com'}
             </span>
           </div>
         </div>

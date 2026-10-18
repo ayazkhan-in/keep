@@ -206,7 +206,7 @@ export const EmployeePoliciesView: React.FC = () => {
             <div className="flex items-center gap-2 text-slate-600">
               <span className="font-medium text-slate-900">Policy Assistant</span>
               <span className="text-slate-300">•</span>
-              <span className="text-[11px] text-slate-500">Acme Global Policy v{policy.versionNumber}</span>
+              <span className="text-[11px] text-slate-500">JP Morgan Global Policy v{policy.versionNumber}</span>
             </div>
 
             {messages.length > 0 && (
@@ -463,7 +463,7 @@ export const EmployeePoliciesView: React.FC = () => {
 
               {/* Footnote Disclaimer */}
               <p className="text-[10px] text-center text-slate-400">
-                Grounded in Acme Global T&E Policy v{policy.versionNumber} • Answers cite exact clauses • Press Enter to send
+                Grounded in JP Morgan Global T&E Policy v{policy.versionNumber} • Answers cite exact clauses • Press Enter to send
               </p>
             </div>
           </div>

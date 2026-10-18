@@ -23,7 +23,7 @@ export const ExpenseHeader: React.FC<ExpenseHeaderProps> = ({
       <div className="flex items-center gap-2.5 text-xs text-slate-500">
         <div className="flex items-center gap-1.5 font-medium text-slate-900">
           <Building2 className="w-3.5 h-3.5 text-slate-700" />
-          <span>Acme Enterprise</span>
+          <span>JP Morgan</span>
         </div>
         <span className="text-slate-300">/</span>
         <span className="font-mono-code text-[11px] text-slate-600">

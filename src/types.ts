@@ -153,8 +153,8 @@ export interface PurchaseItem {
   orderNumber?: string;
   serialNumber?: string;
   paymentMethod?: string;
-  warranty: WarrantyInfo;
-  returnWindow: ReturnWindowInfo;
+  warranty?: WarrantyInfo;
+  returnWindow?: ReturnWindowInfo;
   documents: DocumentItem[];
   tags: string[];
   notes?: string;
@@ -170,7 +170,7 @@ export interface PurchaseItem {
 
 export interface AIActionItem {
   id: string;
-  type: 'return_closing' | 'warranty_expiring' | 'receipt_sync' | 'warranty_claim';
+  type: 'return_closing' | 'warranty_expiring' | 'receipt_sync' | 'warranty_claim' | 'policy_exception' | 'missing_info' | 'policy_audit';
   severity: 'critical' | 'warning' | 'info';
   title: string;
   description: string;
@@ -182,7 +182,7 @@ export interface SpendingInsight {
   id: string;
   title: string;
   description: string;
-  type: 'spending' | 'warranty' | 'subscription' | 'tax';
+  type: 'spending' | 'warranty' | 'subscription' | 'tax' | 'policy';
   actionLabel: string;
 }
 

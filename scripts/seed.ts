@@ -47,7 +47,12 @@ async function seed() {
     'KeeprEmployee2026!',
     'Alice Walker'
   );
-  // Also create alice.walker@acme.com alias
+  // Also create alice.walker@jpmorgan.com and legacy alice.walker@acme.com alias
+  const aliceJpmUser = await getOrCreateUser(
+    'alice.walker@jpmorgan.com',
+    'KeeprEmployee2026!',
+    'Alice Walker'
+  );
   const aliceUser = await getOrCreateUser(
     'alice.walker@acme.com',
     'KeeprEmployee2026!',
@@ -61,7 +66,12 @@ async function seed() {
     'KeeprAuditor2026!',
     'Frank Castle'
   );
-  // Also create frank.castle@acme.com alias
+  // Also create frank.castle@jpmorgan.com and legacy frank.castle@acme.com alias
+  const frankJpmUser = await getOrCreateUser(
+    'frank.castle@jpmorgan.com',
+    'KeeprAuditor2026!',
+    'Frank Castle'
+  );
   const frankUser = await getOrCreateUser(
     'frank.castle@acme.com',
     'KeeprAuditor2026!',
@@ -74,6 +84,17 @@ async function seed() {
     {
       uid: employeeUser.uid,
       email: 'employee@keepr.com',
+      displayName: 'Alice Walker',
+      role: 'employee',
+      orgId: 'org_acme',
+      department: 'Engineering',
+      grade: 'L4',
+      homeCity: 'Bengaluru',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      uid: aliceJpmUser.uid,
+      email: 'alice.walker@jpmorgan.com',
       displayName: 'Alice Walker',
       role: 'employee',
       orgId: 'org_acme',
@@ -96,6 +117,17 @@ async function seed() {
     {
       uid: auditorUser.uid,
       email: 'auditor@keepr.com',
+      displayName: 'Frank Castle',
+      role: 'finance',
+      orgId: 'org_acme',
+      department: 'Finance & Audit',
+      grade: 'Finance Officer',
+      homeCity: 'Bengaluru',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      uid: frankJpmUser.uid,
+      email: 'frank.castle@jpmorgan.com',
       displayName: 'Frank Castle',
       role: 'finance',
       orgId: 'org_acme',
@@ -146,7 +178,7 @@ async function seed() {
   console.log('\n4. Storing Organization and Active Expense Policy...');
   await setDoc(doc(db, 'orgs', 'org_acme'), {
     id: 'org_acme',
-    name: 'Acme Enterprise',
+    name: 'JP Morgan',
     baseCurrency: 'INR',
     timezone: 'Asia/Kolkata',
     reportingMonthStartDay: 1,
@@ -262,13 +294,13 @@ async function seed() {
   console.log('   SEED COMPLETED SUCCESSFULLY! CREDENTIALS:           ');
   console.log('========================================================');
   console.log('👤 EMPLOYEE ACCOUNT:');
-  console.log('   Email:    employee@keepr.com (or alice.walker@acme.com)');
+  console.log('   Email:    employee@keepr.com (or alice.walker@jpmorgan.com)');
   console.log('   Password: KeeprEmployee2026!');
   console.log('   UID:      ' + employeeUser.uid);
   console.log('   Role:     employee (Engineering, L4)');
   console.log('--------------------------------------------------------');
   console.log('🛡️  AUDITOR / FINANCE ACCOUNT:');
-  console.log('   Email:    auditor@keepr.com (or frank.castle@acme.com)');
+  console.log('   Email:    auditor@keepr.com (or frank.castle@jpmorgan.com)');
   console.log('   Password: KeeprAuditor2026!');
   console.log('   UID:      ' + auditorUser.uid);
   console.log('   Role:     finance (Finance & Audit, Finance Officer)');

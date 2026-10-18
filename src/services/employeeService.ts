@@ -4,7 +4,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_101',
     orgId: 'org_acme',
-    identity: { email: 'alice.walker@acme.com', name: 'Alice Walker' },
+    identity: { email: 'alice.walker@jpmorgan.com', name: 'Alice Walker' },
     role: 'employee',
     department: 'Engineering',
     grade: 'L4',
@@ -13,7 +13,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_102',
     orgId: 'org_acme',
-    identity: { email: 'bob.martin@acme.com', name: 'Bob Martin' },
+    identity: { email: 'bob.martin@jpmorgan.com', name: 'Bob Martin' },
     role: 'employee',
     department: 'Sales',
     grade: 'L5',
@@ -22,7 +22,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_103',
     orgId: 'org_acme',
-    identity: { email: 'carol.danvers@acme.com', name: 'Carol Danvers' },
+    identity: { email: 'carol.danvers@jpmorgan.com', name: 'Carol Danvers' },
     role: 'employee',
     department: 'Marketing',
     grade: 'Executive',
@@ -31,7 +31,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_104',
     orgId: 'org_acme',
-    identity: { email: 'david.miller@acme.com', name: 'David Miller' },
+    identity: { email: 'david.miller@jpmorgan.com', name: 'David Miller' },
     role: 'employee',
     department: 'Product',
     grade: 'L4',
@@ -40,7 +40,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_105',
     orgId: 'org_acme',
-    identity: { email: 'elena.rostova@acme.com', name: 'Elena Rostova' },
+    identity: { email: 'elena.rostova@jpmorgan.com', name: 'Elena Rostova' },
     role: 'employee',
     department: 'Operations',
     grade: 'L3',
@@ -49,7 +49,7 @@ export const DEMO_EMPLOYEES: Employee[] = [
   {
     id: 'emp_106',
     orgId: 'org_acme',
-    identity: { email: 'frank.castle@acme.com', name: 'Frank Castle (Finance)' },
+    identity: { email: 'frank.castle@jpmorgan.com', name: 'Frank Castle (Finance)' },
     role: 'finance',
     department: 'Finance & Audit',
     grade: 'Finance Officer',
@@ -70,7 +70,7 @@ export const SEEDED_ACCOUNTS: Employee[] = [
   {
     id: 'nEqzcEzb0zPDjsvy4tfL8tm2QHl1',
     orgId: 'org_acme',
-    identity: { email: 'alice.walker@acme.com', name: 'Alice Walker' },
+    identity: { email: 'alice.walker@jpmorgan.com', name: 'Alice Walker' },
     role: 'employee',
     department: 'Engineering',
     grade: 'L4',
@@ -88,7 +88,7 @@ export const SEEDED_ACCOUNTS: Employee[] = [
   {
     id: 'NaFwF6pXaHfTJJWhOyD4NjHbBLQ2',
     orgId: 'org_acme',
-    identity: { email: 'frank.castle@acme.com', name: 'Frank Castle' },
+    identity: { email: 'frank.castle@jpmorgan.com', name: 'Frank Castle' },
     role: 'finance',
     department: 'Finance & Audit',
     grade: 'Finance Officer',
@@ -257,6 +257,7 @@ export function getRelatedEmployeeIdentifiers(idOrEmail: string): string[] {
     norm === 'pxmbbgdndwtsrersguad8r4gz4s2' ||
     norm === 'neqzcezb0zpdjsvy4tfl8tm2qhl1' ||
     norm === 'employee@keepr.com' ||
+    norm === 'alice.walker@jpmorgan.com' ||
     norm === 'alice.walker@acme.com' ||
     norm === 'alice walker'
   ) {
@@ -265,6 +266,7 @@ export function getRelatedEmployeeIdentifiers(idOrEmail: string): string[] {
       'pXmBbGDnDwTsrErsGuad8r4Gz4S2',
       'nEqzcEzb0zPDjsvy4tfL8tm2QHl1',
       'employee@keepr.com',
+      'alice.walker@jpmorgan.com',
       'alice.walker@acme.com',
     ];
   }
@@ -273,6 +275,7 @@ export function getRelatedEmployeeIdentifiers(idOrEmail: string): string[] {
     norm === '3ocwlidda6vuranxwvxxv8zongqs2' ||
     norm === 'nafwf6pxahftjjwhoyd4njhbblq2' ||
     norm === 'auditor@keepr.com' ||
+    norm === 'frank.castle@jpmorgan.com' ||
     norm === 'frank.castle@acme.com' ||
     norm === 'frank castle' ||
     norm.startsWith('frank castle')
@@ -282,6 +285,7 @@ export function getRelatedEmployeeIdentifiers(idOrEmail: string): string[] {
       '3OcwLiDA6vURaNXWvXXv8ZONgQs2',
       'NaFwF6pXaHfTJJWhOyD4NjHbBLQ2',
       'auditor@keepr.com',
+      'frank.castle@jpmorgan.com',
       'frank.castle@acme.com',
     ];
   }
@@ -316,6 +320,12 @@ export function getEmployeeDisplayName(
     '3OcwLiDA6vURaNXWvXXv8ZONgQs2': 'Frank Castle',
     NaFwF6pXaHfTJJWhOyD4NjHbBLQ2: 'Frank Castle',
     'employee@keepr.com': 'Alice Walker',
+    'alice.walker@jpmorgan.com': 'Alice Walker',
+    'bob.martin@jpmorgan.com': 'Bob Martin',
+    'carol.danvers@jpmorgan.com': 'Carol Danvers',
+    'david.miller@jpmorgan.com': 'David Miller',
+    'elena.rostova@jpmorgan.com': 'Elena Rostova',
+    'frank.castle@jpmorgan.com': 'Frank Castle',
     'alice.walker@acme.com': 'Alice Walker',
     'bob.martin@acme.com': 'Bob Martin',
     'carol.danvers@acme.com': 'Carol Danvers',
@@ -457,7 +467,7 @@ export function updateEmployee(employeeId: string, updates: Partial<Employee>): 
   const updatedEmp = updatedList.find((e) => e.id === employeeId || related.includes(e.id)) || {
     id: employeeId,
     orgId: 'org_acme',
-    identity: { email: `${employeeId}@acme.com`, name: employeeId },
+    identity: { email: `${employeeId}@jpmorgan.com`, name: employeeId },
     role: updates.role || 'employee',
     department: updates.department || 'Engineering',
     grade: updates.grade || 'L4',

@@ -345,7 +345,7 @@ The **Expense Evidence Timeline** (`EvidenceTimeline.tsx`) provides an evidence-
 │    Score: 40/100 (Medium Risk) | Reason: Near-Threshold Pattern        │
 │                                                                        │
 │  ● 6. INTERACTIVE FIX-IT RESOLUTION                                    │
-│    Employee provided missing client name: "Acme Global"                │
+│    Employee provided missing client name: "JP Morgan"                  │
 │                                                                        │
 │  ● 7. FINAL HUMAN DECISION & IMMUTABLE AUDIT ENTRY                     │
 │    Decision: APPROVED (₹1,100.00) | Reviewer: Finance Team            │

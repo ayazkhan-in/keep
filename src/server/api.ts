@@ -358,8 +358,6 @@ function getRawReceiptFallback(textContext?: string, imageBase64?: string): any 
         alcoholTotal: 0,
       },
       address: 'Ground Floor, Times Square Building, Andheri East, Mumbai 400059',
-      warrantyMonths: 0,
-      returnDays: 0,
       notes: 'Daily Meal lunch in Mumbai (Tier-1 City)',
       taxDeductible: true,
       taxCategory: 'Daily Meal Allowance',
@@ -416,8 +414,6 @@ function getRawReceiptFallback(textContext?: string, imageBase64?: string): any 
           hasAlcohol: false,
           alcoholTotal: 0,
         },
-        warrantyMonths: 0,
-        returnDays: 0,
         notes: 'Client celebration dinner in Paris.',
         taxDeductible: true,
         taxCategory: 'Client Entertainment & Meals',
@@ -460,8 +456,6 @@ function getRawReceiptFallback(textContext?: string, imageBase64?: string): any 
         hasAlcohol: !isCoffee,
         alcoholTotal: isCoffee ? 0 : 800.00,
       },
-      warrantyMonths: 0,
-      returnDays: 0,
       notes: isCoffee ? 'Client morning coffee sync and project roadmap alignment.' : 'Team celebration dinner and milestone retro.',
       taxDeductible: true,
       taxCategory: 'Client Entertainment & Meals',
@@ -521,8 +515,6 @@ function getRawReceiptFallback(textContext?: string, imageBase64?: string): any 
           carrier: 'Uber',
           travelDates: new Date().toISOString().split('T')[0],
         },
-        warrantyMonths: 0,
-        returnDays: 0,
         notes: 'Airport transfer for regional client workshops.',
         taxDeductible: true,
         taxCategory: 'Ground Transportation',
@@ -564,8 +556,6 @@ function getRawReceiptFallback(textContext?: string, imageBase64?: string): any 
         bookingReference: 'DL891Q',
         travelDates: `${new Date().toISOString().split('T')[0]} to ${new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0]}`,
       },
-      warrantyMonths: 0,
-      returnDays: 0,
       notes: 'Round-trip engineering onsite sync and client summit.',
       taxDeductible: true,
       taxCategory: 'Business Travel',
@@ -625,8 +615,6 @@ function getRawReceiptFallback(textContext?: string, imageBase64?: string): any 
         servicePeriod: isWeWork ? 'Current Month Membership' : 'Immediate Delivery',
         isRecurring: isWeWork,
       },
-      warrantyMonths: isWeWork ? 0 : 6,
-      returnDays: isWeWork ? 0 : 30,
       notes: isWeWork ? 'Remote branch work hub and collaborative meeting room space.' : 'Restocking engineering studio stationery and wrist rests.',
       taxDeductible: true,
       taxCategory: 'Office & Facilities Expense',
@@ -653,22 +641,14 @@ function getRawReceiptFallback(textContext?: string, imageBase64?: string): any 
     tax: 40.00,
     tip: 0,
     currency: 'USD',
-    orderNumber: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
-    serialNumber: 'SN-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-    paymentMethod: 'Credit Card (•••• 4012)',
-    warrantyMonths: 12,
-    warrantyProvider: 'Standard Manufacturer Warranty',
-    warrantyTerms: 'Full repair and replacement coverage for hardware defects under standard use.',
-    returnDays: 14,
-    returnPolicy: '14 calendar days standard return policy. Original packaging required.',
-    notes: textContext || 'Automatically parsed asset record.',
+    notes: textContext || 'Automatically parsed expense record.',
     lineItems: [
       { name: 'Hardware Asset Item', quantity: 1, unitPrice: 459.00, amount: 459.00, category: 'Hardware', itemFlags: [] },
     ],
     taxDeductible: true,
     taxCategory: 'Office Equipment',
     aiConfidence: 0.95,
-    rawOcrSummary: 'PARSED RECEIPT DOCUMENT - Standard Warranty & Return Window Recorded.',
+    rawOcrSummary: 'PARSED RECEIPT DOCUMENT - Verified Proof of Payment & Tax Data Recorded.',
     isReceipt: true,
     isReadable: true,
     qualityScore: 0.95,
@@ -828,7 +808,7 @@ Extract category-appropriate metadata:
 - For Meals & Entertainment: extract dining type, attendee count, line items (food vs drinks), tip/gratuity, and flag alcohol items ('alcohol' flag).
 - For Travel & Transit: extract travel type, origin/destination route, carrier/provider, ticket/PNR/booking reference, and travel dates.
 - For Office & Operational: extract invoice/PO number, service period, itemized supplies or subscription terms.
-- For Hardware/Electronics: extract serial numbers, warranty terms/duration, and return policy windows.
+- For Hardware/Electronics: extract serial numbers, equipment tags, and procurement specifications.
 
 2. LEGIBILITY & ISSUE INSPECTION (CRITICAL):
 Carefully examine the physical and digital condition of the receipt:
@@ -942,11 +922,6 @@ Carefully examine the physical and digital condition of the receipt:
                   isRecurring: { type: Type.BOOLEAN },
                 },
               },
-              warrantyMonths: { type: Type.NUMBER, description: 'Warranty duration in months' },
-              warrantyProvider: { type: Type.STRING },
-              warrantyTerms: { type: Type.STRING },
-              returnDays: { type: Type.NUMBER, description: 'Return window in days' },
-              returnPolicy: { type: Type.STRING },
               notes: { type: Type.STRING },
               taxDeductible: { type: Type.BOOLEAN },
               taxCategory: { type: Type.STRING },
@@ -1131,28 +1106,21 @@ app.post('/api/gemini/audit-document', async (req, res) => {
     documentTitle: req.body.documentName || 'Invoice / Receipt Analysis',
     legalValidity: 'Verified Original Document',
     authenticityScore: 98,
-    warrantyCoverageAudit: {
-      status: 'Active Coverage',
-      duration: '12 Months Limited Manufacturer Warranty',
-      coveredParts: ['Hardware components', 'Power assembly', 'Internal logic circuitry'],
-      excludedConditions: ['Accidental liquid damage', 'Cosmetic wear', 'Voltage surges'],
-      claimMethod: 'Online portal submission with invoice proof + serial tag photo.',
-      supportContact: 'Customer Support Portal',
-    },
-    returnPolicyAudit: {
-      eligibility: 'Standard 14-day return window',
-      restockingFee: '$0 (No fee in original packaging)',
-      conditionRequirement: 'Must include original box, accessories, and documentation.',
+    expenseComplianceAudit: {
+      status: 'Compliant Proof of Payment',
+      auditSummary: 'Valid corporate tax invoice with authentic vendor details.',
+      itemizedVerification: 'All line items match declared transaction total.',
+      complianceCheck: 'Passed spending policy audit.',
     },
     taxAudit: {
       isDeductible: true,
-      irsSection: 'Section 179 / Business Expense',
+      irsSection: 'Section 179 / Corporate Business Expense',
       recommendedRetentionYears: 7,
     },
     hiddenClauses: [
-      'Arbitration clause applies to warranty claims outside of statutory consumer rights.',
+      'Standard corporate audit retention protocol applies.',
     ],
-    executiveSummary: `Confirmed purchase record for ${req.body.purchaseContext?.name || 'the item'}. Valid proof of purchase with serial verification intact.`,
+    executiveSummary: `Confirmed expense record for ${req.body.purchaseContext?.name || 'the item'}. Valid proof of payment with verified merchant tax details.`,
   });
 
   try {
@@ -1175,7 +1143,7 @@ app.post('/api/gemini/audit-document', async (req, res) => {
     }
 
     contents.push({
-      text: `Perform a deep forensic legal, warranty, and return policy audit on this document:
+      text: `Perform a deep forensic legal, tax, and corporate expense reimbursement compliance audit on this document:
 Document Name: ${documentName}
 Document Type: ${documentType}
 Contextual Purchase: ${JSON.stringify(purchaseContext || {})}
@@ -1193,26 +1161,15 @@ Additional Document Text: ${documentText || 'None provided'}`,
               documentTitle: { type: Type.STRING },
               legalValidity: { type: Type.STRING },
               authenticityScore: { type: Type.NUMBER },
-              warrantyCoverageAudit: {
+              expenseComplianceAudit: {
                 type: Type.OBJECT,
                 properties: {
                   status: { type: Type.STRING },
-                  duration: { type: Type.STRING },
-                  coveredParts: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  excludedConditions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                  claimMethod: { type: Type.STRING },
-                  supportContact: { type: Type.STRING },
+                  auditSummary: { type: Type.STRING },
+                  itemizedVerification: { type: Type.STRING },
+                  complianceCheck: { type: Type.STRING },
                 },
-                required: ['status', 'duration', 'coveredParts', 'claimMethod'],
-              },
-              returnPolicyAudit: {
-                type: Type.OBJECT,
-                properties: {
-                  eligibility: { type: Type.STRING },
-                  restockingFee: { type: Type.STRING },
-                  conditionRequirement: { type: Type.STRING },
-                },
-                required: ['eligibility'],
+                required: ['status', 'auditSummary'],
               },
               taxAudit: {
                 type: Type.OBJECT,
@@ -1229,7 +1186,7 @@ Additional Document Text: ${documentText || 'None provided'}`,
               },
               executiveSummary: { type: Type.STRING },
             },
-            required: ['documentTitle', 'warrantyCoverageAudit', 'executiveSummary'],
+            required: ['documentTitle', 'expenseComplianceAudit', 'executiveSummary'],
           },
         },
       });
@@ -1318,21 +1275,20 @@ Vendor: ${purchase.vendor}`,
   }
 });
 
-// 4. Ask Keepr Natural Language Assistant (Conversational Purchase Intelligence)
+// 4. Ask Keepr Natural Language Assistant (Corporate Expense & Policy Intelligence)
 app.post('/api/gemini/chat', async (req, res) => {
   const getChatFallback = (message: string) => {
     const lower = (message || '').toLowerCase();
-    let reply = "I analyzed your purchases. You have tracked items with active warranties and return windows.";
-    if (lower.includes('software') || lower.includes('subscription')) {
-      reply = "You spent **$2,450.00** on software subscriptions across Q3. This represents about **22.6%** of your tech budget.";
-    } else if (lower.includes('return') || lower.includes('deadline')) {
-      reply = "Your return window for recent hardware items closes in **3 days**. Make sure to inspect them soon.";
-    } else if (lower.includes('warranty') || lower.includes('guarantee')) {
-      reply = "You have active warranties registered. Hardware items are protected under standard limited manufacturer terms.";
-    } else if (lower.includes('tax') || lower.includes('deduct')) {
-      reply = "Most of your tracked tech purchases qualify as business expense deductions. Keep receipts saved in your Vault.";
+    if (lower.includes('cab') || lower.includes('taxi') || lower.includes('travel') || lower.includes('flight') || lower.includes('uber')) {
+      return "Travel rideshares/cabs after 10:00 PM are reimbursable up to **₹1,500** ($20). Flights require economy booking and 14-day advance notice.";
+    } else if (lower.includes('meal') || lower.includes('dinner') || lower.includes('food') || lower.includes('alcohol')) {
+      return "Meals are capped at **₹3,000/day** for Tier 1 cities (Mumbai/Bengaluru). Alcohol is strictly **non-reimbursable** unless pre-approved for client entertainment with attendee list.";
+    } else if (lower.includes('receipt') || lower.includes('deadline') || lower.includes('submit')) {
+      return "Itemized receipts are mandatory for all claims over **₹500**. Submissions must be filed within **30 days** of the expense date.";
+    } else if (lower.includes('warranty') || lower.includes('return') || lower.includes('personal') || lower.includes('guarantee')) {
+      return "I only assist with corporate expense reimbursements, spending limits, and company expense policies.";
     }
-    return reply;
+    return "I am Keepr AI. Ask me about company reimbursement limits, allowable expense categories, or receipt compliance requirements.";
   };
 
   try {
@@ -1343,13 +1299,17 @@ app.post('/api/gemini/chat', async (req, res) => {
       return res.json({
         success: true,
         reply: getChatFallback(message),
-        referencedPurchaseIds: ['pur-1', 'pur-7'],
       });
     }
 
-    const systemInstruction = `You are Keepr, an elite, high-density AI purchase intelligence assistant.
-Your style is calm, concise, authoritative, and mathematically accurate.
-Use concise markdown formatting with bold numbers and bullet points when comparing dates, warranties, or spending amounts.`;
+    const systemInstruction = `You are Keepr AI, an enterprise corporate expense reimbursement and policy compliance assistant.
+
+STRICT CONSTRAINTS:
+1. DOMAIN RESTRICTION: Answer ONLY questions about corporate expenses, reimbursement policies, category spend caps, receipt verification rules, and expense audit workflows.
+2. STRICT REFUSAL: If asked about personal purchases, consumer warranties, return windows, code generation, general knowledge, or off-topic subjects, respond ONLY with: "I only assist with corporate expense reimbursements, spending limits, and company expense policies."
+3. CONCISENESS: Keep answers extremely brief (1 to 3 sentences or short bullet points). Provide zero conversational fluff or introductory chatter.
+4. POLICY INTEGRITY: Never invent or assume numbers, allowances, or policy rules. If a limit is not defined, explicitly instruct the user to seek manager approval.
+5. FORMAT: Use bold text for amounts and limits. State exact currency where applicable.`;
 
     const formattedHistory = chatHistory.map((m: any) => ({
       role: m.sender === 'user' ? 'user' : 'model',
@@ -1366,7 +1326,7 @@ Use concise markdown formatting with bold numbers and bullet points when compari
         contents,
         config: {
           systemInstruction,
-          temperature: 0.2,
+          temperature: 0.1,
         },
       });
 
@@ -1392,170 +1352,23 @@ Use concise markdown formatting with bold numbers and bullet points when compari
   }
 });
 
-// 5. AI Warranty Claim Generator
-app.post('/api/gemini/claim-generator', async (req, res) => {
-  const getClaimFallback = (purchase: any, defectDescription?: string, claimantName = 'Alex Morgan') => {
-    return `OFFICIAL WARRANTY CLAIM & RMA SERVICE NOTICE
 
-Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-To: ${purchase?.warranty?.provider || purchase?.vendor || 'Manufacturer Warranty Division'}
-From: ${claimantName}
-
-RE: Formal Warranty Service & Replacement Request for ${purchase?.name || 'Equipment'}
-Product Serial Number: ${purchase?.serialNumber || 'Recorded in Purchase Proof'}
-Original Purchase Date: ${purchase?.purchaseDate || 'Recorded'}
-Invoice / Order ID: ${purchase?.orderNumber || 'Attached Invoice'}
-Retailer: ${purchase?.vendor || 'Authorized Merchant'}
-
-Dear Support Team,
-
-I am writing to formally submit a manufacturer warranty service claim under the authorized limited warranty terms for my ${purchase?.name || 'equipment'}.
-
-DEFECT DESCRIPTION & REPRODUCIBLE SYMPTOMS:
-${defectDescription || 'Device exhibits intermittent hardware malfunctions during standard operating procedures under normal conditions.'}
-
-WARRANTY COVERAGE VERIFICATION:
-This unit was purchased on ${purchase?.purchaseDate || 'the recorded date'} and remains well within the active warranty period (${purchase?.warranty?.durationMonths || 12}-month coverage). Proof of purchase and invoice receipt are attached with this notice.
-
-REQUESTED REMEDY:
-In accordance with statutory consumer warranty standards and your published warranty policy, I request a Return Merchandise Authorization (RMA) number and a prepaid shipping label to have this unit serviced or replaced.
-
-Thank you for your prompt assistance.
-
-Sincerely,
-${claimantName}`;
-  };
-
-  try {
-    const { purchase, defectDescription, claimantName = 'Alex Morgan' } = req.body;
-    const ai = getAI();
-
-    if (!ai) {
-      return res.json({
-        success: true,
-        claimLetter: getClaimFallback(purchase, defectDescription, claimantName),
-      });
-    }
-
-    try {
-      const response = await generateContentWithQuotaFallback(ai, {
-        contents: `Generate a formal, highly authoritative manufacturer warranty claim & RMA letter:
-Product: ${purchase.name}
-Vendor: ${purchase.vendor}
-Purchase Date: ${purchase.purchaseDate}
-Serial Number: ${purchase.serialNumber || 'Provided in attached invoice'}
-Order Number: ${purchase.orderNumber || 'Attached in documentation'}
-Warranty Terms: ${purchase.warranty?.terms || 'Standard limited hardware warranty'}
-Reported Issue / Defect: ${defectDescription}
-Claimant: ${claimantName}`,
-        config: {
-          temperature: 0.2,
-        },
-      });
-
-      return res.json({
-        success: true,
-        claimLetter: response.text,
-      });
-    } catch (apiErr: any) {
-      console.warn('Claim generator API quota fallback:', apiErr.message);
-      return res.json({
-        success: true,
-        claimLetter: getClaimFallback(purchase, defectDescription, claimantName),
-        quotaExhausted: true,
-      });
-    }
-  } catch (error: any) {
-    console.error('Error generating warranty claim:', error);
-    return res.json({
-      success: true,
-      claimLetter: getClaimFallback(req.body.purchase, req.body.defectDescription, req.body.claimantName),
-      quotaExhausted: true,
-    });
-  }
-});
-
-// 6. AI Return Request Generator
-app.post('/api/gemini/return-generator', async (req, res) => {
-  const getReturnFallback = (purchase: any, returnReason?: string, customerName = 'Alex Morgan') => {
-    return `Subject: Return & Refund Request - Order #${purchase?.orderNumber || '99281'} - ${purchase?.name || 'Item'}
-
-Dear ${purchase?.vendor || 'Merchant'} Customer Care,
-
-I would like to initiate a return for my recent purchase of the ${purchase?.name || 'item'}, ordered on ${purchase?.purchaseDate || 'the recorded date'} (Order Reference: ${purchase?.orderNumber || 'N/A'}).
-
-Reason for Return:
-${returnReason || 'Item does not meet workflow requirements / seeking alternative specification.'}
-
-This item is in original condition with all original packaging, documentation, and accessories intact, and is being requested within the authorized return period.
-
-Please provide a prepaid return shipping label and instructions for processing the full refund to the original payment method.
-
-Thank you,
-${customerName}`;
-  };
-
-  try {
-    const { purchase, returnReason, customerName = 'Alex Morgan' } = req.body;
-    const ai = getAI();
-
-    if (!ai) {
-      return res.json({
-        success: true,
-        returnEmail: getReturnFallback(purchase, returnReason, customerName),
-      });
-    }
-
-    try {
-      const response = await generateContentWithQuotaFallback(ai, {
-        contents: `Generate an email return request to retailer "${purchase.vendor}" for item "${purchase.name}".
-Order ID: ${purchase.orderNumber}
-Purchase Date: ${purchase.purchaseDate}
-Reason: ${returnReason}
-Customer: ${customerName}`,
-        config: {
-          temperature: 0.2,
-        },
-      });
-
-      return res.json({
-        success: true,
-        returnEmail: response.text,
-      });
-    } catch (apiErr: any) {
-      console.warn('Return generator API quota fallback:', apiErr.message);
-      return res.json({
-        success: true,
-        returnEmail: getReturnFallback(purchase, returnReason, customerName),
-        quotaExhausted: true,
-      });
-    }
-  } catch (error: any) {
-    console.error('Error generating return email:', error);
-    return res.json({
-      success: true,
-      returnEmail: getReturnFallback(req.body.purchase, req.body.returnReason, req.body.customerName),
-      quotaExhausted: true,
-    });
-  }
-});
-
-// 7. AI Spending & Risk Insights Generator
+// 5. AI Spending & Policy Insights Generator
 app.post('/api/gemini/insights', async (req, res) => {
   const getInsightsFallback = () => [
     {
       id: 'ins-gen-1',
       title: 'Recurring Software Optimization',
-      description: 'You spend $144/yr on Figma and recurrent cloud services. Consolidating annual licenses could yield 15% savings.',
+      description: 'Corporate spend on SaaS and recurring tools can be optimized by consolidating team seats into enterprise tiers.',
       type: 'subscription',
       actionLabel: 'Review Subscriptions',
     },
     {
       id: 'ins-gen-2',
-      title: 'Expiring Hardware Protection',
-      description: 'Breville Barista Pro and Sony A7IV warranties expire within 14 days. Inspect all functions before window closes.',
-      type: 'warranty',
-      actionLabel: 'Check Warranties',
+      title: 'Per Diem Policy Alert',
+      description: 'Daily meal spend in Bengaluru reached 92% of monthly allocated allowance threshold. Plan upcoming claims accordingly.',
+      type: 'policy',
+      actionLabel: 'Check Allowances',
     },
     {
       id: 'ins-gen-3',
@@ -1579,7 +1392,7 @@ app.post('/api/gemini/insights', async (req, res) => {
         contents: `Given these purchases:
 ${JSON.stringify(purchases, null, 2)}
 
-Generate 3 high-impact, actionable financial/asset insights for Keepr. Return strictly a JSON array of objects with keys: id, title, description, type (one of 'spending', 'warranty', 'subscription', 'tax'), actionLabel.`,
+Generate 3 high-impact, actionable financial/asset insights for Keepr. Return strictly a JSON array of objects with keys: id, title, description, type (one of 'spending', 'policy', 'subscription', 'tax'), actionLabel.`,
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
@@ -1677,31 +1490,24 @@ Identify which purchase IDs semantically match the user's intent. Return JSON wi
   }
 });
 
-// 9. LangChain + Resend Automated Warranty Expiration Email Alert Endpoint
-app.post('/api/warranty/send-alert', async (req, res) => {
+// 7. LangChain + Nodemailer Expense & Policy Compliance Alert Endpoint
+const handleSendAlert = async (req: any, res: any) => {
   try {
     const { purchase, recipientEmail = 'khanasifshamshul@gmail.com', daysLeft } = req.body;
 
     if (!purchase) {
-      // Fallback sample item for testing if no item is provided
+      // Fallback sample corporate expense item for testing
       const sampleItem = {
-        id: 'pur-sample-alert',
-        name: 'MacBook Pro 16" M3 Max (1TB SSD, 36GB RAM)',
-        vendor: 'Apple Store',
-        category: 'Electronics',
-        price: 3499.00,
-        currency: 'USD',
-        purchaseDate: '2023-11-01',
-        serialNumber: 'APL-MBP16-992184',
-        warranty: {
-          hasWarranty: true,
-          expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          provider: 'AppleCare+ Coverage',
-          terms: 'Unlimited hardware repair for accidental damage, battery health drop below 80%, and logic board defects.',
-        },
-        returnWindow: { hasReturn: false, deadlineDate: '2023-11-15' },
+        id: 'exp-sample-alert',
+        name: 'Client Business Dinner & Strategy Alignment',
+        vendor: 'Royal Indian Grand, Mumbai',
+        category: 'Meals & Entertainment',
+        price: 5104.00,
+        currency: 'INR',
+        purchaseDate: new Date().toISOString().split('T')[0],
+        serialNumber: 'EXP-MUM-882190',
         taxDeductible: true,
-        tags: ['Apple', 'Hardware'],
+        tags: ['Client Meal', 'Corporate Reimbursement'],
         documents: [],
       };
 
@@ -1712,10 +1518,13 @@ app.post('/api/warranty/send-alert', async (req, res) => {
     const result = await sendWarrantyExpiryAlert(purchase, recipientEmail, daysLeft);
     return res.json(result);
   } catch (error: any) {
-    console.error('Error in warranty send-alert route:', error);
+    console.error('Error in send-alert route:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
-});
+};
+
+app.post('/api/expense/send-alert', handleSendAlert);
+app.post('/api/warranty/send-alert', handleSendAlert);
 
 export { app };
 export default app;

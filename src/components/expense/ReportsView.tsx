@@ -25,8 +25,8 @@ export const ReportsView: React.FC = () => {
   const [reportType, setReportType] = useState<string>('monthly_digest');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [emailTo, setEmailTo] = useState('cfo@acme.com');
-  const [emailSubject, setEmailSubject] = useState('Acme Corporate Expense Audit Digest - October 2026');
+  const [emailTo, setEmailTo] = useState('cfo@jpmorgan.com');
+  const [emailSubject, setEmailSubject] = useState('JP Morgan Corporate Expense Audit Digest - October 2026');
   const [emailNotes, setEmailNotes] = useState('Attached is the verified monthly expense reimbursement schedule and policy compliance summary for your executive review.');
   const [sendSuccessMsg, setSendSuccessMsg] = useState<string | null>(null);
 
@@ -180,13 +180,13 @@ export const ReportsView: React.FC = () => {
               <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-sm">
                 K
               </div>
-              <span className="font-bold text-lg text-slate-900 tracking-tight">ACME ENTERPRISE</span>
+              <span className="font-bold text-lg text-slate-900 tracking-tight">JP MORGAN</span>
             </div>
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">
               Corporate Expense Audit Report
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              Document Ref: ACME-EXP-2026-M10 • Authorized Policy Version: v{policy.versionNumber}
+              Document Ref: JPM-EXP-2026-M10 • Authorized Policy Version: v{policy.versionNumber}
             </p>
           </div>
 
@@ -300,7 +300,7 @@ export const ReportsView: React.FC = () => {
             <div className="border-b border-slate-400 pb-1 mb-1 font-semibold text-slate-900">
               {activeEmployee.identity.name} (Finance Auditor)
             </div>
-            <div className="text-[11px] text-slate-500">Prepared & Audited By • Acme Corporate Finance</div>
+            <div className="text-[11px] text-slate-500">Prepared & Audited By • JP Morgan Corporate Finance</div>
           </div>
           <div>
             <div className="border-b border-slate-400 pb-1 mb-1 font-semibold text-slate-900">
@@ -365,7 +365,7 @@ export const ReportsView: React.FC = () => {
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-emerald-600" />
-                  <span className="font-semibold text-slate-800">Acme_Expense_Audit_Oct2026.pdf</span>
+                  <span className="font-semibold text-slate-800">JPMorgan_Expense_Audit_Oct2026.pdf</span>
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono-code">2.4 MB</span>
               </div>

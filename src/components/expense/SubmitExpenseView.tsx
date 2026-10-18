@@ -2003,7 +2003,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                       type="text"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
-                      placeholder="e.g. Acme Health Partners"
+                      placeholder="e.g. JP Morgan Health Partners"
                       className={`w-full text-xs p-2.5 border rounded-xl focus:outline-none font-medium ${
                         !clientName ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200 focus:border-emerald-500'
                       }`}
@@ -2285,7 +2285,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                   type="text"
                   value={fixItInput}
                   onChange={(e) => setFixItInput(e.target.value)}
-                  placeholder="e.g. Acme Health Partners"
+                  placeholder="e.g. JP Morgan Health Partners"
                   className="flex-1 text-xs p-2 bg-white border border-amber-300 rounded-lg focus:outline-none"
                 />
                 <button

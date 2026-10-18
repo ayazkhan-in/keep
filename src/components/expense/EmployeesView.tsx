@@ -212,6 +212,7 @@ export const EmployeesView: React.FC = () => {
       emp.id === 'pXmBbGDnDwTsrErsGuad8r4Gz4S2' ||
       emp.id === 'nEqzcEzb0zPDjsvy4tfL8tm2QHl1' ||
       emp.identity.email.toLowerCase() === 'employee@keepr.com' ||
+      emp.identity.email.toLowerCase() === 'alice.walker@jpmorgan.com' ||
       emp.identity.email.toLowerCase() === 'alice.walker@acme.com' ||
       emp.identity.name.toLowerCase() === 'alice walker';
 
@@ -220,6 +221,7 @@ export const EmployeesView: React.FC = () => {
       emp.id === '3OcwLiDA6vURaNXWvXXv8ZONgQs2' ||
       emp.id === 'NaFwF6pXaHfTJJWhOyD4NjHbBLQ2' ||
       emp.identity.email.toLowerCase() === 'auditor@keepr.com' ||
+      emp.identity.email.toLowerCase() === 'frank.castle@jpmorgan.com' ||
       emp.identity.email.toLowerCase() === 'frank.castle@acme.com' ||
       emp.identity.name.toLowerCase().startsWith('frank castle');
 
@@ -230,6 +232,7 @@ export const EmployeesView: React.FC = () => {
           e.employeeId === 'pXmBbGDnDwTsrErsGuad8r4Gz4S2' ||
           e.employeeId === 'nEqzcEzb0zPDjsvy4tfL8tm2QHl1' ||
           (e as any).employeeAlias === 'emp_101' ||
+          (e as any).employeeEmail?.toLowerCase() === 'alice.walker@jpmorgan.com' ||
           (e as any).employeeEmail?.toLowerCase() === 'alice.walker@acme.com' ||
           (e as any).employeeEmail?.toLowerCase() === 'employee@keepr.com'
         );
@@ -240,6 +243,7 @@ export const EmployeesView: React.FC = () => {
           e.employeeId === '3OcwLiDA6vURaNXWvXXv8ZONgQs2' ||
           e.employeeId === 'NaFwF6pXaHfTJJWhOyD4NjHbBLQ2' ||
           (e as any).employeeAlias === 'emp_106' ||
+          (e as any).employeeEmail?.toLowerCase() === 'frank.castle@jpmorgan.com' ||
           (e as any).employeeEmail?.toLowerCase() === 'frank.castle@acme.com' ||
           (e as any).employeeEmail?.toLowerCase() === 'auditor@keepr.com'
         );
@@ -263,9 +267,9 @@ export const EmployeesView: React.FC = () => {
       const name = (emp.identity?.name || '').trim().toLowerCase();
 
       let canonicalKey = email;
-      if (email === 'employee@keepr.com' || email === 'alice.walker@acme.com' || name === 'alice walker') {
+      if (email === 'employee@keepr.com' || email === 'alice.walker@jpmorgan.com' || email === 'alice.walker@acme.com' || name === 'alice walker') {
         canonicalKey = 'person:alice_walker';
-      } else if (email === 'auditor@keepr.com' || email === 'frank.castle@acme.com' || name.startsWith('frank castle')) {
+      } else if (email === 'auditor@keepr.com' || email === 'frank.castle@jpmorgan.com' || email === 'frank.castle@acme.com' || name.startsWith('frank castle')) {
         canonicalKey = 'person:frank_castle';
       }
 
@@ -279,7 +283,7 @@ export const EmployeesView: React.FC = () => {
           identity: {
             ...emp.identity,
             name: 'Alice Walker',
-            email: 'alice.walker@acme.com',
+            email: 'alice.walker@jpmorgan.com',
           },
           role: 'employee',
           department: emp.department || 'Engineering',
@@ -293,7 +297,7 @@ export const EmployeesView: React.FC = () => {
           identity: {
             ...emp.identity,
             name: 'Frank Castle',
-            email: 'frank.castle@acme.com',
+            email: 'frank.castle@jpmorgan.com',
           },
           role: 'finance',
           department: emp.department || 'Finance & Audit',
@@ -1523,7 +1527,7 @@ export const EmployeesView: React.FC = () => {
                         required
                         value={addEmail}
                         onChange={(e) => setAddEmail(e.target.value)}
-                        placeholder="david.zhang@acme.com"
+                        placeholder="david.zhang@jpmorgan.com"
                         className="w-full h-9 px-3 text-xs rounded-lg border border-slate-200 bg-white font-mono-code text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900/10"
                       />
                     </div>

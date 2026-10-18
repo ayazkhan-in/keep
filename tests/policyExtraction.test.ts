@@ -22,10 +22,10 @@ import {
 import { Employee, Expense } from '../src/types/expense';
 
 describe('Policy PDF Extraction & Rule Ingestion Engine', () => {
-  const samplePolicyHandbookText = `ACME GLOBAL CORP EXPENSE & REIMBURSEMENT POLICY (REV 2026.3)
+  const samplePolicyHandbookText = `JP MORGAN ENTERPRISE EXPENSE & REIMBURSEMENT POLICY (REV 2026.3)
 
 SECTION 1. GENERAL PRINCIPLES & AMBIGUITY
-1.1 All business expenses must be ordinary, reasonable, and directly necessary for Acme business operations.
+1.1 All business expenses must be ordinary, reasonable, and directly necessary for JP Morgan business operations.
 1.2 Receipts must be submitted within 30 calendar days of the transaction date. Late submissions require finance justification.
 
 SECTION 2. NON-REIMBURSABLE EXPENSES
@@ -55,7 +55,7 @@ SECTION 5. APPROVAL THRESHOLDS
       // Create a PDF document containing the sample policy text (using INR for ASCII font compatibility)
       const doc = new jsPDF();
       doc.setFont('helvetica', 'bold');
-      doc.text('ACME GLOBAL CORP EXPENSE POLICY', 10, 15);
+      doc.text('JP MORGAN ENTERPRISE EXPENSE POLICY', 10, 15);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
 
@@ -169,11 +169,11 @@ SECTION 5. APPROVAL THRESHOLDS
 
     it('synthesizes a complete, validated PolicyVersion with all rule types from extracted text', () => {
       const parsed = parsePolicyFromText(samplePolicyHandbookText, {
-        policyName: 'Acme Ingested Policy 2026',
+        policyName: 'JP Morgan Ingested Policy 2026',
       });
 
       const policy = parsed.policy;
-      expect(policy.name).toBe('Acme Ingested Policy 2026');
+      expect(policy.name).toBe('JP Morgan Ingested Policy 2026');
       expect(policy.status).toBe('draft');
       expect(policy.settings.baseCurrency).toBe('INR');
       expect(policy.settings.lateSubmissionWindowDays).toBe(30);
@@ -273,7 +273,7 @@ SECTION 5. APPROVAL THRESHOLDS
       };
 
       const parsed = parsePolicyFromText(samplePolicyHandbookText, {
-        policyName: 'Live Synthesized Acme Policy',
+        policyName: 'Live Synthesized JP Morgan Policy',
       });
       synthesizedPolicy = parsed.policy;
     });

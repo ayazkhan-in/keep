@@ -62,7 +62,7 @@ import { SYNTHETIC_EXPENSES } from '../../data/syntheticClaims';
 
 type StudioTab = 'review' | 'checks' | 'test' | 'diff' | 'qa';
 
-const SAMPLE_POLICY_TEXT = `ACME CORPORATE TRAVEL & REIMBURSEMENT POLICY (REV 2026.2)
+const SAMPLE_POLICY_TEXT = `JP MORGAN CORPORATE TRAVEL & REIMBURSEMENT POLICY (REV 2026.2)
 
 1. DAILY MEAL PER-DIEM
 Corporate Daily Meal Allowance: Capped at ₹3,000 per day.
@@ -115,7 +115,7 @@ export const PolicyStudioView: React.FC = () => {
   const [pdfError, setPdfError] = useState<string | null>(null);
 
   // Manual creation state
-  const [manualTitle, setManualTitle] = useState('Acme Global T&E Policy 2026.2');
+  const [manualTitle, setManualTitle] = useState('JP Morgan Global T&E Policy 2026.2');
   const [manualCurrency, setManualCurrency] = useState('INR');
   const [manualTier1Cap, setManualTier1Cap] = useState('3000');
   const [manualTier2Cap, setManualTier2Cap] = useState('1800');
@@ -191,7 +191,7 @@ export const PolicyStudioView: React.FC = () => {
     const rawParagraphs = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
 
     return rawParagraphs.map((para, idx) => {
-      const isHeading = para.trim().startsWith('SECTION') || para.trim().startsWith('ACME');
+      const isHeading = para.trim().startsWith('SECTION') || para.trim().startsWith('ACME') || para.trim().startsWith('JP MORGAN') || para.trim().startsWith('JPMORGAN');
       const mapped = selectedPolicy.rules.filter((r) => {
         if (r.sourceParagraphIndex !== undefined) {
           return r.sourceParagraphIndex === idx;

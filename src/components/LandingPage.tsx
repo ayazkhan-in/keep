@@ -920,7 +920,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         </div>
                         <span className="text-xs font-mono-code text-emerald-700 font-semibold">14 Active Rules</span>
                       </div>
-                      <h4 className="font-semibold text-sm text-[#0F172A] mt-2">Acme Global Travel & Expense Policy</h4>
+                      <h4 className="font-semibold text-sm text-[#0F172A] mt-2">JP Morgan Global Travel & Expense Policy</h4>
                       <p className="text-xs text-[#64748B] mt-1">Daily Meals: ₹3,000/day · Mandatory Receipt &gt; ₹500</p>
                     </div>
 
@@ -957,7 +957,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       Executive Audit Reports & PDF
                     </h3>
                     <p className="text-[14px] text-[#76777D] leading-relaxed">
-                      Generate board-level corporate expense packages with Acme letterhead, compliance metrics, and disbursement schedules. Export to print-ready PDF or dispatch via email directly from the console.
+                      Generate board-level corporate expense packages with JP Morgan letterhead, compliance metrics, and disbursement schedules. Export to print-ready PDF or dispatch via email directly from the console.
                     </p>
                     <button
                       onClick={onNavigateToAuth}
@@ -973,7 +973,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl space-y-3">
                       <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                         <span className="font-mono-code text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                          ACME CORP · EXPENSE AUDIT REPORT
+                          JP MORGAN · EXPENSE AUDIT REPORT
                         </span>
                         <span className="font-mono-code text-[10px] text-emerald-700 font-bold">
                           94.2% Policy Compliant

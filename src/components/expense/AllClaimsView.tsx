@@ -554,7 +554,7 @@ export const AllClaimsView: React.FC = () => {
                     {/* Jagged paper top */}
                     <div className="border-b-2 border-dashed border-slate-300 pb-3 text-center">
                       <div className="font-bold text-sm tracking-wider uppercase text-slate-900">
-                        {selectedClaim.extracted?.merchant?.value || 'Acme Vendor Receipt'}
+                        {selectedClaim.extracted?.merchant?.value || 'JP Morgan Vendor Receipt'}
                       </div>
                       <div className="text-[10px] text-slate-500 mt-0.5">
                         {selectedClaim.context?.city || 'Bengaluru'}, India

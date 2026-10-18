@@ -51,7 +51,7 @@ describe('Corporate Expense Reimbursement Pure Engine', () => {
       orgId: 'org_acme',
       versionNumber: 1,
       status: 'active',
-      name: 'Acme Global Expense Policy 2026',
+      name: 'JP Morgan Global Expense Policy 2026',
       sourceText: 'Standard corporate expense policy rules.',
       cityTiers: {
         Mumbai: 'Tier-1',
@@ -435,7 +435,7 @@ describe('Corporate Expense Reimbursement Pure Engine', () => {
     expect(initialVerdict.missingFields).toContain('Client Name');
 
     // Phase 2: Employee fixes client info -> Re-evaluation approves
-    dinnerWithMissingClient.context.clientName = 'Acme Global Partner';
+    dinnerWithMissingClient.context.clientName = 'JP Morgan Partner';
     dinnerWithMissingClient.context.attendeeCount = 2;
 
     const revisedVerdict = evaluateExpense({

@@ -18,8 +18,6 @@ import {
   ExternalLink,
   LayoutDashboard,
   ShoppingBag,
-  ShieldCheck,
-  RotateCcw,
   Vault,
   BarChart3,
   Clock,
@@ -109,8 +107,6 @@ export const TopBar: React.FC<TopBarProps> = ({
     { id: 'purchases', label: 'Purchases', icon: ShoppingBag },
     { id: 'invoices', label: 'Invoices', icon: FileSpreadsheet },
     { id: 'create-invoice', label: 'Create Invoice', icon: FilePlus2 },
-    { id: 'warranties', label: 'Warranties', icon: ShieldCheck },
-    { id: 'returns', label: 'Returns', icon: RotateCcw, badge: riskCount > 0 ? `${riskCount} Expiring` : undefined },
     { id: 'vault', label: 'Document Vault', icon: Vault },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'timeline', label: 'Timeline', icon: Clock },
@@ -240,25 +236,25 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <div className="divide-y divide-[#F1F5F9] max-h-72 overflow-y-auto">
                   <div
                     onClick={() => {
-                      setActiveView('returns');
+                      setActiveView('review-queue');
                       setShowNotifications(false);
                     }}
                     className="p-3.5 hover:bg-[#F9F9FB] cursor-pointer transition-colors flex gap-2.5 items-start"
                   >
-                    <ShieldAlert className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-[12px] font-medium text-[#0F172A]">
-                        MacBook Pro Return Window: 3 Days Left
+                        Weekend Expense Policy Exception
                       </p>
                       <p className="text-[11px] text-[#76777D]">
-                        Apple Store · Best Buy Order #W99281
+                        Flight Upgrade · Flagged for manager review
                       </p>
                     </div>
                   </div>
 
                   <div
                     onClick={() => {
-                      setActiveView('warranties');
+                      setActiveView('review-queue');
                       setShowNotifications(false);
                     }}
                     className="p-3.5 hover:bg-[#F9F9FB] cursor-pointer transition-colors flex gap-2.5 items-start"
@@ -266,10 +262,10 @@ export const TopBar: React.FC<TopBarProps> = ({
                     <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-[12px] font-medium text-[#0F172A]">
-                        Sony A7IV Warranty Expiry
+                        Missing Attendee Roster
                       </p>
                       <p className="text-[11px] text-[#76777D]">
-                        Manufacturer 1-Year Limited expires Nov 2
+                        Client Dinner $340.00 requires attendee list
                       </p>
                     </div>
                   </div>

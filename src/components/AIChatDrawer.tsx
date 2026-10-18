@@ -6,11 +6,6 @@ import {
   Loader2,
   Bot,
   User,
-  ShoppingBag,
-  ShieldCheck,
-  RotateCcw,
-  ArrowRight,
-  RefreshCw,
 } from 'lucide-react';
 import { PurchaseItem } from '../types';
 import { getActivePolicy, queryPolicyGrounded } from '../services/policyService';
@@ -26,9 +21,9 @@ interface AIChatDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   purchases: PurchaseItem[];
-  onSelectPurchase: (item: PurchaseItem) => void;
-  onTriggerClaim: (item: PurchaseItem) => void;
-  onTriggerReturn: (item: PurchaseItem) => void;
+  onSelectPurchase?: (item: PurchaseItem) => void;
+  onTriggerClaim?: (item: PurchaseItem) => void;
+  onTriggerReturn?: (item: PurchaseItem) => void;
 }
 
 export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
@@ -44,7 +39,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
       id: 'msg-welcome',
       role: 'assistant',
       content:
-        "Hello! I am your Keepr AI Assistant. Ask me anything about corporate reimbursement policies (e.g. 'Can I expense a cab after 10 pm?', 'Is dinner alcohol covered?'), spend allowances, or warranty records.",
+        "Hello! I am Keepr AI. Ask me anything about corporate reimbursement policies (e.g. 'Can I expense a cab after 10 pm?', 'Is dinner alcohol covered?'), spend allowances, or receipt requirements.",
       timestamp: 'Just now',
     },
   ]);
@@ -120,7 +115,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
         role: 'assistant',
         content:
           data.reply ||
-          "I've analyzed your records. Ask me anything about corporate reimbursement policies, receipts, or warranties.",
+          "I've analyzed your policy records. Ask me anything about corporate reimbursement policies, receipts, or spend allowances.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -175,7 +170,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
                 Ask Keepr AI
               </h3>
               <p className="text-[11px] text-[#76777D]">
-                Gemini 3.6 Flash Purchase Intelligence
+                Corporate Expense & Policy Intelligence
               </p>
             </div>
           </div>
@@ -260,7 +255,7 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({
               type="text"
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
-              placeholder="Ask about receipts, warranties, returns..."
+              placeholder="Ask about corporate expense policies, receipt rules, allowances..."
               className="flex-1 px-3.5 py-2.5 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl text-[13px] text-[#0F172A] focus:outline-none focus:border-[#0F172A]"
             />
             <button

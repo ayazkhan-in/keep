@@ -305,7 +305,7 @@ export function replayLedger(expenses: Expense[]): {
       const employee = getAllEmployeesList().find((emp) => emp.id === exp.employeeId) || {
         id: exp.employeeId,
         orgId: exp.orgId,
-        identity: { email: `${exp.employeeId}@acme.com`, name: exp.employeeId },
+        identity: { email: `${exp.employeeId}@jpmorgan.com`, name: exp.employeeId },
         role: 'employee' as const,
         department: 'Engineering',
         grade: 'L4',
