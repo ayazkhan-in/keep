@@ -8,7 +8,8 @@ export const MyExpensesPage: React.FC = () => {
 
   return (
     <MyExpensesView
-      onOpenSubmit={() => navigate(ROUTES.EMPLOYEE.SUBMIT)}
+      onNavigateToSubmit={() => navigate(ROUTES.EMPLOYEE.SUBMIT)}
+      onNavigateToCaps={() => navigate(ROUTES.EMPLOYEE.ALLOWANCES)}
     />
   );
 };

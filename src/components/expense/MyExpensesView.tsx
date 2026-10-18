@@ -14,6 +14,8 @@ import {
   Eye,
   MessageSquare,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../routes/routeConfig';
 import { Expense } from '../../types/expense';
 import { getEmployeeExpenses, subscribeExpenses } from '../../services/expenseService';
 import { getActiveEmployee } from '../../services/employeeService';
@@ -24,14 +26,17 @@ import { FixItModal } from './FixItModal';
 import { EmployeePolicyAssistant } from './EmployeePolicyAssistant';
 
 interface MyExpensesViewProps {
-  onNavigateToSubmit: () => void;
-  onNavigateToCaps: () => void;
+  onNavigateToSubmit?: () => void;
+  onNavigateToCaps?: () => void;
 }
 
 export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
   onNavigateToSubmit,
   onNavigateToCaps,
 }) => {
+  const navigate = useNavigate();
+  const handleGoToSubmit = onNavigateToSubmit || (() => navigate(ROUTES.EMPLOYEE.SUBMIT));
+  const handleGoToCaps = onNavigateToCaps || (() => navigate(ROUTES.EMPLOYEE.ALLOWANCES));
   const activeEmp = getActiveEmployee();
   const [expenses, setExpenses] = useState<Expense[]>(() => getEmployeeExpenses(activeEmp.id));
   const [search, setSearch] = useState('');
@@ -95,16 +100,16 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
-            onClick={onNavigateToCaps}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-[#334155] border border-[#CBD5E1] rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+            onClick={handleGoToCaps}
+            className="flex-1 sm:flex-none px-3.5 py-2 bg-white hover:bg-slate-50 text-[#334155] border border-[#CBD5E1] rounded-xl text-xs font-semibold transition-colors cursor-pointer shadow-2xs text-center"
           >
             <span>View My Caps</span>
           </button>
           <button
-            onClick={onNavigateToSubmit}
-            className="px-3.5 py-2 bg-[#0F172A] hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            onClick={handleGoToSubmit}
+            className="flex-1 sm:flex-none px-3.5 py-2 bg-[#0F172A] hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs text-center"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Submit Receipt</span>
@@ -117,21 +122,21 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs">
-          <span className="text-xs text-[#64748B] font-medium block">Total Claims</span>
-          <span className="text-xl font-bold text-[#0F172A] block mt-1">{expenses.length}</span>
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs">
+          <span className="text-[11px] sm:text-xs text-[#64748B] font-medium block">Total Claims</span>
+          <span className="text-lg sm:text-xl font-bold text-[#0F172A] block mt-1">{expenses.length}</span>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs">
-          <span className="text-xs text-[#64748B] font-medium block">Total Claimed</span>
-          <span className="text-xl font-bold text-[#0F172A] block mt-1">₹{totalClaimed.toLocaleString()}</span>
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs">
+          <span className="text-[11px] sm:text-xs text-[#64748B] font-medium block">Total Claimed</span>
+          <span className="text-lg sm:text-xl font-bold text-[#0F172A] block mt-1">₹{totalClaimed.toLocaleString()}</span>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-emerald-200 bg-emerald-50/30 shadow-2xs">
-          <span className="text-xs text-emerald-800 font-medium block">Approved Reimbursement</span>
-          <span className="text-xl font-bold text-emerald-700 block mt-1">₹{totalApproved.toLocaleString()}</span>
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-emerald-200 bg-emerald-50/30 shadow-2xs">
+          <span className="text-[11px] sm:text-xs text-emerald-800 font-medium block truncate">Approved Reimb.</span>
+          <span className="text-lg sm:text-xl font-bold text-emerald-700 block mt-1">₹{totalApproved.toLocaleString()}</span>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-amber-200 bg-amber-50/30 shadow-2xs">
-          <span className="text-xs text-amber-900 font-medium block">Pending Action</span>
-          <span className="text-xl font-bold text-amber-800 block mt-1">{pendingCount}</span>
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-amber-200 bg-amber-50/30 shadow-2xs">
+          <span className="text-[11px] sm:text-xs text-amber-900 font-medium block">Pending Action</span>
+          <span className="text-lg sm:text-xl font-bold text-amber-800 block mt-1">{pendingCount}</span>
         </div>
       </div>
 
@@ -159,10 +164,11 @@ export const MyExpensesView: React.FC<MyExpensesViewProps> = ({
               Upload a receipt or invoice to submit your first corporate reimbursement.
             </p>
             <button
-              onClick={onNavigateToSubmit}
-              className="px-3 py-1.5 bg-[#0F172A] text-white rounded-xl text-xs font-semibold cursor-pointer shadow-2xs"
+              onClick={handleGoToSubmit}
+              className="px-3.5 py-2 bg-[#0F172A] text-white rounded-xl text-xs font-semibold cursor-pointer shadow-2xs inline-flex items-center gap-1.5"
             >
-              Submit First Receipt
+              <Plus className="w-3.5 h-3.5" />
+              <span>Submit First Receipt</span>
             </button>
           </div>
         ) : (

@@ -5,41 +5,52 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { ROUTES, getDefaultPortalRoute } from './routeConfig';
 import { RoleGuard } from './RoleGuard';
 import { AppRedirect } from './AppRedirect';
-import { LandingPage } from '../components/LandingPage';
-import { AuthPage } from '../components/AuthPage';
-import { NotFoundPage } from '../pages/NotFoundPage';
 import { EmployeeLayout } from '../layouts/EmployeeLayout';
 import { AuditorLayout } from '../layouts/AuditorLayout';
 import { getActiveRole } from '../services/employeeService';
 
-// Employee Pages
-import { MyExpensesPage } from '../pages/employee/MyExpensesPage';
-import { SubmitExpensePage } from '../pages/employee/SubmitExpensePage';
-import { MyCapsPage } from '../pages/employee/MyCapsPage';
-import { EmployeePoliciesPage } from '../pages/employee/EmployeePoliciesPage';
-import { TripsPage } from '../pages/employee/TripsPage';
+// Lazy-loaded Public Pages
+const LandingPage = React.lazy(() => import('../components/LandingPage').then((m) => ({ default: m.LandingPage })));
+const AuthPage = React.lazy(() => import('../components/AuthPage').then((m) => ({ default: m.AuthPage })));
+const NotFoundPage = React.lazy(() => import('../pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
-// Auditor Pages
-import { ReviewQueuePage } from '../pages/auditor/ReviewQueuePage';
-import { AllClaimsPage } from '../pages/auditor/AllClaimsPage';
-import { PolicyStudioPage } from '../pages/auditor/PolicyStudioPage';
-import { EmployeesPage } from '../pages/auditor/EmployeesPage';
-import { ReportsPage } from '../pages/auditor/ReportsPage';
-import { SimulatorPage } from '../pages/auditor/SimulatorPage';
-import { ExportPage } from '../pages/auditor/ExportPage';
-import { ScorecardPage } from '../pages/auditor/ScorecardPage';
+// Lazy-loaded Employee Pages
+const MyExpensesPage = React.lazy(() => import('../pages/employee/MyExpensesPage').then((m) => ({ default: m.MyExpensesPage })));
+const SubmitExpensePage = React.lazy(() => import('../pages/employee/SubmitExpensePage').then((m) => ({ default: m.SubmitExpensePage })));
+const MyCapsPage = React.lazy(() => import('../pages/employee/MyCapsPage').then((m) => ({ default: m.MyCapsPage })));
+const EmployeePoliciesPage = React.lazy(() => import('../pages/employee/EmployeePoliciesPage').then((m) => ({ default: m.EmployeePoliciesPage })));
+const TripsPage = React.lazy(() => import('../pages/employee/TripsPage').then((m) => ({ default: m.TripsPage })));
 
-// Manage Pages
-import { DashboardPage } from '../pages/manage/DashboardPage';
-import { PurchasesPage } from '../pages/manage/PurchasesPage';
-import { WarrantiesPage } from '../pages/manage/WarrantiesPage';
-import { ReturnsPage } from '../pages/manage/ReturnsPage';
-import { VaultPage } from '../pages/manage/VaultPage';
-import { AnalyticsPage } from '../pages/manage/AnalyticsPage';
-import { TimelinePage } from '../pages/manage/TimelinePage';
-import { InvoicesPage } from '../pages/manage/InvoicesPage';
-import { CreateInvoicePage } from '../pages/manage/CreateInvoicePage';
-import { SettingsPage } from '../pages/SettingsPage';
+// Lazy-loaded Auditor Pages
+const ReviewQueuePage = React.lazy(() => import('../pages/auditor/ReviewQueuePage').then((m) => ({ default: m.ReviewQueuePage })));
+const AllClaimsPage = React.lazy(() => import('../pages/auditor/AllClaimsPage').then((m) => ({ default: m.AllClaimsPage })));
+const PolicyStudioPage = React.lazy(() => import('../pages/auditor/PolicyStudioPage').then((m) => ({ default: m.PolicyStudioPage })));
+const EmployeesPage = React.lazy(() => import('../pages/auditor/EmployeesPage').then((m) => ({ default: m.EmployeesPage })));
+const ReportsPage = React.lazy(() => import('../pages/auditor/ReportsPage').then((m) => ({ default: m.ReportsPage })));
+const SimulatorPage = React.lazy(() => import('../pages/auditor/SimulatorPage').then((m) => ({ default: m.SimulatorPage })));
+const ExportPage = React.lazy(() => import('../pages/auditor/ExportPage').then((m) => ({ default: m.ExportPage })));
+const ScorecardPage = React.lazy(() => import('../pages/auditor/ScorecardPage').then((m) => ({ default: m.ScorecardPage })));
+
+// Lazy-loaded Manage Pages
+const DashboardPage = React.lazy(() => import('../pages/manage/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const PurchasesPage = React.lazy(() => import('../pages/manage/PurchasesPage').then((m) => ({ default: m.PurchasesPage })));
+const WarrantiesPage = React.lazy(() => import('../pages/manage/WarrantiesPage').then((m) => ({ default: m.WarrantiesPage })));
+const ReturnsPage = React.lazy(() => import('../pages/manage/ReturnsPage').then((m) => ({ default: m.ReturnsPage })));
+const VaultPage = React.lazy(() => import('../pages/manage/VaultPage').then((m) => ({ default: m.VaultPage })));
+const AnalyticsPage = React.lazy(() => import('../pages/manage/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })));
+const TimelinePage = React.lazy(() => import('../pages/manage/TimelinePage').then((m) => ({ default: m.TimelinePage })));
+const InvoicesPage = React.lazy(() => import('../pages/manage/InvoicesPage').then((m) => ({ default: m.InvoicesPage })));
+const CreateInvoicePage = React.lazy(() => import('../pages/manage/CreateInvoicePage').then((m) => ({ default: m.CreateInvoicePage })));
+const SettingsPage = React.lazy(() => import('../pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
+
+const RouteLoadingFallback: React.FC = () => (
+  <div className="flex w-full h-64 items-center justify-center">
+    <div className="flex flex-col items-center gap-2.5">
+      <div className="w-6 h-6 border-2 border-emerald-600/30 border-t-emerald-600 rounded-full animate-spin" />
+      <span className="font-mono-code text-[11px] text-slate-400">Loading module...</span>
+    </div>
+  </div>
+);
 
 export const AppRoutes: React.FC = () => {
   const { loading } = useAuth();
@@ -58,86 +69,88 @@ export const AppRoutes: React.FC = () => {
   }
 
   return (
-    <Routes>
-      {/* Public Marketing & Auth */}
-      <Route
-        path={ROUTES.HOME}
-        element={
-          <LandingPage
-            onNavigateToAuth={() => navigate(ROUTES.AUTH)}
-            onNavigateToApp={() => navigate(getDefaultPortalRoute(currentRole))}
-          />
-        }
-      />
-      <Route
-        path={ROUTES.AUTH}
-        element={
-          <AuthPage
-            onBackToLanding={() => navigate(ROUTES.HOME)}
-            onLoginSuccess={() => navigate(getDefaultPortalRoute(getActiveRole()))}
-          />
-        }
-      />
+    <React.Suspense fallback={<RouteLoadingFallback />}>
+      <Routes>
+        {/* Public Marketing & Auth */}
+        <Route
+          path={ROUTES.HOME}
+          element={
+            <LandingPage
+              onNavigateToAuth={() => navigate(ROUTES.AUTH)}
+              onNavigateToApp={() => navigate(getDefaultPortalRoute(currentRole))}
+            />
+          }
+        />
+        <Route
+          path={ROUTES.AUTH}
+          element={
+            <AuthPage
+              onBackToLanding={() => navigate(ROUTES.HOME)}
+              onLoginSuccess={() => navigate(getDefaultPortalRoute(getActiveRole()))}
+            />
+          }
+        />
 
-      {/* Legacy /app route fallback with smart role-based routing */}
-      <Route path={ROUTES.APP_LEGACY} element={<AppRedirect />} />
-      <Route path="/app/*" element={<AppRedirect />} />
+        {/* Legacy /app route fallback with smart role-based routing */}
+        <Route path={ROUTES.APP_LEGACY} element={<AppRedirect />} />
+        <Route path="/app/*" element={<AppRedirect />} />
 
-      {/* Employee Portal */}
-      <Route
-        path={ROUTES.EMPLOYEE.ROOT}
-        element={
-          <RoleGuard allowedRoles={['employee', 'admin']}>
-            <EmployeeLayout />
-          </RoleGuard>
-        }
-      >
-        <Route index element={<Navigate to={ROUTES.EMPLOYEE.EXPENSES} replace />} />
-        <Route path="expenses" element={<MyExpensesPage />} />
-        <Route path="submit" element={<SubmitExpensePage />} />
-        <Route path="allowances" element={<MyCapsPage />} />
-        <Route path="caps" element={<Navigate to={ROUTES.EMPLOYEE.ALLOWANCES} replace />} />
-        <Route path="policies" element={<EmployeePoliciesPage />} />
-        <Route path="policy" element={<Navigate to={ROUTES.EMPLOYEE.POLICIES} replace />} />
-        <Route path="trips" element={<TripsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-      </Route>
+        {/* Employee Portal */}
+        <Route
+          path={ROUTES.EMPLOYEE.ROOT}
+          element={
+            <RoleGuard allowedRoles={['employee', 'admin']}>
+              <EmployeeLayout />
+            </RoleGuard>
+          }
+        >
+          <Route index element={<Navigate to={ROUTES.EMPLOYEE.EXPENSES} replace />} />
+          <Route path="expenses" element={<MyExpensesPage />} />
+          <Route path="submit" element={<SubmitExpensePage />} />
+          <Route path="allowances" element={<MyCapsPage />} />
+          <Route path="caps" element={<Navigate to={ROUTES.EMPLOYEE.ALLOWANCES} replace />} />
+          <Route path="policies" element={<EmployeePoliciesPage />} />
+          <Route path="policy" element={<Navigate to={ROUTES.EMPLOYEE.POLICIES} replace />} />
+          <Route path="trips" element={<TripsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
 
-      {/* Auditor & Finance Portal */}
-      <Route
-        path={ROUTES.AUDITOR.ROOT}
-        element={
-          <RoleGuard allowedRoles={['finance', 'admin']}>
-            <AuditorLayout />
-          </RoleGuard>
-        }
-      >
-        <Route index element={<Navigate to={ROUTES.AUDITOR.REVIEW_QUEUE} replace />} />
-        <Route path="review-queue" element={<ReviewQueuePage />} />
-        <Route path="all-expenses" element={<AllClaimsPage />} />
-        <Route path="claims" element={<Navigate to={ROUTES.AUDITOR.ALL_EXPENSES} replace />} />
-        <Route path="policies" element={<PolicyStudioPage />} />
-        <Route path="employees" element={<EmployeesPage />} />
-        <Route path="reports" element={<ReportsPage />} />
-        <Route path="simulator" element={<SimulatorPage />} />
-        <Route path="exports" element={<ExportPage />} />
-        <Route path="scorecard" element={<ScorecardPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        {/* Auditor & Finance Portal */}
+        <Route
+          path={ROUTES.AUDITOR.ROOT}
+          element={
+            <RoleGuard allowedRoles={['finance', 'admin']}>
+              <AuditorLayout />
+            </RoleGuard>
+          }
+        >
+          <Route index element={<Navigate to={ROUTES.AUDITOR.REVIEW_QUEUE} replace />} />
+          <Route path="review-queue" element={<ReviewQueuePage />} />
+          <Route path="all-expenses" element={<AllClaimsPage />} />
+          <Route path="claims" element={<Navigate to={ROUTES.AUDITOR.ALL_EXPENSES} replace />} />
+          <Route path="policies" element={<PolicyStudioPage />} />
+          <Route path="employees" element={<EmployeesPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="simulator" element={<SimulatorPage />} />
+          <Route path="exports" element={<ExportPage />} />
+          <Route path="scorecard" element={<ScorecardPage />} />
+          <Route path="settings" element={<SettingsPage />} />
 
-        {/* Manage Tools (Personal asset vault, warranties, invoices) */}
-        <Route path="manage/dashboard" element={<DashboardPage />} />
-        <Route path="manage/purchases" element={<PurchasesPage />} />
-        <Route path="manage/warranties" element={<WarrantiesPage />} />
-        <Route path="manage/returns" element={<ReturnsPage />} />
-        <Route path="manage/vault" element={<VaultPage />} />
-        <Route path="manage/analytics" element={<AnalyticsPage />} />
-        <Route path="manage/timeline" element={<TimelinePage />} />
-        <Route path="manage/invoices" element={<InvoicesPage />} />
-        <Route path="manage/invoices/new" element={<CreateInvoicePage />} />
-      </Route>
+          {/* Manage Tools (Personal asset vault, warranties, invoices) */}
+          <Route path="manage/dashboard" element={<DashboardPage />} />
+          <Route path="manage/purchases" element={<PurchasesPage />} />
+          <Route path="manage/warranties" element={<WarrantiesPage />} />
+          <Route path="manage/returns" element={<ReturnsPage />} />
+          <Route path="manage/vault" element={<VaultPage />} />
+          <Route path="manage/analytics" element={<AnalyticsPage />} />
+          <Route path="manage/timeline" element={<TimelinePage />} />
+          <Route path="manage/invoices" element={<InvoicesPage />} />
+          <Route path="manage/invoices/new" element={<CreateInvoicePage />} />
+        </Route>
 
-      {/* Catch-all 404 Route */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        {/* Catch-all 404 Route */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </React.Suspense>
   );
 };

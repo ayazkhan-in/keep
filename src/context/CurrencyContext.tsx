@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 export type SupportedCurrency = 'INR' | 'USD' | 'EUR' | 'GBP' | 'CAD' | 'AUD' | 'JPY';
 
@@ -43,18 +43,18 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return 'INR';
   });
 
-  const setCurrency = (newCurrency: SupportedCurrency) => {
+  const setCurrency = useCallback((newCurrency: SupportedCurrency) => {
     setCurrencyState(newCurrency);
     try {
       localStorage.setItem('keepr_currency_v1', newCurrency);
     } catch (e) {
       console.error(e);
     }
-  };
+  }, []);
 
   const currentConfig = CURRENCY_CONFIGS[currency] || CURRENCY_CONFIGS.INR;
 
-  const formatPrice = (amount: number, overrideCurrency?: string): string => {
+  const formatPrice = useCallback((amount: number, overrideCurrency?: string): string => {
     const code = (overrideCurrency && overrideCurrency in CURRENCY_CONFIGS
       ? overrideCurrency
       : currency) as SupportedCurrency;
@@ -66,9 +66,9 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
 
     return `${config.symbol}${formattedNumber}`;
-  };
+  }, [currency]);
 
-  const formatCompact = (amount: number, overrideCurrency?: string): string => {
+  const formatCompact = useCallback((amount: number, overrideCurrency?: string): string => {
     const code = (overrideCurrency && overrideCurrency in CURRENCY_CONFIGS
       ? overrideCurrency
       : currency) as SupportedCurrency;
@@ -87,18 +87,18 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return `${config.symbol}${(amount / 1000).toFixed(1)}k`;
     }
     return `${config.symbol}${amount.toFixed(0)}`;
-  };
+  }, [currency]);
+
+  const contextValue = useMemo(() => ({
+    currency,
+    setCurrency,
+    currencySymbol: currentConfig.symbol,
+    formatPrice,
+    formatCompact,
+  }), [currency, setCurrency, currentConfig.symbol, formatPrice, formatCompact]);
 
   return (
-    <CurrencyContext.Provider
-      value={{
-        currency,
-        setCurrency,
-        currencySymbol: currentConfig.symbol,
-        formatPrice,
-        formatCompact,
-      }}
-    >
+    <CurrencyContext.Provider value={contextValue}>
       {children}
     </CurrencyContext.Provider>
   );

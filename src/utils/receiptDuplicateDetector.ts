@@ -25,7 +25,8 @@ export async function computeSha256(data: string | ArrayBuffer | Uint8Array): Pr
   // 2. Node.js native crypto fallback if running in legacy node environment
   try {
     if (typeof window === 'undefined') {
-      const nodeCrypto = await import(/* @vite-ignore */ 'crypto');
+      const cryptoModuleName = 'crypto';
+      const nodeCrypto = await import(/* @vite-ignore */ cryptoModuleName);
       const hash = nodeCrypto.createHash('sha256');
       if (typeof data === 'string') {
         hash.update(data);

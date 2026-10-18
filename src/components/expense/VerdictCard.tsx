@@ -95,38 +95,38 @@ export const VerdictCard: React.FC<VerdictCardProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-[#11161B] rounded-2xl border border-[#E2E8F0] dark:border-[#1E293B] p-4 sm:p-5 shadow-2xs space-y-4">
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] p-4 sm:p-5 shadow-2xs space-y-4">
       {/* Top Banner: Decision Status & Risk Band */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0] dark:border-[#1E293B]">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           {expense.status === 'auto_approved' || expense.status === 'approved' ? (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               {expense.status === 'auto_approved' ? 'TOUCHLESS AUTO-APPROVED' : 'APPROVED'}
             </span>
           ) : expense.status === 'partially_approved' ? (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">
-              <Scale className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+              <Scale className="w-3.5 h-3.5 text-blue-600" />
               PARTIALLY APPROVED
             </span>
           ) : expense.status === 'needs_info' ? (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
               NEEDS INFORMATION
             </span>
           ) : expense.status === 'rejected' ? (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300">
-              <XCircle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">
+              <XCircle className="w-3.5 h-3.5 text-red-600" />
               REJECTED
             </span>
           ) : expense.status === 'paid' ? (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-              <DollarSign className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
               PAID RECORDED
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-300">
-              <Clock className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800">
+              <Clock className="w-3.5 h-3.5 text-slate-600" />
               IN REVIEW
             </span>
           )}
@@ -170,42 +170,42 @@ export const VerdictCard: React.FC<VerdictCardProps> = ({
 
       {/* Financial Amounts Breakdown Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div className="bg-[#F8FAFC] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#1E293B] rounded-xl p-3">
-          <span className="text-[11px] text-[#64748B] dark:text-slate-400 block font-medium">Claimed Amount</span>
-          <span className="text-base font-bold text-[#0F172A] dark:text-slate-100 block mt-0.5">
+        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3">
+          <span className="text-[11px] text-[#64748B] block font-medium">Claimed Amount</span>
+          <span className="text-base font-bold text-[#0F172A] block mt-0.5">
             ₹{claimedAmount.toLocaleString()}
           </span>
-          <span className="text-[10px] text-[#64748B] dark:text-slate-400 font-mono-code block mt-0.5">
+          <span className="text-[10px] text-[#64748B] font-mono-code block mt-0.5">
             {expense.normalizedCurrency?.sourceCurrency} {expense.extracted?.total?.value || claimedAmount}
           </span>
         </div>
 
-        <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3">
-          <span className="text-[11px] text-emerald-800 dark:text-emerald-300 block font-medium">Approved Amount</span>
-          <span className="text-base font-bold text-emerald-700 dark:text-emerald-400 block mt-0.5">
+        <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3">
+          <span className="text-[11px] text-emerald-800 block font-medium">Approved Amount</span>
+          <span className="text-base font-bold text-emerald-700 block mt-0.5">
             ₹{approvedAmount.toLocaleString()}
           </span>
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono-code block mt-0.5">
+          <span className="text-[10px] text-emerald-600 font-mono-code block mt-0.5">
             Reimbursable
           </span>
         </div>
 
-        <div className="bg-red-50/70 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-3">
-          <span className="text-[11px] text-red-800 dark:text-red-300 block font-medium">Excluded / Capped</span>
-          <span className="text-base font-bold text-red-700 dark:text-red-400 block mt-0.5">
+        <div className="bg-red-50/70 border border-red-200 rounded-xl p-3">
+          <span className="text-[11px] text-red-800 block font-medium">Excluded / Capped</span>
+          <span className="text-base font-bold text-red-700 block mt-0.5">
             ₹{rejectedAmount.toLocaleString()}
           </span>
-          <span className="text-[10px] text-red-600 dark:text-red-400 font-mono-code block mt-0.5">
+          <span className="text-[10px] text-red-600 font-mono-code block mt-0.5">
             Deducted
           </span>
         </div>
 
-        <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
-          <span className="text-[11px] text-amber-900 dark:text-amber-300 block font-medium">Pending Info</span>
-          <span className="text-base font-bold text-amber-800 dark:text-amber-400 block mt-0.5">
+        <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3">
+          <span className="text-[11px] text-amber-900 block font-medium">Pending Info</span>
+          <span className="text-base font-bold text-amber-800 block mt-0.5">
             ₹{pendingAmount.toLocaleString()}
           </span>
-          <span className="text-[10px] text-amber-700 dark:text-amber-400 font-mono-code block mt-0.5">
+          <span className="text-[10px] text-amber-700 font-mono-code block mt-0.5">
             Held for Details
           </span>
         </div>
@@ -417,7 +417,7 @@ export const VerdictCard: React.FC<VerdictCardProps> = ({
                 <button
                   onClick={() => handleAction('mark_paid')}
                   disabled={isSubmitting}
-                  className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
                   <DollarSign className="w-3.5 h-3.5" />
                   <span>Mark Paid</span>

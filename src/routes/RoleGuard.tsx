@@ -55,31 +55,31 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles, children }) 
 
   return (
     <div
-      className="flex h-[100dvh] w-full text-[#1A1C1D] dark:text-[#F1F5F9] overflow-hidden font-sans p-3 sm:p-5 md:p-6 bg-cover bg-center bg-no-repeat dark:bg-none bg-[#F8F9FA] dark:bg-[#080C0F] items-center justify-center transition-colors"
-      style={{ backgroundImage: theme === 'dark' ? 'none' : "url('/bg.jpg')" }}
+      className="flex h-[100dvh] w-full text-[#1A1C1D] overflow-hidden font-sans p-3 sm:p-5 md:p-6 bg-cover bg-center bg-no-repeat bg-[#F8F9FA] items-center justify-center transition-colors"
+      style={{ backgroundImage: "url('/bg.jpg')" }}
     >
-      <div className="max-w-md w-full bg-white dark:bg-[#0D1217] rounded-2xl border border-[#E2E8F0] dark:border-[#1E293B] shadow-xl p-6 sm:p-8 text-center relative overflow-hidden transition-colors">
+      <div className="max-w-md w-full bg-white rounded-2xl border border-[#E2E8F0] shadow-xl p-6 sm:p-8 text-center relative overflow-hidden transition-colors">
         {/* Top Accent line */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-rose-500 via-amber-500 to-emerald-600" />
 
-        <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-4 shadow-xs">
+        <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
           <ShieldAlert className="w-7 h-7" />
         </div>
 
-        <span className="font-mono-code text-[11px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-300 bg-rose-100/70 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/50 px-2.5 py-1 rounded-md inline-block mb-3">
+        <span className="font-mono-code text-[11px] font-bold uppercase tracking-wider text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-md inline-block mb-3">
           Access Restricted • Role Clearance
         </span>
 
-        <h2 className="text-xl font-bold text-[#0F172A] dark:text-white mb-2 tracking-tight">
+        <h2 className="text-xl font-bold text-[#0F172A] mb-2 tracking-tight">
           Unauthorized Workspace Access
         </h2>
 
-        <p className="text-[13px] text-[#64748B] dark:text-[#94A3B8] mb-6 leading-relaxed">
-          You are currently signed in as <strong className="text-[#0F172A] dark:text-white">{activeEmp.identity.name}</strong> (
-          <span className="font-mono-code text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded text-xs font-semibold uppercase">
+        <p className="text-[13px] text-[#64748B] mb-6 leading-relaxed">
+          You are currently signed in as <strong className="text-[#0F172A]">{activeEmp.identity.name}</strong> (
+          <span className="font-mono-code text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded text-xs font-semibold uppercase">
             {currentRole}
           </span>
-          ). This portal requires verified <strong className="text-[#0F172A] dark:text-white">{allowedRoles.join(' / ')}</strong> credentials.
+          ). This portal requires verified <strong className="text-[#0F172A]">{allowedRoles.join(' / ')}</strong> credentials.
         </p>
 
         <div className="space-y-2.5">
@@ -93,9 +93,9 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles, children }) 
 
           <button
             onClick={handleSignOutAndSwitch}
-            className="py-2 px-3 bg-[#F8FAFC] dark:bg-[#151B22] hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#212C36] text-[#334155] dark:text-[#CBD5E1] rounded-xl text-[12px] font-medium transition-all flex items-center justify-center gap-2 cursor-pointer w-full"
+            className="py-2 px-3 bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] text-[#334155] rounded-xl text-[12px] font-medium transition-all flex items-center justify-center gap-2 cursor-pointer w-full"
           >
-            <LogOut className="w-4 h-4 text-[#64748B] dark:text-[#94A3B8]" />
+            <LogOut className="w-4 h-4 text-[#64748B]" />
             <span>Sign Out & Switch Account</span>
           </button>
         </div>

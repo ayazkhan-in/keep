@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { useTheme } from '../context/ThemeContext';
 import { UserRole } from '../types/expense';
 import { setActiveRole, setActiveEmployee } from '../services/employeeService';
 
@@ -36,7 +35,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const { handleRoleChange } = useWorkspace();
-  const { theme } = useTheme();
 
   const handleRoleApply = (role: UserRole) => {
     setSelectedRole(role);
@@ -140,8 +138,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   return (
     <div
-      className="h-screen max-h-screen overflow-hidden bg-cover bg-center bg-no-repeat dark:bg-none bg-[#F8F9FA] dark:bg-[#080C0F] flex flex-col justify-between relative selection:bg-emerald-600 selection:text-white transition-colors"
-      style={{ backgroundImage: theme === 'dark' ? 'none' : "url('/bg.jpg')" }}
+      className="h-screen max-h-screen overflow-hidden bg-cover bg-center bg-no-repeat bg-[#F8F9FA] flex flex-col justify-between relative selection:bg-emerald-600 selection:text-white transition-colors"
+      style={{ backgroundImage: "url('/bg.jpg')" }}
     >
       {/* Top Header */}
       <motion.header
@@ -152,14 +150,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       >
         <button
           onClick={onBackToLanding}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-800 dark:text-white bg-white/90 dark:bg-[#151B22]/90 hover:bg-white dark:hover:bg-[#1E293B] border border-slate-200 dark:border-[#212C36] px-3 py-1.5 rounded-full transition-all shadow-2xs backdrop-blur-md cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-800 bg-white/90 hover:bg-white border border-slate-200 px-3 py-1.5 rounded-full transition-all shadow-2xs backdrop-blur-md cursor-pointer"
         >
-          <ArrowLeft className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300" />
+          <ArrowLeft className="w-3.5 h-3.5 text-slate-700" />
           <span>Back to Overview</span>
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono-code text-slate-600 dark:text-[#94A3B8] bg-white/80 dark:bg-[#151B22]/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-slate-200 dark:border-[#212C36] shadow-2xs">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono-code text-slate-600 bg-white/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-slate-200 shadow-2xs">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Audit Enclave v2.4
           </span>
@@ -172,26 +170,26 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           initial={{ opacity: 0, scale: 0.96, y: 16, filter: 'blur(12px)' }}
           animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
           transition={{ duration: 0.45, ease: [0.21, 0.47, 0.32, 0.98] }}
-          className="w-full max-w-[410px] bg-white/95 dark:bg-[#0D1217]/95 backdrop-blur-2xl border border-white/90 dark:border-[#1E293B] rounded-2xl shadow-xl overflow-hidden p-5 sm:p-6 transition-colors"
+          className="w-full max-w-[410px] bg-white/95 backdrop-blur-2xl border border-white/90 rounded-2xl shadow-xl overflow-hidden p-5 sm:p-6 transition-colors"
         >
           {/* Top Brand & Mode Switcher Row */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-[#151B22] border border-slate-200 dark:border-[#212C36] flex items-center justify-center shadow-2xs shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shadow-2xs shrink-0">
                 <img src="/abstract.png" alt="Keepr Logo" className="w-5 h-5 object-contain" />
               </div>
               <div>
-                <span className="font-heading font-bold text-base text-slate-900 dark:text-white tracking-tight leading-none block">
+                <span className="font-heading font-bold text-base text-slate-900 tracking-tight leading-none block">
                   Keepr
                 </span>
-                <span className="text-[10px] text-slate-500 dark:text-[#94A3B8] font-mono-code leading-none block mt-0.5">
+                <span className="text-[10px] text-slate-500 font-mono-code leading-none block mt-0.5">
                   Corporate Ingestion
                 </span>
               </div>
             </div>
 
             {/* Segmented Mode Switcher */}
-            <div className="flex bg-slate-100/90 dark:bg-[#151B22] p-0.5 rounded-lg border border-slate-200/80 dark:border-[#212C36] text-[11px]">
+            <div className="flex bg-slate-100/90 p-0.5 rounded-lg border border-slate-200/80 text-[11px]">
               <button
                 type="button"
                 onClick={() => {
@@ -200,8 +198,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 }}
                 className={`px-2.5 py-1 font-semibold rounded-md transition-all cursor-pointer ${
                   mode === 'signin'
-                    ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white shadow-2xs'
-                    : 'text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
                 Sign In
@@ -214,8 +212,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 }}
                 className={`px-2.5 py-1 font-semibold rounded-md transition-all cursor-pointer ${
                   mode === 'signup'
-                    ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white shadow-2xs'
-                    : 'text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
                 Register
@@ -224,10 +222,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </div>
 
           {/* Modern Segmented Role Slider */}
-          <div className="relative bg-slate-100/90 dark:bg-[#151B22] p-1 rounded-xl flex items-center border border-slate-200/80 dark:border-[#212C36] mb-2.5">
+          <div className="relative bg-slate-100/90 p-1 rounded-xl flex items-center border border-slate-200/80 mb-2.5">
             {/* Sliding background indicator */}
             <div
-              className={`absolute top-1 bottom-1 rounded-lg bg-white dark:bg-[#1E293B] shadow-xs border border-slate-200/60 dark:border-[#334155] transition-all duration-200 ease-out ${
+              className={`absolute top-1 bottom-1 rounded-lg bg-white shadow-xs border border-slate-200/60 transition-all duration-200 ease-out ${
                 selectedRole === 'employee' ? 'left-1 w-[calc(50%-4px)]' : 'left-[calc(50%+1px)] w-[calc(50%-4px)]'
               }`}
             />
@@ -235,12 +233,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               type="button"
               onClick={() => handleRoleApply('employee')}
               className={`relative z-10 flex-1 py-1.5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                selectedRole === 'employee' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-[#94A3B8] hover:text-slate-800 dark:hover:text-white'
+                selectedRole === 'employee' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               <UserIcon
                 className={`w-3.5 h-3.5 transition-colors ${
-                  selectedRole === 'employee' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'
+                  selectedRole === 'employee' ? 'text-emerald-600' : 'text-slate-400'
                 }`}
               />
               <span>Employee</span>
@@ -249,12 +247,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               type="button"
               onClick={() => handleRoleApply('finance')}
               className={`relative z-10 flex-1 py-1.5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                selectedRole === 'finance' ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-[#94A3B8] hover:text-slate-800 dark:hover:text-white'
+                selectedRole === 'finance' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
               <ShieldCheck
                 className={`w-3.5 h-3.5 transition-colors ${
-                  selectedRole === 'finance' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'
+                  selectedRole === 'finance' ? 'text-emerald-600' : 'text-slate-400'
                 }`}
               />
               <span>Finance Auditor</span>
@@ -262,8 +260,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </div>
 
           {/* Persona Helper & 1-Click Fast Enter */}
-          <div className="flex items-center justify-between px-2.5 py-1.5 mb-3 bg-slate-50 dark:bg-[#151B22] rounded-lg border border-slate-200/70 dark:border-[#212C36] text-[11px]">
-            <div className="flex items-center gap-1.5 text-slate-600 dark:text-[#CBD5E1] truncate">
+          <div className="flex items-center justify-between px-2.5 py-1.5 mb-3 bg-slate-50 rounded-lg border border-slate-200/70 text-[11px]">
+            <div className="flex items-center gap-1.5 text-slate-600 truncate">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
               <span className="truncate font-mono-code text-[10.5px]">
                 {selectedRole === 'finance'
@@ -274,7 +272,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <button
               type="button"
               onClick={() => handleQuickRoleEnter(selectedRole)}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 shrink-0 cursor-pointer"
             >
               <span>1-Click Sign In</span>
               <ArrowRight className="w-3 h-3" />
@@ -283,7 +281,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
           {/* Error Alert */}
           {error && (
-            <div className="flex items-start gap-2 p-2.5 mb-3 text-xs bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/60 rounded-xl">
+            <div className="flex items-start gap-2 p-2.5 mb-3 text-xs bg-red-50 text-red-700 border border-red-200 rounded-xl">
               <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500 mt-0.5" />
               <span className="text-[11px] leading-tight">{error}</span>
             </div>
@@ -293,7 +291,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2.5 px-3 py-2 bg-white dark:bg-[#151B22] hover:bg-slate-50 dark:hover:bg-[#1E293B] border border-slate-200 dark:border-[#212C36] text-slate-800 dark:text-white rounded-xl text-xs font-medium shadow-2xs transition-colors disabled:opacity-50 cursor-pointer mb-2.5"
+            className="w-full flex items-center justify-center gap-2.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 rounded-xl text-xs font-medium shadow-2xs transition-colors disabled:opacity-50 cursor-pointer mb-2.5"
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
               <path
@@ -317,8 +315,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </button>
 
           <div className="relative flex items-center justify-center my-2.5">
-            <div className="w-full border-t border-slate-200 dark:border-[#212C36]" />
-            <span className="absolute bg-white dark:bg-[#0D1217] px-2.5 text-[10px] text-slate-400 dark:text-[#94A3B8] font-mono-code uppercase tracking-wider">
+            <div className="w-full border-t border-slate-200" />
+            <span className="absolute bg-white px-2.5 text-[10px] text-slate-400 font-mono-code uppercase tracking-wider">
               Or Work Email
             </span>
           </div>
@@ -327,7 +325,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <form onSubmit={handleSubmit} className="space-y-2.5">
             {mode === 'signup' && (
               <div>
-                <label className="block text-[10px] font-semibold text-slate-600 dark:text-[#94A3B8] uppercase tracking-wider mb-1 font-mono-code">
+                <label className="block text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1 font-mono-code">
                   Full Name
                 </label>
                 <div className="relative">
@@ -338,14 +336,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Alex Morgan"
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-[#151B22] border border-slate-200 dark:border-[#212C36] rounded-lg text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500 focus:bg-white dark:focus:bg-[#151B22] transition-colors"
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-hidden focus:border-emerald-500 focus:bg-white transition-colors"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-[10px] font-semibold text-slate-600 dark:text-[#94A3B8] uppercase tracking-wider mb-1 font-mono-code">
+              <label className="block text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1 font-mono-code">
                 Work Email
               </label>
               <div className="relative">
@@ -356,13 +354,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-[#151B22] border border-slate-200 dark:border-[#212C36] rounded-lg text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500 focus:bg-white dark:focus:bg-[#151B22] transition-colors"
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-hidden focus:border-emerald-500 focus:bg-white transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-slate-600 dark:text-[#94A3B8] uppercase tracking-wider mb-1 font-mono-code">
+              <label className="block text-[10px] font-semibold text-slate-600 uppercase tracking-wider mb-1 font-mono-code">
                 Password
               </label>
               <div className="relative">
@@ -374,7 +372,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-[#151B22] border border-slate-200 dark:border-[#212C36] rounded-lg text-xs text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500 focus:bg-white dark:focus:bg-[#151B22] transition-colors"
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-hidden focus:border-emerald-500 focus:bg-white transition-colors"
                 />
               </div>
             </div>
@@ -396,10 +394,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </form>
 
           {/* Quick Demo Bypass */}
-          <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-[#212C36] text-center">
+          <div className="mt-3 pt-2.5 border-t border-slate-200 text-center">
             <button
               onClick={handleGuestDemo}
-              className="text-[11px] text-slate-500 dark:text-[#94A3B8] hover:text-slate-800 dark:hover:text-white transition-colors inline-flex items-center gap-1 cursor-pointer font-medium hover:underline"
+              className="text-[11px] text-slate-500 hover:text-slate-800 transition-colors inline-flex items-center gap-1 cursor-pointer font-medium hover:underline"
             >
               <span>Explore full workspace as guest preview</span>
               <ArrowRight className="w-3 h-3 text-slate-400" />
@@ -409,8 +407,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 py-3 text-center text-[11px] text-slate-600 dark:text-[#94A3B8]">
-        <span className="inline-block px-3 py-1 rounded-full bg-white/80 dark:bg-[#151B22]/80 backdrop-blur-md border border-slate-200/80 dark:border-[#212C36] shadow-2xs">
+      <footer className="relative z-10 py-3 text-center text-[11px] text-slate-600">
+        <span className="inline-block px-3 py-1 rounded-full bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-2xs">
           Protected by bank-grade zero-knowledge encryption enclave.
         </span>
       </footer>

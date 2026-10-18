@@ -43,6 +43,12 @@ export function sanitizeFirestoreData<T>(data: T): T {
 
   const cleaned: Record<string, any> = {};
   for (const key of Object.keys(data as Record<string, any>)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    if (!Object.prototype.hasOwnProperty.call(data, key)) {
+      continue;
+    }
     const val = (data as Record<string, any>)[key];
     if (val !== undefined) {
       // Compress oversized base64 data URLs if present to prevent exceeding Firestore 1MB document limit

@@ -1218,7 +1218,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button onClick={onNavigateToAuth} className="hover:text-[#0F172A] cursor-pointer">
               Sign In
             </button>
-            <a href="https://ai.google.dev" target="_blank" rel="noreferrer" className="hover:text-[#0F172A]">
+            <a href="https://ai.google.dev" target="_blank" rel="noopener noreferrer" className="hover:text-[#0F172A]">
               Gemini 3.7 Multimodal API
             </a>
           </div>

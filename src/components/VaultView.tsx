@@ -109,6 +109,7 @@ export const VaultView: React.FC<VaultViewProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const runDocumentAudit = async (doc: DocumentItem, purchase: PurchaseItem) => {

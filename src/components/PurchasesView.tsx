@@ -127,6 +127,15 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
     );
   };
 
+  const escapeCsvCell = (val: string | number | undefined | null): string => {
+    if (val === null || val === undefined) return '""';
+    let str = String(val);
+    if (/^[=+\-@\t\r]/.test(str)) {
+      str = "'" + str;
+    }
+    return `"${str.replace(/"/g, '""')}"`;
+  };
+
   const handleExportCSV = () => {
     const itemsToExport =
       selectedIds.length > 0
@@ -137,7 +146,17 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
     const rows = itemsToExport
       .map(
         (p) =>
-          `"${p.id}","${p.name}","${p.vendor}","${p.category}","${p.purchaseDate}",${p.price},"${p.warranty.expiryDate || 'N/A'}","${p.returnWindow.deadlineDate || 'N/A'}","${p.serialNumber || 'N/A'}"`
+          [
+            escapeCsvCell(p.id),
+            escapeCsvCell(p.name),
+            escapeCsvCell(p.vendor),
+            escapeCsvCell(p.category),
+            escapeCsvCell(p.purchaseDate),
+            Number(p.price || 0).toFixed(2),
+            escapeCsvCell(p.warranty?.expiryDate || 'N/A'),
+            escapeCsvCell(p.returnWindow?.deadlineDate || 'N/A'),
+            escapeCsvCell(p.serialNumber || 'N/A'),
+          ].join(',')
       )
       .join('\n');
 
@@ -149,6 +168,7 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const getItemIcon = (category: string) => {

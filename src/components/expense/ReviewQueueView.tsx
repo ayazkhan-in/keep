@@ -217,8 +217,8 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({ initialTab = '
         );
       case 'needs_info':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-            <HelpCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <HelpCircle className="w-3 h-3 text-emerald-600" />
             Needs Info
           </span>
         );
@@ -310,47 +310,47 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({ initialTab = '
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="p-3.5 bg-white dark:bg-[#11161B] border border-[#E2E8F0] dark:border-[#1E293B] rounded-xl shadow-2xs">
-          <div className="flex items-center justify-between text-[#64748B] dark:text-slate-400">
+        <div className="p-3.5 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
+          <div className="flex items-center justify-between text-[#64748B]">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Exceptions Queue</span>
             <AlertTriangle className="w-4 h-4 text-amber-500" />
           </div>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-[#0F172A] dark:text-slate-100">{metrics.inReviewCount}</span>
-            <span className="text-xs text-[#64748B] dark:text-slate-400">₹{metrics.inReviewAmount.toLocaleString()}</span>
+            <span className="text-xl font-bold text-[#0F172A]">{metrics.inReviewCount}</span>
+            <span className="text-xs text-[#64748B]">₹{metrics.inReviewAmount.toLocaleString()}</span>
           </div>
         </div>
 
-        <div className="p-3.5 bg-white dark:bg-[#11161B] border border-[#E2E8F0] dark:border-[#1E293B] rounded-xl shadow-2xs">
-          <div className="flex items-center justify-between text-[#64748B] dark:text-slate-400">
+        <div className="p-3.5 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
+          <div className="flex items-center justify-between text-[#64748B]">
             <span className="text-[11px] font-semibold uppercase tracking-wider">High Anomaly Risk</span>
             <AlertOctagon className="w-4 h-4 text-rose-500" />
           </div>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-rose-700 dark:text-rose-400">{metrics.highRiskCount}</span>
-            <span className="text-xs text-[#64748B] dark:text-slate-400">Needs scrutiny</span>
+            <span className="text-xl font-bold text-rose-700">{metrics.highRiskCount}</span>
+            <span className="text-xs text-[#64748B]">Needs scrutiny</span>
           </div>
         </div>
 
-        <div className="p-3.5 bg-white dark:bg-[#11161B] border border-[#E2E8F0] dark:border-[#1E293B] rounded-xl shadow-2xs">
-          <div className="flex items-center justify-between text-[#64748B] dark:text-slate-400">
+        <div className="p-3.5 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
+          <div className="flex items-center justify-between text-[#64748B]">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Needs Information</span>
             <HelpCircle className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{metrics.needsInfoCount}</span>
-            <span className="text-xs text-[#64748B] dark:text-slate-400">Waiting on employee</span>
+            <span className="text-xl font-bold text-emerald-700">{metrics.needsInfoCount}</span>
+            <span className="text-xs text-[#64748B]">Waiting on employee</span>
           </div>
         </div>
 
-        <div className="p-3.5 bg-white dark:bg-[#11161B] border border-[#E2E8F0] dark:border-[#1E293B] rounded-xl shadow-2xs">
-          <div className="flex items-center justify-between text-[#64748B] dark:text-slate-400">
+        <div className="p-3.5 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
+          <div className="flex items-center justify-between text-[#64748B]">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Touchless Ready</span>
             <Bot className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{metrics.autoApprovedCount}</span>
-            <span className="text-xs text-[#64748B] dark:text-slate-400">₹{metrics.autoApprovedAmount.toLocaleString()}</span>
+            <span className="text-xl font-bold text-emerald-700">{metrics.autoApprovedCount}</span>
+            <span className="text-xs text-[#64748B]">₹{metrics.autoApprovedAmount.toLocaleString()}</span>
           </div>
         </div>
       </div>

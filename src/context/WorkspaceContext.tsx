@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ActiveView,
@@ -130,14 +130,14 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
   const activeView = useMemo(() => getPathToView(location.pathname), [location.pathname]);
 
   // Navigate to corresponding route when setActiveView is called
-  const setActiveView = (view: ActiveView) => {
+  const setActiveView = useCallback((view: ActiveView) => {
     const targetPath = VIEW_TO_PATH[view] || ROUTES.EMPLOYEE.EXPENSES;
     if (location.pathname !== targetPath) {
       navigate(targetPath);
     }
-  };
+  }, [location.pathname, navigate]);
 
-  const handleRoleChange = (role: UserRole) => {
+  const handleRoleChange = useCallback((role: UserRole) => {
     setActiveRole(role);
     setCurrentRole(role);
     if (role === 'finance' || role === 'admin') {
@@ -145,7 +145,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else {
       navigate(ROUTES.EMPLOYEE.EXPENSES);
     }
-  };
+  }, [navigate]);
 
   // Real-time synchronization of corporate expense claims from database
   useEffect(() => {
@@ -256,7 +256,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleAddPurchase = async (newPurchase: PurchaseItem) => {
+  const handleAddPurchase = useCallback(async (newPurchase: PurchaseItem) => {
     setPurchases((prev) => [newPurchase, ...prev]);
     try {
       await addPurchaseToDb(newPurchase, user?.uid);
@@ -293,18 +293,18 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
         console.warn('Failed to trigger instant email:', e);
       }
     }
-  };
+  }, [user?.uid, user?.email]);
 
-  const handleDeletePurchase = async (id: string) => {
+  const handleDeletePurchase = useCallback(async (id: string) => {
     setPurchases((prev) => prev.filter((p) => p.id !== id));
     try {
       await deletePurchaseFromDb(id, user?.uid);
     } catch (err) {
       console.warn('Failed to delete purchase from Firestore (using local state):', err);
     }
-  };
+  }, [user?.uid]);
 
-  const handleSaveInvoice = async (invoice: Invoice) => {
+  const handleSaveInvoice = useCallback(async (invoice: Invoice) => {
     setInvoices((prev) => {
       const exists = prev.some((i) => i.id === invoice.id);
       if (exists) {
@@ -318,14 +318,14 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } catch (err) {
       console.warn('Failed to sync invoice to Firestore (using local state):', err);
     }
-  };
+  }, [user?.uid]);
 
-  const handleEditInvoice = (invoice: Invoice) => {
+  const handleEditInvoice = useCallback((invoice: Invoice) => {
     setEditingInvoice(invoice);
     navigate(ROUTES.AUDITOR.MANAGE_CREATE_INVOICE);
-  };
+  }, [navigate]);
 
-  const handleDuplicateInvoice = (invoice: Invoice) => {
+  const handleDuplicateInvoice = useCallback((invoice: Invoice) => {
     const duplicated: Invoice = {
       ...invoice,
       id: `inv-${Date.now()}`,
@@ -336,18 +336,18 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
       updatedAt: new Date().toISOString(),
     };
     handleSaveInvoice(duplicated);
-  };
+  }, [handleSaveInvoice]);
 
-  const handleDeleteInvoice = async (id: string) => {
+  const handleDeleteInvoice = useCallback(async (id: string) => {
     setInvoices((prev) => prev.filter((i) => i.id !== id));
     try {
       await deleteInvoiceFromDb(id, user?.uid);
     } catch (err) {
       console.warn('Failed to delete invoice from Firestore:', err);
     }
-  };
+  }, [user?.uid]);
 
-  const handleUpdateInvoiceStatus = async (id: string, status: InvoiceStatus) => {
+  const handleUpdateInvoiceStatus = useCallback(async (id: string, status: InvoiceStatus) => {
     setInvoices((prev) =>
       prev.map((i) => (i.id === id ? { ...i, status, updatedAt: new Date().toISOString() } : i))
     );
@@ -356,72 +356,100 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } catch (err) {
       console.warn('Failed to update invoice status in Firestore:', err);
     }
-  };
+  }, [user?.uid]);
 
-  const handleTriggerClaim = (purchase: PurchaseItem) => {
+  const handleTriggerClaim = useCallback((purchase: PurchaseItem) => {
     setClaimModalState({
       isOpen: true,
       purchase,
       mode: 'warranty_claim',
     });
-  };
+  }, []);
 
-  const handleTriggerReturn = (purchase: PurchaseItem) => {
+  const handleTriggerReturn = useCallback((purchase: PurchaseItem) => {
     setClaimModalState({
       isOpen: true,
       purchase,
       mode: 'return_request',
     });
-  };
+  }, []);
 
-  const riskCount = purchases.filter(
-    (p) => p.returnWindow.hasReturn && p.returnWindow.status === 'expiring_soon'
-  ).length;
+  const riskCount = useMemo(() => purchases.filter(
+    (p) => p.returnWindow?.hasReturn && p.returnWindow?.status === 'expiring_soon'
+  ).length, [purchases]);
+
+  const contextValue = useMemo(() => ({
+    purchases,
+    setPurchases,
+    invoices,
+    setInvoices,
+    actions,
+    setActions,
+    editingInvoice,
+    setEditingInvoice,
+    dbConnected,
+    riskCount,
+    searchQuery,
+    setSearchQuery,
+    isScannerOpen,
+    setIsScannerOpen,
+    isCommandPaletteOpen,
+    setIsCommandPaletteOpen,
+    isSettingsOpen,
+    setIsSettingsOpen,
+    isAIChatOpen,
+    setIsAIChatOpen,
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    selectedPurchase,
+    setSelectedPurchase,
+    claimModalState,
+    setClaimModalState,
+    currentRole,
+    handleRoleChange,
+    activeView,
+    setActiveView,
+    handleAddPurchase,
+    handleDeletePurchase,
+    handleTriggerClaim,
+    handleTriggerReturn,
+    handleSaveInvoice,
+    handleEditInvoice,
+    handleDuplicateInvoice,
+    handleDeleteInvoice,
+    handleUpdateInvoiceStatus,
+  }), [
+    purchases,
+    invoices,
+    actions,
+    editingInvoice,
+    dbConnected,
+    riskCount,
+    searchQuery,
+    isScannerOpen,
+    isCommandPaletteOpen,
+    isSettingsOpen,
+    isAIChatOpen,
+    isAuthModalOpen,
+    selectedPurchase,
+    claimModalState,
+    currentRole,
+    handleRoleChange,
+    activeView,
+    setActiveView,
+    handleAddPurchase,
+    handleDeletePurchase,
+    handleTriggerClaim,
+    handleTriggerReturn,
+    handleSaveInvoice,
+    handleEditInvoice,
+    handleDuplicateInvoice,
+    handleDeleteInvoice,
+    handleUpdateInvoiceStatus,
+  ]);
 
   return (
-    <WorkspaceContext.Provider
-      value={{
-        purchases,
-        setPurchases,
-        invoices,
-        setInvoices,
-        actions,
-        setActions,
-        editingInvoice,
-        setEditingInvoice,
-        dbConnected,
-        riskCount,
-        searchQuery,
-        setSearchQuery,
-        isScannerOpen,
-        setIsScannerOpen,
-        isCommandPaletteOpen,
-        setIsCommandPaletteOpen,
-        isSettingsOpen,
-        setIsSettingsOpen,
-        isAIChatOpen,
-        setIsAIChatOpen,
-        isAuthModalOpen,
-        setIsAuthModalOpen,
-        selectedPurchase,
-        setSelectedPurchase,
-        claimModalState,
-        setClaimModalState,
-        currentRole,
-        handleRoleChange,
-        activeView,
-        setActiveView,
-        handleAddPurchase,
-        handleDeletePurchase,
-        handleTriggerClaim,
-        handleTriggerReturn,
-        handleSaveInvoice,
-        handleEditInvoice,
-        handleDuplicateInvoice,
-        handleDeleteInvoice,
-        handleUpdateInvoiceStatus,
-      }}
-    >
+    <WorkspaceContext.Provider value={contextValue}>
       {children}
     </WorkspaceContext.Provider>
   );

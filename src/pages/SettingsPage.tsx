@@ -6,26 +6,26 @@ export const SettingsPage: React.FC = () => {
   const { setIsSettingsOpen, currentRole } = useWorkspace();
 
   return (
-    <div className="bg-white dark:bg-[#0D1217] border border-[#E2E8F0] dark:border-[#1E293B] rounded-2xl p-6 sm:p-8 max-w-3xl mx-auto shadow-xs transition-colors">
+    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sm:p-8 max-w-3xl mx-auto shadow-xs transition-colors">
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+        <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
           <Settings className="w-5 h-5" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-[#0F172A] dark:text-white tracking-tight">Application Preferences & Settings</h2>
-          <p className="text-[13px] text-[#64748B] dark:text-[#94A3B8]">
+          <h2 className="text-xl font-bold text-[#0F172A] tracking-tight">Application Preferences & Settings</h2>
+          <p className="text-[13px] text-[#64748B]">
             Configure currency defaults, automated audit thresholds, and AI scanning parameters.
           </p>
         </div>
       </div>
 
-      <div className="mt-6 border-t border-[#E2E8F0] dark:border-[#1E293B] pt-6 space-y-4">
-        <div className="bg-[#F8FAFC] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl p-4 flex items-center justify-between">
+      <div className="mt-6 border-t border-[#E2E8F0] pt-6 space-y-4">
+        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Sliders className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <Sliders className="w-5 h-5 text-emerald-600" />
             <div>
-              <p className="text-sm font-semibold text-[#0F172A] dark:text-white">Modal Preferences Hub</p>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">Open comprehensive settings dialog to adjust theme, base currencies, and OCR sensitivity.</p>
+              <p className="text-sm font-semibold text-[#0F172A]">Modal Preferences Hub</p>
+              <p className="text-xs text-[#64748B]">Open comprehensive settings dialog to adjust base currencies, alerts, and OCR parameters.</p>
             </div>
           </div>
           <button
@@ -36,13 +36,13 @@ export const SettingsPage: React.FC = () => {
           </button>
         </div>
 
-        <div className="bg-[#F8FAFC] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl p-4">
+        <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <p className="text-xs font-semibold text-[#0F172A] dark:text-white">Current Clearance Level</p>
+            <Shield className="w-4 h-4 text-emerald-600" />
+            <p className="text-xs font-semibold text-[#0F172A]">Current Clearance Level</p>
           </div>
-          <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-            Active Role: <span className="font-mono-code font-bold uppercase text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded">{currentRole}</span>. Switch between Employee and Auditor views using the sidebar.
+          <p className="text-xs text-[#64748B]">
+            Active Role: <span className="font-mono-code font-bold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">{currentRole}</span>. Switch between Employee and Auditor views using the sidebar.
           </p>
         </div>
       </div>

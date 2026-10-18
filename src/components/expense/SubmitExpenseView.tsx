@@ -1142,10 +1142,10 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
   ] as const;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
       {/* Onboarding Stepper Header */}
       {currentStep < 5 && (
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-2">
             <span>
               Step {currentStep} of 4 •{' '}
@@ -1182,51 +1182,47 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
         }}
       />
 
-      {/* STEP 1: CAPTURE RECEIPT */}
-      {currentStep === 1 && (
-        <motion.div
-          key="step1"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="space-y-6"
-        >
-          <div className="text-center space-y-1.5">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-              How would you like to add your receipt?
-            </h1>
-            <p className="text-sm text-slate-500 max-w-md mx-auto">
-              Our AI automatically ingests the receipt, extracts line items, and runs your company policy checks.
-            </p>
-          </div>
-
-          {/* Animated Slider Segmented Switcher */}
-          <div className="flex justify-center">
-            <div className="relative inline-flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80 shadow-inner">
-              {captureOptions.map((opt) => {
-                const isSelected = captureMode === opt.id;
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setCaptureMode(opt.id)}
-                    className={`relative px-5 py-2.5 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 cursor-pointer z-10 ${isSelected ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                  >
-                    {isSelected && (
-                      <motion.div
-                        layoutId="activeCaptureSlider"
-                        className="absolute inset-0 bg-white rounded-xl shadow-xs border border-slate-200/60 -z-10"
-                        transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                      />
-                    )}
-                    <opt.icon className="w-4 h-4" />
-                    <span>{opt.label}</span>
-                  </button>
-                );
-              })}
+      <AnimatePresence mode="wait">
+        {/* STEP 1: CAPTURE RECEIPT */}
+        {currentStep === 1 && (
+          <motion.div
+            key="step1"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-6"
+          >
+            <div className="text-center space-y-1.5">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                How would you like to add your receipt?
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">
+                Our AI automatically ingests the receipt, extracts line items, and runs your company policy checks.
+              </p>
             </div>
-          </div>
+
+            {/* Animated Slider Segmented Switcher */}
+            <div className="flex justify-center">
+              <div className="relative inline-flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80 shadow-inner max-w-full">
+                {captureOptions.map((opt) => {
+                  const isSelected = captureMode === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setCaptureMode(opt.id)}
+                      className={`relative px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer z-10 ${
+                        isSelected ? 'text-slate-900 bg-white shadow-xs border border-slate-200/60' : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <opt.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span>{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
           {/* Capture Box */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs min-h-[300px] flex flex-col justify-center">
@@ -1935,6 +1931,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
           </div>
         </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Duplicate Original Claim Modal */}
       {viewOriginalClaim && (

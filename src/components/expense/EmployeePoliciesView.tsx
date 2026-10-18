@@ -155,33 +155,33 @@ export const EmployeePoliciesView: React.FC = () => {
   return (
     <div className="space-y-4 max-w-5xl mx-auto pb-6">
       {/* Page Header */}
-      <div className="bg-white dark:bg-[#0D1217] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
               <span>Company Policy & Assistant</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono-code font-medium bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono-code font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>v{policy.versionNumber} Active</span>
               </span>
             </h1>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Know company reimbursement guidelines or ask questions in natural language.
           </p>
         </div>
 
         {/* Tab Switcher Pills */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#151B22] p-1 rounded-xl self-start md:self-auto text-xs border border-slate-200/60 dark:border-[#212C36]">
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl self-start md:self-auto text-xs border border-slate-200/60">
           <button
             onClick={() => setActiveTab('chat')}
             className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'chat'
-                ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Bot className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <Bot className="w-3.5 h-3.5 text-emerald-600" />
             <span>Ask Assistant</span>
           </button>
 
@@ -189,11 +189,11 @@ export const EmployeePoliciesView: React.FC = () => {
             onClick={() => setActiveTab('browse')}
             className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'browse'
-                ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <BookOpen className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+            <BookOpen className="w-3.5 h-3.5 text-slate-600" />
             <span>Browse Policies</span>
           </button>
         </div>
@@ -201,20 +201,20 @@ export const EmployeePoliciesView: React.FC = () => {
 
       {/* TAB 1: AI POLICY ASSISTANT WITH MINIMAL STICKY ROUNDED INPUT BAR */}
       {activeTab === 'chat' && (
-        <div className="bg-white dark:bg-[#0D1217] rounded-2xl border border-slate-200 dark:border-[#1E293B] shadow-xs flex flex-col h-[calc(100vh-210px)] min-h-[580px] overflow-hidden relative">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col h-[calc(100dvh-230px)] min-h-[380px] sm:min-h-[520px] overflow-hidden relative">
           {/* Chat Sub-header */}
-          <div className="px-4 py-2.5 border-b border-slate-100 dark:border-[#1E293B] bg-slate-50/70 dark:bg-[#11161B]/70 flex items-center justify-between text-xs shrink-0">
-            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-              <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="font-semibold text-slate-900 dark:text-slate-100">Keepr Policy AI</span>
-              <span className="text-slate-300 dark:text-slate-600">•</span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">Grounded in Acme Global T&E Policy v{policy.versionNumber}</span>
+          <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between text-xs shrink-0">
+            <div className="flex items-center gap-2 text-slate-600">
+              <Bot className="w-4 h-4 text-emerald-600" />
+              <span className="font-semibold text-slate-900">Keepr Policy AI</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-[11px] text-slate-500">Grounded in Acme Global T&E Policy v{policy.versionNumber}</span>
             </div>
 
             {messages.length > 0 && (
               <button
                 onClick={handleResetChat}
-                className="text-[11px] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white flex items-center gap-1 cursor-pointer transition-colors"
+                className="text-[11px] text-slate-500 hover:text-slate-900 flex items-center gap-1 cursor-pointer transition-colors"
                 title="Reset conversation"
               >
                 <RotateCcw className="w-3 h-3" />
@@ -228,61 +228,61 @@ export const EmployeePoliciesView: React.FC = () => {
             {messages.length === 0 ? (
               // Empty / Welcome state
               <div className="max-w-xl mx-auto py-6 sm:py-8 text-center space-y-6">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mx-auto shadow-xs">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto shadow-xs">
                   <Bot className="w-6 h-6" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900">
                     What would you like to know about our expense policy?
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
                     Ask any question in natural language before spending or filing an expense claim to verify eligibility and limits.
                   </p>
                 </div>
 
                 {/* Key Policy Rules At a Glance (No City Tiers) */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-left">
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#151B22] border border-slate-100 dark:border-[#212C36]">
-                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold text-[11px] mb-0.5">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-semibold text-[11px] mb-0.5">
                       <Utensils className="w-3.5 h-3.5 text-emerald-500" />
                       <span>Daily Meals</span>
                     </div>
-                    <div className="font-mono-code text-xs text-slate-900 dark:text-slate-100 font-bold">₹3,000 / day</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Standard allowance</div>
+                    <div className="font-mono-code text-xs text-slate-900 font-bold">₹3,000 / day</div>
+                    <div className="text-[10px] text-slate-500">Standard allowance</div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#151B22] border border-slate-100 dark:border-[#212C36]">
-                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold text-[11px] mb-0.5">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-semibold text-[11px] mb-0.5">
                       <Building2 className="w-3.5 h-3.5 text-emerald-500" />
                       <span>Client Dining</span>
                     </div>
-                    <div className="font-mono-code text-xs text-slate-900 dark:text-slate-100 font-bold">₹2,500 / attendee</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Documentation required</div>
+                    <div className="font-mono-code text-xs text-slate-900 font-bold">₹2,500 / attendee</div>
+                    <div className="text-[10px] text-slate-500">Documentation required</div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#151B22] border border-slate-100 dark:border-[#212C36]">
-                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold text-[11px] mb-0.5">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-semibold text-[11px] mb-0.5">
                       <XCircle className="w-3.5 h-3.5 text-rose-500" />
                       <span>Exclusions</span>
                     </div>
-                    <div className="text-xs text-slate-900 dark:text-slate-100 font-medium">Alcohol, Tobacco</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Non-reimbursable</div>
+                    <div className="text-xs text-slate-900 font-medium">Alcohol, Tobacco</div>
+                    <div className="text-[10px] text-slate-500">Non-reimbursable</div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#151B22] border border-slate-100 dark:border-[#212C36]">
-                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-semibold text-[11px] mb-0.5">
+                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                    <div className="flex items-center gap-1.5 text-slate-700 font-semibold text-[11px] mb-0.5">
                       <Clock className="w-3.5 h-3.5 text-amber-500" />
                       <span>Deadline</span>
                     </div>
-                    <div className="font-mono-code text-xs text-slate-900 dark:text-slate-100 font-bold">30 Days</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">From receipt date</div>
+                    <div className="font-mono-code text-xs text-slate-900 font-bold">30 Days</div>
+                    <div className="text-[10px] text-slate-500">From receipt date</div>
                   </div>
                 </div>
 
                 {/* Starter Prompts */}
                 <div className="space-y-2">
-                  <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
                     Common Questions
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
@@ -290,10 +290,10 @@ export const EmployeePoliciesView: React.FC = () => {
                       <button
                         key={i}
                         onClick={() => handleSendQuery(p.query)}
-                        className="p-2.5 rounded-xl border border-slate-200/80 dark:border-[#212C36] bg-white dark:bg-[#151B22] hover:border-slate-300 dark:hover:border-[#334155] hover:bg-slate-50 dark:hover:bg-[#1A232D] transition-all text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between group cursor-pointer shadow-2xs"
+                        className="p-2.5 rounded-xl border border-slate-200/80 bg-white hover:border-slate-300 hover:bg-slate-50 transition-all text-xs text-slate-700 flex items-center justify-between group cursor-pointer shadow-2xs"
                       >
                         <span className="truncate">{p.query}</span>
-                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 ml-1.5" />
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all shrink-0 ml-1.5" />
                       </button>
                     ))}
                   </div>
@@ -306,9 +306,9 @@ export const EmployeePoliciesView: React.FC = () => {
                   {m.sender === 'user' ? (
                     // User Message Bubble
                     <div className="flex justify-end">
-                      <div className="bg-slate-900 dark:bg-emerald-700 text-white rounded-2xl rounded-tr-xs px-4 py-2.5 text-xs max-w-lg shadow-sm">
+                      <div className="bg-slate-900 text-white rounded-2xl rounded-tr-xs px-4 py-2.5 text-xs max-w-lg shadow-sm">
                         <p className="leading-relaxed">{m.text}</p>
-                        <span className="text-[10px] text-slate-400 dark:text-emerald-200 mt-1 block text-right font-mono-code">
+                        <span className="text-[10px] text-slate-400 mt-1 block text-right font-mono-code">
                           {m.timestamp}
                         </span>
                       </div>
@@ -316,62 +316,62 @@ export const EmployeePoliciesView: React.FC = () => {
                   ) : (
                     // Assistant Message Bubble
                     <div className="flex justify-start">
-                      <div className="bg-white dark:bg-[#11161B] border border-slate-200/90 dark:border-[#1E293B] rounded-2xl rounded-tl-xs p-4 sm:p-5 text-xs max-w-2xl shadow-xs space-y-3 text-slate-800 dark:text-slate-200">
+                      <div className="bg-white border border-slate-200/90 rounded-2xl rounded-tl-xs p-4 sm:p-5 text-xs max-w-2xl shadow-xs space-y-3 text-slate-800">
                         {/* Status / Verdict Banner */}
                         {m.result && (
                           <div className="flex items-center gap-2">
                             {m.result.verdict === 'covered' && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 <span>{m.result.verdictLabel}</span>
                               </span>
                             )}
                             {m.result.verdict === 'capped' && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                 <AlertTriangle className="w-3.5 h-3.5" />
                                 <span>{m.result.verdictLabel}</span>
                               </span>
                             )}
                             {m.result.verdict === 'excluded' && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                                 <XCircle className="w-3.5 h-3.5" />
                                 <span>{m.result.verdictLabel}</span>
                               </span>
                             )}
                             {m.result.verdict === 'review_required' && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 <HelpCircle className="w-3.5 h-3.5" />
                                 <span>{m.result.verdictLabel}</span>
                               </span>
                             )}
                             {m.result.verdict === 'silent' && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                                 <Building2 className="w-3.5 h-3.5" />
                                 <span>{m.result.verdictLabel}</span>
                               </span>
                             )}
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono-code ml-auto">
+                            <span className="text-[10px] text-slate-400 font-mono-code ml-auto">
                               {m.timestamp}
                             </span>
                           </div>
                         )}
 
                         {/* Natural Language Answer */}
-                        <p className="text-slate-800 dark:text-slate-200 text-xs sm:text-[13px] leading-relaxed">
+                        <p className="text-slate-800 text-xs sm:text-[13px] leading-relaxed">
                           {m.text}
                         </p>
 
                         {/* Grounded Citation Box */}
                         {m.result?.sourceQuote && (
-                          <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#151B22] border border-slate-200/80 dark:border-[#212C36] space-y-1">
-                            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1">
+                            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700">
                               <span className="flex items-center gap-1.5">
                                 <FileText className="w-3 h-3 text-slate-500" />
                                 <span>{m.result.sourceSection || 'Official Policy Clause'}</span>
                               </span>
                               <span className="text-[10px] font-mono-code text-slate-400">Grounded Citation</span>
                             </div>
-                            <blockquote className="text-[11px] text-slate-600 dark:text-slate-300 italic border-l-2 border-emerald-500 pl-2 mt-1">
+                            <blockquote className="text-[11px] text-slate-600 italic border-l-2 border-emerald-500 pl-2 mt-1">
                               "{m.result.sourceQuote}"
                             </blockquote>
                           </div>
@@ -380,10 +380,10 @@ export const EmployeePoliciesView: React.FC = () => {
                         {/* Practical Action Tips */}
                         {m.result?.tips && m.result.tips.length > 0 && (
                           <div className="pt-1 space-y-1">
-                            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block">
+                            <span className="text-[11px] font-semibold text-slate-700 block">
                               Receipt & Claim Advice:
                             </span>
-                            <ul className="space-y-1 text-[11px] text-slate-600 dark:text-slate-400 list-disc list-inside">
+                            <ul className="space-y-1 text-[11px] text-slate-600 list-disc list-inside">
                               {m.result.tips.map((tip, idx) => (
                                 <li key={idx}>{tip}</li>
                               ))}
@@ -393,13 +393,13 @@ export const EmployeePoliciesView: React.FC = () => {
 
                         {/* Follow-up question chips */}
                         {m.result?.suggestedFollowUps && m.result.suggestedFollowUps.length > 0 && (
-                          <div className="pt-2 border-t border-slate-100 dark:border-[#1E293B] flex flex-wrap gap-1.5">
+                          <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5">
                             <span className="text-[10px] text-slate-400 self-center mr-1">Ask next:</span>
                             {m.result.suggestedFollowUps.map((fu, idx) => (
                               <button
                                 key={idx}
                                 onClick={() => handleSendQuery(fu)}
-                                className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-[#151B22] dark:hover:bg-[#1E293B] text-slate-700 dark:text-slate-300 text-[10px] font-medium transition-colors cursor-pointer border border-transparent dark:border-[#212C36]"
+                                className="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-medium transition-colors cursor-pointer border border-transparent"
                               >
                                 {fu}
                               </button>
@@ -416,9 +416,9 @@ export const EmployeePoliciesView: React.FC = () => {
             {/* Typing Indicator */}
             {isTyping && (
               <div className="flex justify-start">
-                <div className="bg-white dark:bg-[#11161B] border border-slate-200 dark:border-[#1E293B] rounded-2xl rounded-tl-xs px-4 py-3 shadow-xs flex items-center gap-2">
-                  <Bot className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-                  <span className="text-xs text-slate-500 dark:text-slate-400">Checking policy rules...</span>
+                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-xs px-4 py-3 shadow-xs flex items-center gap-2">
+                  <Bot className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                  <span className="text-xs text-slate-500">Checking policy rules...</span>
                   <div className="flex gap-1 ml-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -432,11 +432,11 @@ export const EmployeePoliciesView: React.FC = () => {
           </div>
 
           {/* MINIMAL STICKY FULLY-ROUNDED INPUT BAR */}
-          <div className="sticky bottom-0 z-10 p-3 sm:p-4 bg-white/95 dark:bg-[#0D1217]/95 backdrop-blur-md border-t border-slate-100 dark:border-[#1E293B] shrink-0">
+          <div className="sticky bottom-0 z-10 p-3 sm:p-4 bg-white/95 backdrop-blur-md border-t border-slate-100 shrink-0">
             <div className="max-w-2xl mx-auto space-y-1.5">
-              <div className="bg-slate-50 dark:bg-[#151B22] border border-slate-200 dark:border-[#212C36] hover:border-slate-300 dark:hover:border-[#334155] focus-within:border-emerald-500 dark:focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/10 focus-within:bg-white dark:focus-within:bg-[#151B22] rounded-full px-4 py-1.5 sm:py-2 transition-all shadow-xs flex items-center gap-2.5">
+              <div className="bg-slate-50 border border-slate-200 hover:border-slate-300 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/10 focus-within:bg-white rounded-full px-4 py-1.5 sm:py-2 transition-all shadow-xs flex items-center gap-2.5">
                 <div className="text-slate-400 shrink-0">
-                  <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <Bot className="w-4 h-4 text-emerald-600" />
                 </div>
 
                 <input
@@ -445,7 +445,7 @@ export const EmployeePoliciesView: React.FC = () => {
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask any policy question in plain language..."
-                  className="flex-1 bg-transparent border-0 focus:outline-none text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 py-1"
+                  className="flex-1 bg-transparent border-0 focus:outline-none text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 py-1"
                 />
 
                 <button
@@ -454,8 +454,8 @@ export const EmployeePoliciesView: React.FC = () => {
                   disabled={!inputText.trim() || isTyping}
                   className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-all shrink-0 flex items-center justify-center cursor-pointer ${
                     inputText.trim() && !isTyping
-                      ? 'bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white shadow-xs'
-                      : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                   title="Send question (Enter)"
                 >
@@ -464,7 +464,7 @@ export const EmployeePoliciesView: React.FC = () => {
               </div>
 
               {/* Footnote Disclaimer */}
-              <p className="text-[10px] text-center text-slate-400 dark:text-slate-500">
+              <p className="text-[10px] text-center text-slate-400">
                 Grounded in Acme Global T&E Policy v{policy.versionNumber} • Answers cite exact clauses • Press Enter to send
               </p>
             </div>
@@ -476,15 +476,15 @@ export const EmployeePoliciesView: React.FC = () => {
       {activeTab === 'browse' && (
         <div className="space-y-4">
           {/* Filter Bar & Search */}
-          <div className="bg-white dark:bg-[#0D1217] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Category filter pills */}
             <div className="flex flex-wrap items-center gap-1.5 text-xs">
               <button
                 onClick={() => setCategoryFilter('all')}
                 className={`px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-colors ${
                   categoryFilter === 'all'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
-                    : 'bg-slate-100 dark:bg-[#151B22] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-[#1E293B]'
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 All Rules ({policy.rules.length})
@@ -493,8 +493,8 @@ export const EmployeePoliciesView: React.FC = () => {
                 onClick={() => setCategoryFilter('meals')}
                 className={`px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-colors ${
                   categoryFilter === 'meals'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
-                    : 'bg-slate-100 dark:bg-[#151B22] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-[#1E293B]'
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Meals & Allowances
@@ -503,8 +503,8 @@ export const EmployeePoliciesView: React.FC = () => {
                 onClick={() => setCategoryFilter('travel')}
                 className={`px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-colors ${
                   categoryFilter === 'travel'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
-                    : 'bg-slate-100 dark:bg-[#151B22] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-[#1E293B]'
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Travel & Ground Transit
@@ -513,8 +513,8 @@ export const EmployeePoliciesView: React.FC = () => {
                 onClick={() => setCategoryFilter('client')}
                 className={`px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-colors ${
                   categoryFilter === 'client'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
-                    : 'bg-slate-100 dark:bg-[#151B22] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-[#1E293B]'
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Client Entertainment
@@ -523,8 +523,8 @@ export const EmployeePoliciesView: React.FC = () => {
                 onClick={() => setCategoryFilter('exclusions')}
                 className={`px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-colors ${
                   categoryFilter === 'exclusions'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
-                    : 'bg-slate-100 dark:bg-[#151B22] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-[#1E293B]'
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Exclusions
@@ -533,8 +533,8 @@ export const EmployeePoliciesView: React.FC = () => {
                 onClick={() => setCategoryFilter('approvals')}
                 className={`px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-colors ${
                   categoryFilter === 'approvals'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
-                    : 'bg-slate-100 dark:bg-[#151B22] text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-[#1E293B]'
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 Thresholds & Deadlines
@@ -549,7 +549,7 @@ export const EmployeePoliciesView: React.FC = () => {
                 value={browseSearch}
                 onChange={(e) => setBrowseSearch(e.target.value)}
                 placeholder="Search policy rules..."
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-[#151B22] border border-slate-200 dark:border-[#212C36] rounded-lg focus:outline-none focus:bg-white dark:focus:bg-[#1A232D] text-slate-900 dark:text-slate-100"
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white text-slate-900"
               />
             </div>
           </div>
@@ -565,7 +565,7 @@ export const EmployeePoliciesView: React.FC = () => {
               return (
                 <div
                   key={rule.id}
-                  className="bg-white dark:bg-[#0D1217] rounded-2xl border border-slate-200 dark:border-[#1E293B] p-4 shadow-xs space-y-3 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between"
+                  className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3 hover:border-slate-300 transition-all flex flex-col justify-between"
                 >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
@@ -573,7 +573,7 @@ export const EmployeePoliciesView: React.FC = () => {
                         <span className="text-[10px] font-mono-code font-semibold text-slate-400 uppercase block">
                           {rule.section}
                         </span>
-                        <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                        <h3 className="text-xs font-bold text-slate-900 mt-0.5">
                           {rule.title}
                         </h3>
                       </div>
@@ -582,12 +582,12 @@ export const EmployeePoliciesView: React.FC = () => {
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0 ${
                           isCap
-                            ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                             : isExclusion
-                            ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
                             : isThreshold
-                            ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
                         }`}
                       >
                         {rule.type.toUpperCase()}
@@ -597,8 +597,8 @@ export const EmployeePoliciesView: React.FC = () => {
                     {/* Numerical or condition highlight */}
                     {isCap && rule.parameters.capAmountMinor && (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">Cap Limit:</span>
-                        <span className="text-sm font-bold font-mono-code text-slate-900 dark:text-slate-100">
+                        <span className="text-xs text-slate-500">Cap Limit:</span>
+                        <span className="text-sm font-bold font-mono-code text-slate-900">
                           ₹{((rule.parameters.capAmountMinor || 0) / 100).toLocaleString()}
                         </span>
                         <span className="text-[10px] text-slate-400">
@@ -609,8 +609,8 @@ export const EmployeePoliciesView: React.FC = () => {
 
                     {isThreshold && rule.parameters.thresholdAmountMinor && (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">Escalates Above:</span>
-                        <span className="text-sm font-bold font-mono-code text-slate-900 dark:text-slate-100">
+                        <span className="text-xs text-slate-500">Escalates Above:</span>
+                        <span className="text-sm font-bold font-mono-code text-slate-900">
                           ₹{((rule.parameters.thresholdAmountMinor || 0) / 100).toLocaleString()}
                         </span>
                         <span className="text-[10px] text-slate-400">
@@ -621,8 +621,8 @@ export const EmployeePoliciesView: React.FC = () => {
 
                     {isTimeWindow && rule.parameters.timeWindowDays && (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">Submission Window:</span>
-                        <span className="text-sm font-bold font-mono-code text-slate-900 dark:text-slate-100">
+                        <span className="text-xs text-slate-500">Submission Window:</span>
+                        <span className="text-sm font-bold font-mono-code text-slate-900">
                           {rule.parameters.timeWindowDays} Calendar Days
                         </span>
                       </div>
@@ -630,21 +630,21 @@ export const EmployeePoliciesView: React.FC = () => {
 
                     {/* Source quote callout */}
                     {rule.sourceQuote && (
-                      <p className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-[#151B22] p-2.5 rounded-xl border border-slate-100 dark:border-[#212C36] italic leading-relaxed">
+                      <p className="text-[11px] text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 italic leading-relaxed">
                         "{rule.sourceQuote}"
                       </p>
                     )}
                   </div>
 
                   {/* Ask AI Button */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-[#1E293B] flex items-center justify-between">
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <span className="text-[10px] text-slate-400">
-                      On violation: <code className="text-slate-600 dark:text-slate-300 font-mono-code">{rule.parameters.onViolationBehavior || 'cap'}</code>
+                      On violation: <code className="text-slate-600 font-mono-code">{rule.parameters.onViolationBehavior || 'cap'}</code>
                     </span>
 
                     <button
                       onClick={() => handleAskAboutRule(rule)}
-                      className="text-[11px] text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                      className="text-[11px] text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-1 cursor-pointer transition-colors"
                     >
                       <Bot className="w-3.5 h-3.5" />
                       <span>Ask AI Assistant</span>

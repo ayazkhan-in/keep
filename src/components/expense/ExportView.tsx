@@ -97,6 +97,16 @@ export const ExportView: React.FC = () => {
     }
   };
 
+  // CSV Sanitization to prevent formula injection
+  const escapeCsvCell = (val: string | number | undefined | null): string => {
+    if (val === null || val === undefined) return '""';
+    let str = String(val);
+    if (/^[=+\-@\t\r]/.test(str)) {
+      str = "'" + str;
+    }
+    return `"${str.replace(/"/g, '""')}"`;
+  };
+
   // CSV Generation Helper
   const downloadCSV = (content: string, filename: string) => {
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
@@ -146,21 +156,21 @@ export const ExportView: React.FC = () => {
       const reviewer = exp.reviewerAction?.reviewerName || (exp.status === 'auto_approved' ? 'System Touchless' : 'Pending');
 
       return [
-        `"${exp.id}"`,
-        `"${exp.expenseDate}"`,
-        `"${exp.submittedAt.split('T')[0]}"`,
-        `"${exp.employeeId}"`,
-        `"${category}"`,
-        `"${merchant.replace(/"/g, '""')}"`,
+        escapeCsvCell(exp.id),
+        escapeCsvCell(exp.expenseDate),
+        escapeCsvCell(exp.submittedAt.split('T')[0]),
+        escapeCsvCell(exp.employeeId),
+        escapeCsvCell(category),
+        escapeCsvCell(merchant),
         (exp.normalizedCurrency.sourceAmount ?? (exp.normalizedCurrency.sourceAmountMinor / 100)).toFixed(2),
-        `"${exp.normalizedCurrency.sourceCurrency}"`,
+        escapeCsvCell(exp.normalizedCurrency.sourceCurrency),
         exp.normalizedCurrency.fxRate.toFixed(4),
         ((exp.verdict?.approvedAmountMinor || 0) / 100).toFixed(2),
         ((exp.verdict?.rejectedAmountMinor || 0) / 100).toFixed(2),
-        `"${exp.status}"`,
+        escapeCsvCell(exp.status),
         exp.verdict?.riskScore ?? 0,
-        `"${reviewer}"`,
-        `"${citations}"`,
+        escapeCsvCell(reviewer),
+        escapeCsvCell(citations),
       ].join(',');
     });
 
@@ -198,12 +208,12 @@ export const ExportView: React.FC = () => {
       const narration = `Reimbursement for claim ${exp.id} - ${merchant} (${exp.employeeId})`;
 
       return [
-        `"${exp.expenseDate}"`,
-        `"Payment"`,
-        `"${category}"`,
-        `"HDFC Corporate Bank A/c"`,
+        escapeCsvCell(exp.expenseDate),
+        escapeCsvCell('Payment'),
+        escapeCsvCell(category),
+        escapeCsvCell('HDFC Corporate Bank A/c'),
         amt,
-        `"${narration.replace(/"/g, '""')}"`,
+        escapeCsvCell(narration),
       ].join(',');
     });
 

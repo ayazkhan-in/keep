@@ -22,7 +22,7 @@ function createTransporter() {
       pass,
     },
     tls: {
-      rejectUnauthorized: false,
+      rejectUnauthorized: process.env.SMTP_IGNORE_TLS === 'true' ? false : true,
     },
   });
 }
@@ -62,6 +62,15 @@ export async function sendWarrantyExpiryAlert(
   customDaysLeft?: number
 ): Promise<{ success: boolean; emailId?: string; error?: string; message?: string }> {
   try {
+    const sanitizedEmail = String(recipientEmail || '').replace(/[\r\n]/g, '').trim();
+    const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+    if (!EMAIL_REGEX.test(sanitizedEmail)) {
+      return {
+        success: false,
+        error: 'Invalid recipient email address format.',
+      };
+    }
+
     const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.VITE_FIREBASE_API_KEY;
     
     // Calculate actual real days remaining
@@ -161,7 +170,7 @@ export async function sendWarrantyExpiryAlert(
 
     const mailOptions = {
       from: fromAddress,
-      to: recipientEmail,
+      to: sanitizedEmail,
       subject: `🚨 Warranty Expiring Soon (${daysLeft} Days Remaining): ${purchase.name}`,
       html: htmlContent,
     };

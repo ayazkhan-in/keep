@@ -27,14 +27,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="p-8 bg-white dark:bg-[#0D1217] border border-rose-200 dark:border-rose-900/50 rounded-2xl shadow-sm text-center max-w-lg mx-auto my-12 transition-colors">
-          <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-100 dark:border-rose-900/40">
+        <div className="p-8 bg-white border border-rose-200 rounded-2xl shadow-sm text-center max-w-lg mx-auto my-12 transition-colors">
+          <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-100">
             <AlertTriangle className="w-6 h-6" />
           </div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+          <h2 className="text-lg font-bold text-slate-900">
             {this.props.fallbackTitle || 'Unable to load this section'}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1 mb-5">
+          <p className="text-xs text-slate-500 mt-1 mb-5">
             {this.state.error?.message || 'An unexpected error occurred while rendering this view.'}
           </p>
           <button
