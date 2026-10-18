@@ -46,6 +46,17 @@ import {
   applyThreadPatch,
 } from '../../services/expenseService';
 import { preprocessReceiptImage } from '../../utils/receiptProcessor';
+import { ReceiptIssueOverlay } from '../ui/ReceiptIssueOverlay';
+import { ReceiptIssue } from '../../types';
+import {
+  computeRawImageSha256,
+  createAnchorJson,
+  computeAnchorJsonHash,
+  checkRawImageDuplicate,
+  checkAnchorJsonDuplicate,
+  createDuplicateRejectionIssue,
+  registerReceipt,
+} from '../../utils/receiptDuplicateDetector';
 
 interface SubmitExpenseViewProps {
   onSuccess: () => void;
@@ -96,6 +107,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
   // AI Extraction state
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractingStep, setExtractingStep] = useState('');
+  const [receiptIssue, setReceiptIssue] = useState<ReceiptIssue | null>(null);
 
   // Form Fields
   const [vendor, setVendor] = useState('Toit Brewpub Indiranagar');
@@ -458,7 +470,19 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
   ]);
 
   // Demo Scenarios Loader
-  const loadDemoScenario = (type: 'meal_alcohol' | 'client_dining' | 'hotel' | 'hardware') => {
+  const loadDemoScenario = (
+    type:
+      | 'meal_alcohol'
+      | 'client_dining'
+      | 'hotel'
+      | 'hardware'
+      | 'travel_transit'
+      | 'office_operational'
+      | 'blurry_issue'
+      | 'duplicate_raw'
+      | 'duplicate_anchor'
+  ) => {
+    setReceiptIssue(null);
     if (type === 'meal_alcohol') {
       setVendor('Toit Brewpub Indiranagar');
       setDate('2026-10-22');
@@ -556,6 +580,108 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       setReceiptFileName('lemon_tree_pune.jpg');
       setReceiptSha256('c710fe4c81045e0d4d8ef8704efc586b4a2a4724b17a02242171018921868333');
       setReceiptDHash('2d4e8a1c9f0b7e5a');
+    } else if (type === 'travel_transit') {
+      setVendor('Delta Air Lines');
+      setDate('2026-10-22');
+      setTotal('48500');
+      setTax('3800');
+      setCurrency('INR');
+      setCategory('travel');
+      setCity('Bengaluru');
+      setIsTravel(true);
+      setClientName('');
+      setPurpose('Client Summit: BLR to SFO flight (Booking REF: DL-8849)');
+      setLineItems([
+        {
+          id: '1',
+          description: 'Airfare BLR -> SFO (Economy Comfort)',
+          quantity: 1,
+          unitPrice: 48500,
+          amount: 48500,
+          category: 'travel',
+          confidence: 0.99,
+          itemFlags: [],
+        },
+      ]);
+      setConfidence({ vendor: 0.99, date: 0.98, total: 0.99, currency: 0.99, category: 0.99 });
+      setInferred({ vendor: false, date: false, total: false, currency: false, category: false, trip: true });
+      setReceiptImage('/abstract.png');
+      setReceiptFileName('delta_boarding_pass.pdf');
+      setReceiptSha256('e912ab4c81045e0d4d8ef8704efc586b4a2a4724b17a02242171018921868355');
+      setReceiptDHash('3a9f2c1d8e0b4a7c');
+    } else if (type === 'office_operational') {
+      setVendor('WeWork Managed Offices');
+      setDate('2026-10-22');
+      setTotal('18500');
+      setTax('2200');
+      setCurrency('INR');
+      setCategory('supplies');
+      setCity('Bengaluru');
+      setIsTravel(false);
+      setClientName('');
+      setPurpose('Monthly Team Flex Pass (PO-9941)');
+      setLineItems([
+        {
+          id: '1',
+          description: 'Dedicated Desk Pass (Monthly)',
+          quantity: 1,
+          unitPrice: 18500,
+          amount: 18500,
+          category: 'supplies',
+          confidence: 0.98,
+          itemFlags: [],
+        },
+      ]);
+      setConfidence({ vendor: 0.98, date: 0.98, total: 0.98, currency: 0.99, category: 0.98 });
+      setInferred({ vendor: false, date: false, total: false, currency: false, category: false, trip: false });
+      setReceiptImage('/abstract.png');
+      setReceiptFileName('wework_oct_invoice.pdf');
+      setReceiptSha256('f023cd4c81045e0d4d8ef8704efc586b4a2a4724b17a02242171018921868366');
+      setReceiptDHash('8b1d4e2f9a0c3e5b');
+    } else if (type === 'duplicate_raw') {
+      setReceiptImage('/abstract.png');
+      setReceiptFileName('toit_brewpub_dinner.jpg');
+      setReceiptIssue(
+        createDuplicateRejectionIssue({
+          isDuplicate: true,
+          stage: 'raw_image_hash',
+          matchedRecordTitle: 'Wanderlust Travel Agency (2026-09-14)',
+        })
+      );
+      setCurrentStep(1);
+      return;
+    } else if (type === 'duplicate_anchor') {
+      setReceiptImage('/abstract.png');
+      setReceiptFileName('toit_different_angle.jpg');
+      setReceiptIssue(
+        createDuplicateRejectionIssue({
+          isDuplicate: true,
+          stage: 'anchor_json_hash',
+          matchedRecordTitle: 'Toit Brewpub (₹2,400 on Oct 22)',
+        })
+      );
+      setCurrentStep(1);
+      return;
+    } else if (type === 'blurry_issue') {
+      setVendor('Unknown Merchant');
+      setDate('2026-10-22');
+      setTotal('0');
+      setTax('0');
+      setCurrency('INR');
+      setCategory('meals');
+      setCity('Bengaluru');
+      setIsTravel(false);
+      setClientName('');
+      setPurpose('');
+      setLineItems([]);
+      setReceiptImage('/abstract.png');
+      setReceiptFileName('blurry_receipt_sample.jpg');
+      setReceiptIssue({
+        code: 'unreadable',
+        message: 'Receipt is severely blurry with low contrast. Merchant name and total amount could not be verified with confidence.',
+        severity: 'error',
+        recommendation: 'Place the receipt on a flat, well-lit surface and capture a steady photo directly from above.',
+      });
     } else {
       setVendor('Fine Dine Bistro');
       setDate('2026-10-22');
@@ -613,6 +739,17 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
         setReceiptFileName(base64OrFile.name);
       }
 
+      // STAGE 1: Raw Image Hashing check BEFORE calling Gemini API
+      if (sha256) {
+        const rawDupCheck = checkRawImageDuplicate(sha256);
+        if (rawDupCheck.isDuplicate) {
+          setReceiptIssue(createDuplicateRejectionIssue(rawDupCheck));
+          setIsExtracting(false);
+          setExtractingStep('');
+          return;
+        }
+      }
+
       setExtractingStep('Analyzing document structure with Gemini AI...');
 
       // Call AI endpoint
@@ -628,21 +765,122 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       const data = await res.json();
       if (data && data.extracted) {
         const ext = data.extracted;
+
+        // Check if server rejected as duplicate
+        if (data.duplicate || ext.isDuplicate) {
+          setReceiptIssue(
+            ext.primaryIssue ||
+              createDuplicateRejectionIssue({
+                isDuplicate: true,
+                stage: data.duplicateStage || 'raw_image_hash',
+                matchedRecordTitle: ext.vendor,
+              })
+          );
+          setIsExtracting(false);
+          setExtractingStep('');
+          setCurrentStep(1);
+          return;
+        }
+
+        // STAGE 2: Client-side Anchor JSON check after Gemini gives JSON output
+        const anchor = createAnchorJson({
+          purchaseDate: ext.purchaseDate,
+          price: ext.price,
+          vendor: ext.vendor,
+          currency: ext.currency,
+        });
+        const anchorHash = ext.anchorJsonHash || (await computeAnchorJsonHash(anchor));
+        const anchorDupCheck = checkAnchorJsonDuplicate(anchorHash, anchor);
+        if (anchorDupCheck.isDuplicate) {
+          setReceiptIssue(createDuplicateRejectionIssue(anchorDupCheck));
+          setIsExtracting(false);
+          setExtractingStep('');
+          setCurrentStep(1);
+          return;
+        }
+
+        // Check for receipt legibility / validation issues
+        if (ext.primaryIssue) {
+          setReceiptIssue(ext.primaryIssue);
+        } else if (ext.issues && ext.issues.length > 0) {
+          setReceiptIssue(ext.issues[0]);
+        } else if (ext.hasIssue || ext.isReadable === false) {
+          setReceiptIssue({
+            code: 'unreadable',
+            message: ext.readableReason || 'The receipt image has quality issues or is difficult to read.',
+            severity: ext.isReadable === false ? 'error' : 'warning',
+            recommendation: 'Please review and verify the extracted amounts, or upload a clearer photo.',
+          });
+        }
+
         if (ext.vendor) setVendor(ext.vendor);
         if (ext.purchaseDate) setDate(ext.purchaseDate);
         if (ext.price) {
           setTotal(String(ext.price));
-          setTax(String(Math.round(ext.price * 0.08)));
+          setTax(ext.tax ? String(ext.tax) : String(Math.round(ext.price * 0.08)));
         }
         if (ext.currency) setCurrency(ext.currency);
+
+        // Versatile category handling
         if (ext.category) {
           const catLower = ext.category.toLowerCase();
-          if (catLower.includes('meal') || catLower.includes('food')) setCategory('meals');
-          else if (catLower.includes('travel') || catLower.includes('flight')) setCategory('travel');
-          else setCategory('supplies');
+          if (
+            catLower.includes('meal') ||
+            catLower.includes('entertainment') ||
+            catLower.includes('food') ||
+            catLower.includes('dining') ||
+            catLower.includes('restaurant') ||
+            catLower.includes('cafe')
+          ) {
+            setCategory('meals');
+            if (ext.attendeeCount && ext.attendeeCount > 1) {
+              setAttendeeCount(String(ext.attendeeCount));
+            }
+          } else if (
+            catLower.includes('travel') ||
+            catLower.includes('transit') ||
+            catLower.includes('flight') ||
+            catLower.includes('airline') ||
+            catLower.includes('rideshare') ||
+            catLower.includes('uber') ||
+            catLower.includes('hotel')
+          ) {
+            setCategory('travel');
+            setIsTravel(true);
+            if (ext.destination) {
+              setCity(ext.destination);
+            }
+          } else if (
+            catLower.includes('office') ||
+            catLower.includes('operational') ||
+            catLower.includes('supplies') ||
+            catLower.includes('software') ||
+            catLower.includes('subscription')
+          ) {
+            setCategory('supplies');
+            setIsTravel(false);
+            if (ext.poNumber) {
+              setPurpose(`PO ${ext.poNumber} operational expense`);
+            }
+          } else {
+            setCategory('supplies');
+          }
         }
 
-        if (ext.name) {
+        if (Array.isArray(ext.lineItems) && ext.lineItems.length > 0) {
+          setLineItems(
+            ext.lineItems.map((item: any, idx: number) => ({
+              id: String(idx + 1),
+              description: item.description || item.name || `Item ${idx + 1}`,
+              quantity: Number(item.quantity) || 1,
+              unitPrice: Number(item.unitPrice || item.price || (ext.price ? ext.price / ext.lineItems.length : 0)),
+              amount: Number(item.amount || item.price || 0),
+              category: item.category || ext.category || 'meals',
+              confidence: item.confidence ?? 0.95,
+              itemFlags: Array.isArray(item.itemFlags) ? item.itemFlags : [],
+            }))
+          );
+        } else if (ext.name) {
           setLineItems([
             {
               id: '1',
@@ -650,7 +888,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
               quantity: 1,
               unitPrice: ext.price || 1200,
               amount: ext.price || 1200,
-              category: 'meals',
+              category: ext.category || 'meals',
               confidence: 0.95,
               itemFlags: [],
             },
@@ -660,6 +898,12 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       setCurrentStep(2);
     } catch (err) {
       console.warn('AI Ingestion notice, continuing with fallback:', err);
+      setReceiptIssue({
+        code: 'unreadable',
+        message: 'Could not process receipt image due to network or format error.',
+        severity: 'warning',
+        recommendation: 'You can fill out the details manually or try scanning again.',
+      });
       setCurrentStep(2);
     } finally {
       setIsExtracting(false);
@@ -672,6 +916,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
     if (!pastedText.trim()) return;
     setIsExtracting(true);
     setExtractingStep('Extracting structured expense items from text...');
+    setReceiptIssue(null);
 
     try {
       const res = await fetch('/api/gemini/scan-receipt', {
@@ -685,10 +930,39 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
       const data = await res.json();
       if (data && data.extracted) {
         const ext = data.extracted;
+        if (ext.primaryIssue) {
+          setReceiptIssue(ext.primaryIssue);
+        } else if (ext.issues && ext.issues.length > 0) {
+          setReceiptIssue(ext.issues[0]);
+        }
         if (ext.vendor) setVendor(ext.vendor);
         if (ext.purchaseDate) setDate(ext.purchaseDate);
         if (ext.price) setTotal(String(ext.price));
         if (ext.currency) setCurrency(ext.currency);
+        if (ext.category) {
+          const catLower = ext.category.toLowerCase();
+          if (catLower.includes('meal') || catLower.includes('entertainment') || catLower.includes('food')) {
+            setCategory('meals');
+          } else if (catLower.includes('travel') || catLower.includes('transit')) {
+            setCategory('travel');
+          } else {
+            setCategory('supplies');
+          }
+        }
+        if (Array.isArray(ext.lineItems) && ext.lineItems.length > 0) {
+          setLineItems(
+            ext.lineItems.map((item: any, idx: number) => ({
+              id: String(idx + 1),
+              description: item.description || item.name || `Item ${idx + 1}`,
+              quantity: Number(item.quantity) || 1,
+              unitPrice: Number(item.unitPrice || item.price || 0),
+              amount: Number(item.amount || item.price || 0),
+              category: item.category || ext.category || 'meals',
+              confidence: item.confidence ?? 0.95,
+              itemFlags: Array.isArray(item.itemFlags) ? item.itemFlags : [],
+            }))
+          );
+        }
       }
       setCurrentStep(2);
     } catch (err) {
@@ -893,6 +1167,21 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
         </div>
       )}
 
+      {/* Receipt Issue Overlay at Top */}
+      <ReceiptIssueOverlay
+        issue={receiptIssue}
+        onDismiss={() => setReceiptIssue(null)}
+        onRetake={() => {
+          setReceiptIssue(null);
+          setCurrentStep(1);
+          setCaptureMode('upload');
+          fileInputRef.current?.click();
+        }}
+        onProceedAnyway={() => {
+          setReceiptIssue(null);
+        }}
+      />
+
       {/* STEP 1: CAPTURE RECEIPT */}
       {currentStep === 1 && (
         <motion.div
@@ -921,9 +1210,8 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                     key={opt.id}
                     type="button"
                     onClick={() => setCaptureMode(opt.id)}
-                    className={`relative px-5 py-2.5 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 cursor-pointer z-10 ${
-                      isSelected ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'
-                    }`}
+                    className={`relative px-5 py-2.5 text-xs font-semibold rounded-xl transition-colors flex items-center gap-2 cursor-pointer z-10 ${isSelected ? 'text-slate-900' : 'text-slate-500 hover:text-slate-800'
+                      }`}
                   >
                     {isSelected && (
                       <motion.div
@@ -1032,7 +1320,29 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                   onClick={() => loadDemoScenario('meal_alcohol')}
                   className="px-3 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors cursor-pointer"
                 >
-                  Meal with Beer
+                  Meals & Entertainment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadDemoScenario('travel_transit')}
+                  className="px-3 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors cursor-pointer"
+                >
+                  Travel & Transit (Flight)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadDemoScenario('office_operational')}
+                  className="px-3 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors cursor-pointer"
+                >
+                  Office & Operational (WeWork)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadDemoScenario('blurry_issue')}
+                  className="px-3 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-medium text-rose-700 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <AlertTriangle className="w-3 h-3 text-rose-600" />
+                  Blurry Receipt (Issue Demo)
                 </button>
                 <button
                   type="button"
@@ -1050,10 +1360,17 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => loadDemoScenario('hardware')}
-                  className="px-3 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 transition-colors cursor-pointer"
+                  onClick={() => loadDemoScenario('duplicate_raw' as any)}
+                  className="px-3 py-1 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium text-purple-700 transition-colors cursor-pointer flex items-center gap-1"
                 >
-                  Allowance Overrun
+                  <span>🛡️ Duplicate Raw Image</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadDemoScenario('duplicate_anchor' as any)}
+                  className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-medium text-indigo-700 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <span>🛡️ Duplicate Anchor JSON</span>
                 </button>
               </div>
             </div>
@@ -1100,9 +1417,8 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className={`w-full text-xs p-2.5 border rounded-xl focus:outline-none font-medium ${
-                    !date ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200 focus:border-indigo-500'
-                  }`}
+                  className={`w-full text-xs p-2.5 border rounded-xl focus:outline-none font-medium ${!date ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200 focus:border-indigo-500'
+                    }`}
                 />
               </div>
 
@@ -1261,18 +1577,16 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsTravel(false)}
-                  className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
-                    !isTravel ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
+                  className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-medium cursor-pointer transition-all ${!isTravel ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
                 >
                   Local Expense (No Trip)
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsTravel(true)}
-                  className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-medium cursor-pointer transition-all ${
-                    isTravel ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
+                  className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-medium cursor-pointer transition-all ${isTravel ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
                 >
                   Business Travel
                 </button>
@@ -1321,9 +1635,8 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
                       placeholder="e.g. Acme Health Partners"
-                      className={`w-full text-xs p-2.5 border rounded-xl focus:outline-none font-medium ${
-                        !clientName ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200 focus:border-indigo-500'
-                      }`}
+                      className={`w-full text-xs p-2.5 border rounded-xl focus:outline-none font-medium ${!clientName ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200 focus:border-indigo-500'
+                        }`}
                     />
                   </div>
 
@@ -1395,11 +1708,10 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
           {/* Duplicate Claim Blocker / Warning */}
           {duplicateInfo && duplicateInfo.highestScore >= 0.70 && (
             <div
-              className={`p-4 rounded-2xl border text-xs flex items-start gap-3 ${
-                duplicateInfo.highestScore >= 0.95
+              className={`p-4 rounded-2xl border text-xs flex items-start gap-3 ${duplicateInfo.highestScore >= 0.95
                   ? 'bg-rose-50 border-rose-200 text-rose-900'
                   : 'bg-amber-50 border-amber-200 text-amber-900'
-              }`}
+                }`}
             >
               <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-rose-600" />
               <div className="flex-1 space-y-1">
@@ -1644,8 +1956,8 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                 {viewOriginalClaim?.extracted?.total?.value
                   ? Number(viewOriginalClaim.extracted.total.value).toFixed(2)
                   : viewOriginalClaim?.normalizedCurrency?.targetAmountMinor
-                  ? (viewOriginalClaim.normalizedCurrency.targetAmountMinor / 100).toFixed(2)
-                  : '0.00'}
+                    ? (viewOriginalClaim.normalizedCurrency.targetAmountMinor / 100).toFixed(2)
+                    : '0.00'}
               </p>
               <p><strong>Submitted At:</strong> {viewOriginalClaim?.submittedAt || 'N/A'}</p>
             </div>

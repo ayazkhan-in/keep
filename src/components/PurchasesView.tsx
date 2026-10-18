@@ -22,6 +22,9 @@ import {
   RotateCcw,
   FileText,
   Trash2,
+  Utensils,
+  Plane,
+  Briefcase,
 } from 'lucide-react';
 import { PurchaseItem, CategoryType } from '../types';
 import { DeleteConfirmationModal } from './DeleteConfirmationModal';
@@ -39,6 +42,9 @@ interface PurchasesViewProps {
 
 const CATEGORY_OPTIONS = [
   { value: 'All Categories', label: 'All Categories' },
+  { value: 'Meals & Entertainment', label: 'Meals & Entertainment' },
+  { value: 'Travel & Transit', label: 'Travel & Transit' },
+  { value: 'Office & Operational', label: 'Office & Operational' },
   { value: 'Electronics', label: 'Electronics' },
   { value: 'Office Furniture', label: 'Office Furniture' },
   { value: 'Software', label: 'Software' },
@@ -147,6 +153,12 @@ export const PurchasesView: React.FC<PurchasesViewProps> = ({
 
   const getItemIcon = (category: string) => {
     switch (category) {
+      case 'Meals & Entertainment':
+        return <Utensils className="w-4 h-4 text-[#76777D]" />;
+      case 'Travel & Transit':
+        return <Plane className="w-4 h-4 text-[#76777D]" />;
+      case 'Office & Operational':
+        return <Briefcase className="w-4 h-4 text-[#76777D]" />;
       case 'Electronics':
         return <Laptop className="w-4 h-4 text-[#76777D]" />;
       case 'Office Furniture':

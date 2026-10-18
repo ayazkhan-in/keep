@@ -12,6 +12,7 @@ import {
   ArrowRight,
   ShieldCheck,
   RotateCw,
+  RefreshCw,
   Eye,
   Code,
   DollarSign,
@@ -20,10 +21,27 @@ import {
   Check,
   FileCode,
   Zap,
+  Utensils,
+  Plane,
+  Briefcase,
+  AlertOctagon,
+  Info,
+  Coffee,
+  Car,
 } from 'lucide-react';
-import { PurchaseItem, CategoryType } from '../types';
+import { PurchaseItem, CategoryType, ReceiptIssue } from '../types';
 import { MinimalSelect } from './ui/MinimalSelect';
+import { ReceiptIssueOverlay } from './ui/ReceiptIssueOverlay';
 import { useCurrency } from '../context/CurrencyContext';
+import {
+  computeRawImageSha256,
+  createAnchorJson,
+  computeAnchorJsonHash,
+  checkRawImageDuplicate,
+  checkAnchorJsonDuplicate,
+  registerReceipt,
+  createDuplicateRejectionIssue,
+} from '../utils/receiptDuplicateDetector';
 
 interface ReceiptScannerModalProps {
   isOpen: boolean;
@@ -43,6 +61,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanStep, setScanStep] = useState<string>('');
   const [extractedData, setExtractedData] = useState<any>(null);
+  const [activeIssue, setActiveIssue] = useState<ReceiptIssue | null>(null);
   const [showRawInspector, setShowRawInspector] = useState<boolean>(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -55,6 +74,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
   // Reset all state when closing or scanning a new item
   const resetState = () => {
     setExtractedData(null);
+    setActiveIssue(null);
     setPreviewBase64(null);
     setSelectedFile(null);
     setPastedText('');
@@ -111,7 +131,7 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
     }
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (!videoRef.current || !canvasRef.current) return;
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -123,7 +143,23 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
       const base64 = canvas.toDataURL('image/jpeg', 0.9);
       setPreviewBase64(base64);
       stopCamera();
-      triggerAIScan(base64, 'image/jpeg');
+
+      // STAGE 1: Raw Image Hashing Check BEFORE Gemini API Call
+      try {
+        const rawImageHash = await computeRawImageSha256(base64);
+        const dupCheck = checkRawImageDuplicate(rawImageHash);
+
+        if (dupCheck.isDuplicate) {
+          const issue = createDuplicateRejectionIssue(dupCheck);
+          setActiveIssue(issue);
+          setIsScanning(false);
+          return;
+        }
+
+        triggerAIScan(base64, 'image/jpeg', undefined, rawImageHash);
+      } catch (err) {
+        triggerAIScan(base64, 'image/jpeg');
+      }
     }
   };
 
@@ -136,15 +172,44 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
     }
   };
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     setSelectedFile(file);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      setPreviewBase64(base64);
-      triggerAIScan(base64, file.type || 'image/jpeg');
-    };
-    reader.readAsDataURL(file);
+    setActiveIssue(null);
+    setExtractedData(null);
+
+    // STAGE 1: Raw Image Hashing Check BEFORE Gemini API Call
+    try {
+      const rawImageHash = await computeRawImageSha256(file);
+      const dupCheck = checkRawImageDuplicate(rawImageHash);
+
+      if (dupCheck.isDuplicate) {
+        // Discard / reject before calling Gemini API
+        const issue = createDuplicateRejectionIssue(dupCheck);
+        setActiveIssue(issue);
+        setIsScanning(false);
+        const reader = new FileReader();
+        reader.onload = (e) => setPreviewBase64(e.target?.result as string);
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setPreviewBase64(base64);
+        triggerAIScan(base64, file.type || 'image/jpeg', undefined, rawImageHash);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn('Raw hash compute error:', err);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setPreviewBase64(base64);
+        triggerAIScan(base64, file.type || 'image/jpeg');
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handlePasteSubmit = () => {
@@ -153,11 +218,109 @@ export const ReceiptScannerModal: React.FC<ReceiptScannerModalProps> = ({
     triggerAIScan(undefined, 'text/plain', pastedText);
   };
 
-  const loadSampleReceipt = (type: 'apple' | 'amazon' | 'herman' | 'breville') => {
+  const loadSampleReceipt = (
+    type:
+      | 'toit'
+      | 'bluebottle'
+      | 'delta'
+      | 'uber'
+      | 'wework'
+      | 'staples'
+      | 'apple'
+      | 'herman'
+      | 'blurry'
+      | 'cutoff'
+      | 'non_receipt'
+      | 'duplicate_raw'
+      | 'duplicate_anchor'
+  ) => {
     let mockContext = '';
     let mockPhoto = '';
 
-    if (type === 'apple') {
+    if (type === 'toit') {
+      mockPhoto = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80';
+      mockContext = `TOIT BREWPUB & KITCHEN - INDIRANAGAR
+Table: 14 | Check: CHK-49102 | Guests: 3
+Date: 2026-10-22 20:30
+1x Woodfired Margherita Pizza - ₹1,200.00
+2x Toit Tint-in-Wit Craft Beer (Pint) - ₹800.00
+Subtotal: ₹2,000.00
+CGST 2.5% + SGST 2.5%: ₹200.00
+Service Charge / Gratuity: ₹200.00
+Total Paid: ₹2,400.00 INR
+Payment: Corporate Visa (•••• 4012)
+Notes: Team celebration dinner & Q4 sprint retro.`;
+    } else if (type === 'bluebottle') {
+      mockPhoto = 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80';
+      mockContext = `BLUE BOTTLE COFFEE & ROASTERY
+Store: SF Mint Plaza | Order #BB-8910
+Date: 2026-10-24 09:15
+2x Bella Donovan Single Origin Drip - $13.00
+1x Almond Twice-Baked Croissant - $4.50
+1x Poached Egg Avocado Toast - $7.00
+Subtotal: $24.50
+Sales Tax: $1.80
+Tip: $2.70
+Total Amount: $29.00 USD
+Payment: Apple Pay (Alex Morgan •••• 1004)
+Category: Meals & Entertainment (Client Breakfast Meeting)`;
+    } else if (type === 'delta') {
+      mockPhoto = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80';
+      mockContext = `DELTA AIR LINES E-TICKET & PASSENGER RECEIPT
+Ticket Reference: 006-2918204910 | Confirmation: DL891Q
+Passenger: Alex Morgan | SkyMiles: 99182301
+Flight: DL-1842 | SFO (San Francisco) -> JFK (New York)
+Departure: 2026-10-28 08:30 AM
+Base Fare (Main Cabin Class V): $440.00 USD
+US Transportation Tax: $33.00
+September 11th Security Fee: $5.60
+Passenger Facility Charge: $4.50
+Checked Baggage Fee (1x 50 lbs): $35.00
+Total Charged: $518.10 USD
+Payment: Corporate Amex (•••• 3009)
+Status: Confirmed E-Ticket Issued`;
+    } else if (type === 'uber') {
+      mockPhoto = 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80';
+      mockContext = `UBER TECHNOLOGIES RIDESHARE RECEIPT
+Trip ID: ubr-881920-sf-terminal
+Date: 2026-10-24 07:15 AM
+Driver: Marcus R. (Toyota Camry Hybrid)
+Pickup: 500 Howard St, San Francisco, CA
+Dropoff: SFO Terminal 2 Departures
+Trip Distance: 14.8 miles | Duration: 24 mins
+Uber Comfort Fare: $32.40
+Bay Area Airport Access Surcharge: $3.50
+Caltrans Highway Toll: $6.00
+Tip to Driver: $5.00
+Total Fare: $46.90 USD
+Payment: Visa ending in 4012`;
+    } else if (type === 'wework') {
+      mockPhoto = 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80';
+      mockContext = `WEWORK MANAGEMENT LLC - INVOICE
+Invoice Number: WW-2026-99120
+Location: WeWork Transbay, San Francisco, CA
+Billing Period: Oct 01, 2026 - Oct 31, 2026
+Item: Monthly All-Access Coworking Flex Pass (1 Member) - $250.00
+Item: 4-Hour Meeting Room Credit Pack - $49.00
+Subtotal: $299.00
+Tax / Facilities Fee: $24.00
+Total: $323.00 USD
+PO Reference: PO-2026-OP44
+Payment Terms: Paid in full via Corporate ACH`;
+    } else if (type === 'staples') {
+      mockPhoto = 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=800&q=80';
+      mockContext = `STAPLES BUSINESS ADVANTAGE INVOICE
+Order: ORD-ST-88192 | Account: ACME-ENG-99
+Date: 2026-10-20
+2x Premium Multipurpose Copy Paper (Case of 10 Reams) - $70.00
+3x Ergonomic Memory Foam Keyboard Wrist Rests - $60.00
+1x High-Yield Black Toner Cartridge - $85.00
+Subtotal: $215.00
+Sales Tax: $18.50
+Shipping: $0.00 (Free Commercial Delivery)
+Total Paid: $233.50 USD
+Payment: Corporate Visa (•••• 4012)`;
+    } else if (type === 'apple') {
       mockPhoto = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80';
       mockContext = `APPLE STORE RETAIL INVOICE
 Store: Apple Fifth Avenue, NY
@@ -166,54 +329,103 @@ Item: Apple Studio Display 27-inch 5K Retina (Standard Glass, Tilt-adjustable)
 Unit Price: $1,599.00 USD
 Serial Number: APL-SD5K-881920
 Payment Method: Apple Pay (Visa •••• 4012)
-Date: 2023-10-28
+Date: 2026-10-18
 Warranty: 1-Year Limited Manufacturer Warranty (Covers screen panel, internal power supply, logic board)
-Return Window: 14 calendar days from delivery (Deadline: Nov 11, 2023)`;
-    } else if (type === 'amazon') {
-      mockPhoto = 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80';
-      mockContext = `AMAZON.COM INVOICE
-Order # 113-9918231-5501923
-Seller: Keychron Direct Fulfillment
-Item: Keychron Q1 Pro Custom Mechanical Keyboard (Carbon Black, Wireless QMK/VIA)
-Price: $198.00 USD
-Serial Number: KC-Q1P-7721
-Date: 2023-10-27
-Warranty: 12-Month Limited Manufacturer Warranty
-Return Window: 30 days hassle-free returns`;
+Return Window: 14 calendar days from delivery (Deadline: Nov 01, 2026)`;
     } else if (type === 'herman') {
       mockPhoto = 'https://images.unsplash.com/photo-1580481077195-c3f25c7e148e?auto=format&fit=crop&w=800&q=80';
       mockContext = `HERMAN MILLER OFFICIAL INVOICE
 Order: HM-9921448
 Item: Aeron Chair - Size B (Graphite Frame, PostureFit SL, Fully Adjustable Arms)
 Total: $1,495.00 USD
-Serial: HM-AER-2023-9914
-Date: 2023-09-15
+Serial: HM-AER-2026-9914
+Date: 2026-09-15
 Warranty: Herman Miller 12-Year 24/7 Comprehensive Warranty (Pneumatic cylinder, frame, tilt mechanism, pellicle mesh)
 Return Window: 30-Day In-Home Trial`;
+    } else if (type === 'blurry') {
+      mockPhoto = 'https://images.unsplash.com/photo-1554415707-9e4c07dca042?auto=format&fit=crop&w=800&q=80';
+      mockContext = `BLURRY UNREADABLE RECEIPT SAMPLE
+[IMAGE IS EXTREMELY BLURRY, SHAKEN AND OUT OF FOCUS]
+Store: **** **fe Deli
+Date: **/**/2026
+Total: **.** [ILLEGIBLE SMEAR]
+Unreadable thermal ink, numbers smeared, camera motion blur.`;
+    } else if (type === 'cutoff') {
+      mockPhoto = 'https://images.unsplash.com/photo-1554415707-9e4c07dca042?auto=format&fit=crop&w=800&q=80';
+      mockContext = `CUT OFF RECEIPT SAMPLE
+Cafe Metro & Roastery
+Order: #2291
+Item: Smoked Turkey Sandwich - $12.50
+Item: Espresso Tonic - $6.50
+[RECEIPT IS CROPPED / CUT OFF AT THE BOTTOM - TOTAL AMOUNT, TAX AND PAYMENT RECEIPT ARE COMPLETELY MISSING]`;
+    } else if (type === 'duplicate_raw') {
+      mockPhoto = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80';
+      setPreviewBase64(mockPhoto);
+      // Simulate raw image duplicate detection before Gemini API call
+      setActiveIssue(
+        createDuplicateRejectionIssue({
+          isDuplicate: true,
+          stage: 'raw_image_hash',
+          matchedRecordTitle: 'Wanderlust Travel Agency (2026-09-14)',
+        })
+      );
+      setExtractedData(null);
+      setIsScanning(false);
+      return;
+    } else if (type === 'duplicate_anchor') {
+      mockPhoto = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80';
+      mockContext = `TOIT BREWPUB & KITCHEN - INDIRANAGAR
+Table: 14 | Check: CHK-49102 | Guests: 3
+Date: 2026-10-22 20:30
+1x Woodfired Margherita Pizza - ₹1,200.00
+2x Toit Tint-in-Wit Craft Beer (Pint) - ₹800.00
+Total Paid: ₹2,400.00 INR`;
+      setPreviewBase64(mockPhoto);
+      // Pre-seed the anchor duplicate so when AI finishes, it rejects!
+      const anchor = createAnchorJson({
+        date: '2026-10-22',
+        total: 2400,
+        merchant: 'Toit Brewpub Indiranagar',
+        currency: 'INR',
+      });
+      computeAnchorJsonHash(anchor).then((anchorHash) => {
+        registerReceipt({
+          id: 'prev-toit-claim',
+          title: 'Toit Brewpub Indiranagar (Initial Approval)',
+          vendor: 'Toit Brewpub Indiranagar',
+          date: '2026-10-22',
+          amount: 2400,
+          anchorJsonHash: anchorHash,
+        });
+        triggerAIScan(undefined, 'text/plain', mockContext);
+      });
+      return;
     } else {
-      mockPhoto = 'https://images.unsplash.com/photo-1509785307050-d4066910ec1e?auto=format&fit=crop&w=800&q=80';
-      mockContext = `BREVILLE RETAIL RECEIPT
-Williams Sonoma Flagship
-Item: Breville Barista Pro Espresso Machine (Brushed Stainless Steel)
-Price: $849.95 USD
-Serial Number: BES878BSS-2023-441
-Date: 2023-10-18
-Warranty: 2-Year Limited Product Warranty (ThermoJet heating unit, conical burr grinder)
-Return Window: 30 Days return policy`;
+      mockPhoto = 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=800&q=80';
+      mockContext = `NOT A RECEIPT SAMPLE
+Image of an indoor green potted snake plant on a wooden desk.
+This file contains no financial transactions, prices, dates, or vendor information.`;
     }
 
     setPreviewBase64(mockPhoto);
     triggerAIScan(undefined, 'text/plain', mockContext);
   };
 
-  const triggerAIScan = async (base64?: string, mimeType?: string, textContext?: string) => {
+  const triggerAIScan = async (
+    base64?: string,
+    mimeType?: string,
+    textContext?: string,
+    rawImageHash?: string
+  ) => {
     setIsScanning(true);
     setScanStep('Analyzing document structure with Gemini 3.6 Flash...');
     setQuotaWarning(null);
+    setActiveIssue(null);
 
     try {
-      setTimeout(() => setScanStep('Extracting itemized pricing, serial IDs & vendors...'), 500);
-      setTimeout(() => setScanStep('Calculating warranty coverage & return deadlines...'), 1100);
+      setTimeout(() => setScanStep('Classifying category (Meals, Travel, Operational, Tech)...'), 400);
+      setTimeout(() => setScanStep('Auditing image legibility & detecting quality issues...'), 800);
+      setTimeout(() => setScanStep('Extracting itemized lines, subtotal, tax & tip...'), 1200);
 
       const res = await fetch('/api/gemini/scan-receipt', {
         method: 'POST',
@@ -226,14 +438,79 @@ Return Window: 30 Days return policy`;
       });
 
       const data = await res.json();
-      if (data.success && data.extracted) {
+      if (data.extracted) {
+        // Check if server rejected as duplicate before advancing to review form
+        if (data.duplicate || data.extracted.isDuplicate) {
+          setExtractedData(null);
+          setActiveIssue(
+            data.extracted.primaryIssue ||
+              createDuplicateRejectionIssue({
+                isDuplicate: true,
+                stage: data.duplicateStage || 'raw_image_hash',
+                matchedRecordTitle: data.extracted.vendor,
+              })
+          );
+          setIsScanning(false);
+          return;
+        }
+
+        // STAGE 2: Client-side Anchor JSON Hashing after Gemini Output
+        const anchor = createAnchorJson({
+          purchaseDate: data.extracted.purchaseDate,
+          price: data.extracted.price,
+          vendor: data.extracted.vendor,
+          currency: data.extracted.currency,
+          orderNumber: data.extracted.orderNumber,
+        });
+        const anchorHash = data.extracted.anchorJsonHash || (await computeAnchorJsonHash(anchor));
+        data.extracted.anchorJsonHash = anchorHash;
+        data.extracted.rawImageHash = rawImageHash || data.extracted.rawImageHash;
+
+        const anchorDupCheck = checkAnchorJsonDuplicate(anchorHash, anchor);
+        if (anchorDupCheck.isDuplicate) {
+          // Reject as duplicate anchor - process ends here with duplicate card
+          setExtractedData(null);
+          const issue = createDuplicateRejectionIssue(anchorDupCheck);
+          setActiveIssue(issue);
+          setIsScanning(false);
+          return;
+        }
+
         setExtractedData(data.extracted);
+
+        // Check if there are readability or quality issues to show in the top overlay card
+        if (data.extracted.primaryIssue) {
+          setActiveIssue(data.extracted.primaryIssue);
+        } else if (data.extracted.hasIssue && data.extracted.issues?.[0]) {
+          setActiveIssue(data.extracted.issues[0]);
+        } else if (!data.extracted.isReadable) {
+          setActiveIssue({
+            code: 'UNREADABLE_IMAGE',
+            severity: 'error',
+            title: 'Receipt Is Severely Blurry & Unreadable',
+            message: 'Your receipt image has significant distortion and motion blur. Itemized charges and the total amount could not be reliably verified.',
+            suggestion: 'Please place the receipt on a flat dark surface with steady lighting and retake a sharp, focused photo.',
+          });
+        } else {
+          setActiveIssue(null);
+        }
+
         if (data.quotaExhausted || data.warning) {
-          setQuotaWarning(data.warning || 'Gemini 3.6 Flash daily API quota was reached. Smart heuristic extraction was used so you can keep saving purchases without interruption.');
+          setQuotaWarning(
+            data.warning ||
+              'Gemini daily API quota was reached. Smart versatile heuristic extraction was used so you can keep working without interruption.'
+          );
         }
       }
     } catch (err) {
       console.error('Scan error:', err);
+      setActiveIssue({
+        code: 'NETWORK_ERROR',
+        severity: 'warning',
+        title: 'Network Communication Issue',
+        message: 'Could not connect to the Gemini OCR service. You can enter details manually.',
+        suggestion: 'Check your internet connection or use manual input.',
+      });
     } finally {
       setIsScanning(false);
       setScanStep('');
@@ -242,6 +519,11 @@ Return Window: 30 Days return policy`;
 
   const handleSave = () => {
     if (!extractedData) return;
+
+    if (extractedData.isDuplicate || activeIssue?.code?.startsWith('DUPLICATE')) {
+      alert('This duplicate receipt has been rejected and cannot be saved.');
+      return;
+    }
 
     const purchaseDate = extractedData.purchaseDate || new Date().toISOString().split('T')[0];
     const warrantyMonths = Number(extractedData.warrantyMonths) >= 0 ? Number(extractedData.warrantyMonths) : 12;
@@ -301,7 +583,20 @@ Return Window: 30 Days return policy`;
       aiConfidence: extractedData.aiConfidence || 0.98,
       aiExtractedNotes: `Automatically parsed with Gemini on ${new Date().toLocaleDateString()}`,
       taxDeductible: Boolean(extractedData.taxDeductible),
+      rawImageHash: extractedData.rawImageHash,
+      anchorJsonHash: extractedData.anchorJsonHash,
     };
+
+    // Register confirmed purchase into duplicate registry
+    registerReceipt({
+      id: newPurchase.id,
+      title: newPurchase.name,
+      vendor: newPurchase.vendor,
+      date: newPurchase.purchaseDate,
+      amount: newPurchase.price,
+      rawImageHash: newPurchase.rawImageHash,
+      anchorJsonHash: newPurchase.anchorJsonHash,
+    });
 
     onSavePurchase(newPurchase);
     resetState();
@@ -348,12 +643,20 @@ Return Window: 30 Days return policy`;
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="p-6 overflow-y-auto flex-1 space-y-6 relative">
+          {/* Top Readability & Quality Issue Overlay Card */}
+          <ReceiptIssueOverlay
+            issue={activeIssue}
+            onDismiss={() => setActiveIssue(null)}
+            onRetry={resetState}
+            onContinueAnyway={extractedData ? () => setActiveIssue(null) : undefined}
+          />
+
           {quotaWarning && (
             <div className="flex items-start gap-2.5 p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-amber-950">Gemini 3.6 Flash API Notice</p>
+                <p className="font-semibold text-amber-950">Gemini API Intelligence Notice</p>
                 <p className="text-amber-800 text-[11px] mt-0.5">{quotaWarning}</p>
               </div>
             </div>
@@ -489,40 +792,171 @@ Return Window: 30 Days return policy`;
                 </div>
               )}
 
-              {/* Sample Receipts Quick Load */}
-              <div className="mt-5 pt-4 border-t border-[#E2E8F0]">
-                <p className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] font-semibold mb-2.5">
-                  Or test with sample preloaded receipts:
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <button
-                    onClick={() => loadSampleReceipt('apple')}
-                    className="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl hover:border-[#0F172A] text-left transition-colors cursor-pointer group"
-                  >
-                    <p className="font-medium text-[12px] text-[#0F172A] group-hover:text-black">Apple Display</p>
-                    <p className="text-[11px] text-[#76777D]">$1,599 · 1-Yr War.</p>
-                  </button>
-                  <button
-                    onClick={() => loadSampleReceipt('amazon')}
-                    className="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl hover:border-[#0F172A] text-left transition-colors cursor-pointer group"
-                  >
-                    <p className="font-medium text-[12px] text-[#0F172A] group-hover:text-black">Keychron Q1</p>
-                    <p className="text-[11px] text-[#76777D]">$198 · 30d Return</p>
-                  </button>
-                  <button
-                    onClick={() => loadSampleReceipt('herman')}
-                    className="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl hover:border-[#0F172A] text-left transition-colors cursor-pointer group"
-                  >
-                    <p className="font-medium text-[12px] text-[#0F172A] group-hover:text-black">Aeron Chair</p>
-                    <p className="text-[11px] text-[#76777D]">$1,495 · 12-Yr War.</p>
-                  </button>
-                  <button
-                    onClick={() => loadSampleReceipt('breville')}
-                    className="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl hover:border-[#0F172A] text-left transition-colors cursor-pointer group"
-                  >
-                    <p className="font-medium text-[12px] text-[#0F172A] group-hover:text-black">Barista Pro</p>
-                    <p className="text-[11px] text-[#76777D]">$849.95 · 2-Yr War.</p>
-                  </button>
+              {/* Sample Receipts Quick Load with Categories & Issue Tests */}
+              <div className="mt-6 pt-5 border-t border-[#E2E8F0] space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] font-semibold">
+                    Test with Versatile Sample Receipts:
+                  </p>
+                  <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                    Includes Issue Overlay Demos
+                  </span>
+                </div>
+
+                {/* Meals & Entertainment Section */}
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-[#0F172A]">
+                    <Utensils className="w-3.5 h-3.5 text-orange-600" />
+                    <span>Meals & Entertainment</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('toit')}
+                      className="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl hover:border-[#0F172A] hover:bg-white text-left transition-all cursor-pointer group shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-[12px] text-[#0F172A] group-hover:text-black">Toit Brewpub Indiranagar</p>
+                        <span className="text-[10px] font-mono-code bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded">Dinner & Drinks</span>
+                      </div>
+                      <p className="text-[11px] text-[#76777D] mt-0.5">₹2,400 · Pizza, Beer, 18% Tax & Tip</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('bluebottle')}
+                      className="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl hover:border-[#0F172A] hover:bg-white text-left transition-all cursor-pointer group shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-[12px] text-[#0F172A] group-hover:text-black">Blue Bottle Coffee</p>
+                        <span className="text-[10px] font-mono-code bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Client Sync</span>
+                      </div>
+                      <p className="text-[11px] text-[#76777D] mt-0.5">$29.00 · Single Origin & Pastries</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Travel & Transit Section */}
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-[#0F172A]">
+                    <Plane className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Travel & Transit</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('delta')}
+                      className="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl hover:border-[#0F172A] hover:bg-white text-left transition-all cursor-pointer group shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-[12px] text-[#0F172A] group-hover:text-black">Delta Air Lines SFO→JFK</p>
+                        <span className="text-[10px] font-mono-code bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded">Flight</span>
+                      </div>
+                      <p className="text-[11px] text-[#76777D] mt-0.5">$518.10 · E-Ticket, Luggage & Tax</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('uber')}
+                      className="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl hover:border-[#0F172A] hover:bg-white text-left transition-all cursor-pointer group shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-[12px] text-[#0F172A] group-hover:text-black">Uber Airport Terminal Ride</p>
+                        <span className="text-[10px] font-mono-code bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded">Rideshare</span>
+                      </div>
+                      <p className="text-[11px] text-[#76777D] mt-0.5">$46.90 · 14.8 Miles, Toll & Tip</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Office & Operational Section */}
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-[#0F172A]">
+                    <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Office & Operational</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('wework')}
+                      className="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl hover:border-[#0F172A] hover:bg-white text-left transition-all cursor-pointer group shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-[12px] text-[#0F172A] group-hover:text-black">WeWork Coworking Flex Pass</p>
+                        <span className="text-[10px] font-mono-code bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">Workspace</span>
+                      </div>
+                      <p className="text-[11px] text-[#76777D] mt-0.5">$323.00 · Monthly Desk & Room Credits</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('staples')}
+                      className="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl hover:border-[#0F172A] hover:bg-white text-left transition-all cursor-pointer group shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium text-[12px] text-[#0F172A] group-hover:text-black">Staples Commercial Supplies</p>
+                        <span className="text-[10px] font-mono-code bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded">Supplies</span>
+                      </div>
+                      <p className="text-[11px] text-[#76777D] mt-0.5">$233.50 · Paper, Ergonomics, Toner</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* ⚠️ Issue Testing Section (Demonstrating Top Overlay Card) */}
+                <div className="pt-2 border-t border-dashed border-[#E2E8F0]">
+                  <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-rose-700">
+                    <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Test Unreadable / Issue Detection (Shows Top Overlay Card):</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('blurry')}
+                      className="p-2.5 bg-rose-50/70 border border-rose-200 hover:border-rose-400 rounded-xl text-left transition-all cursor-pointer group"
+                    >
+                      <p className="font-medium text-[12px] text-rose-950 group-hover:text-rose-900 flex items-center gap-1">
+                        <span>⚠️ Blurry / Smudged</span>
+                      </p>
+                      <p className="text-[10px] text-rose-800 mt-0.5">Motion blur & illegible ink</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('cutoff')}
+                      className="p-2.5 bg-amber-50/70 border border-amber-200 hover:border-amber-400 rounded-xl text-left transition-all cursor-pointer group"
+                    >
+                      <p className="font-medium text-[12px] text-amber-950 group-hover:text-amber-900 flex items-center gap-1">
+                        <span>⚠️ Cut Off at Bottom</span>
+                      </p>
+                      <p className="text-[10px] text-amber-800 mt-0.5">Total amount cropped out</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('non_receipt')}
+                      className="p-2.5 bg-slate-100 border border-slate-300 hover:border-slate-500 rounded-xl text-left transition-all cursor-pointer group"
+                    >
+                      <p className="font-medium text-[12px] text-slate-900 group-hover:text-black flex items-center gap-1">
+                        <span>⚠️ Non-Receipt Image</span>
+                      </p>
+                      <p className="text-[10px] text-slate-700 mt-0.5">Plant photo instead of receipt</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('duplicate_raw' as any)}
+                      className="p-2.5 bg-purple-50/80 border border-purple-200 hover:border-purple-400 rounded-xl text-left transition-all cursor-pointer group"
+                    >
+                      <p className="font-medium text-[12px] text-purple-950 group-hover:text-purple-900 flex items-center gap-1">
+                        <span>🛡️ Duplicate Raw Image</span>
+                      </p>
+                      <p className="text-[10px] text-purple-800 mt-0.5">Discarded before Gemini API call</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadSampleReceipt('duplicate_anchor' as any)}
+                      className="p-2.5 bg-indigo-50/80 border border-indigo-200 hover:border-indigo-400 rounded-xl text-left transition-all cursor-pointer group sm:col-span-2"
+                    >
+                      <p className="font-medium text-[12px] text-indigo-950 group-hover:text-indigo-900 flex items-center gap-1">
+                        <span>🛡️ Duplicate Anchor JSON</span>
+                      </p>
+                      <p className="text-[10px] text-indigo-800 mt-0.5">Matching date + vendor + amount hash rejected</p>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -537,7 +971,7 @@ Return Window: 30 Days return policy`;
               </div>
               <div>
                 <h4 className="font-medium text-[15px] text-[#0F172A]">
-                  Scanning & Parsing Document...
+                  Scanning & Parsing Document with Gemini...
                 </h4>
                 <p className="text-[12px] text-[#76777D] mt-1 font-mono-code">{scanStep}</p>
               </div>
@@ -545,7 +979,7 @@ Return Window: 30 Days return policy`;
           )}
 
           {/* Verification & Edit Form once extracted */}
-          {extractedData && !isScanning && (
+          {extractedData && !isScanning && !activeIssue?.code?.startsWith('DUPLICATE') && (
             <div className="space-y-4">
               <div className="p-3.5 bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl flex items-center justify-between text-[12px] text-[#065F46]">
                 <div className="flex items-center gap-2">
@@ -569,10 +1003,61 @@ Return Window: 30 Days return policy`;
                 </div>
               )}
 
+              {/* Context Badges for Versatile Categories */}
+              {extractedData.mealsContext && (
+                <div className="p-3 bg-orange-50 border border-orange-200 rounded-xl text-orange-900 text-xs flex items-center gap-3 flex-wrap">
+                  <span className="font-semibold flex items-center gap-1">
+                    <Utensils className="w-3.5 h-3.5 text-orange-600" />
+                    Meals & Dining Context:
+                  </span>
+                  <span>Type: <strong>{extractedData.mealsContext.diningType || 'Dine-In'}</strong></span>
+                  <span>Guests: <strong>{extractedData.mealsContext.attendeeCount || 2}</strong></span>
+                  {extractedData.mealsContext.hasAlcohol && (
+                    <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-mono-code text-[10px]">
+                      Alcohol Detected: ₹{extractedData.mealsContext.alcoholTotal || 0}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {extractedData.travelContext && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs flex items-center gap-3 flex-wrap">
+                  <span className="font-semibold flex items-center gap-1">
+                    <Plane className="w-3.5 h-3.5 text-blue-600" />
+                    Travel & Transit Context:
+                  </span>
+                  <span>Carrier: <strong>{extractedData.travelContext.carrier || 'Carrier'}</strong></span>
+                  {extractedData.travelContext.origin && (
+                    <span>Route: <strong>{extractedData.travelContext.origin} → {extractedData.travelContext.destination}</strong></span>
+                  )}
+                  {extractedData.travelContext.bookingReference && (
+                    <span>Ref / PNR: <strong>{extractedData.travelContext.bookingReference}</strong></span>
+                  )}
+                </div>
+              )}
+
+              {extractedData.operationalContext && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs flex items-center gap-3 flex-wrap">
+                  <span className="font-semibold flex items-center gap-1">
+                    <Briefcase className="w-3.5 h-3.5 text-emerald-600" />
+                    Operational Context:
+                  </span>
+                  {extractedData.operationalContext.poNumber && (
+                    <span>PO #: <strong>{extractedData.operationalContext.poNumber}</strong></span>
+                  )}
+                  {extractedData.operationalContext.department && (
+                    <span>Dept: <strong>{extractedData.operationalContext.department}</strong></span>
+                  )}
+                  {extractedData.operationalContext.servicePeriod && (
+                    <span>Period: <strong>{extractedData.operationalContext.servicePeriod}</strong></span>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[13px]">
                 <div>
                   <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
-                    Product / Asset Name
+                    Product / Expense Name
                   </label>
                   <input
                     type="text"
@@ -586,7 +1071,7 @@ Return Window: 30 Days return policy`;
 
                 <div>
                   <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
-                    Vendor / Retailer
+                    Vendor / Merchant
                   </label>
                   <input
                     type="text"
@@ -600,43 +1085,17 @@ Return Window: 30 Days return policy`;
 
                 <div>
                   <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
-                    Total Amount ($ USD)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={extractedData.price || 0}
-                    onChange={(e) =>
-                      setExtractedData({ ...extractedData, price: parseFloat(e.target.value) || 0 })
-                    }
-                    className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A] font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
-                    Purchase Date
-                  </label>
-                  <input
-                    type="date"
-                    value={extractedData.purchaseDate || ''}
-                    onChange={(e) =>
-                      setExtractedData({ ...extractedData, purchaseDate: e.target.value })
-                    }
-                    className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
                     Category
                   </label>
                   <MinimalSelect
-                    value={extractedData.category || 'Electronics'}
+                    value={extractedData.category || 'Meals & Entertainment'}
                     onChange={(val) =>
                       setExtractedData({ ...extractedData, category: val as CategoryType })
                     }
                     options={[
+                      { value: 'Meals & Entertainment', label: 'Meals & Entertainment' },
+                      { value: 'Travel & Transit', label: 'Travel & Transit' },
+                      { value: 'Office & Operational', label: 'Office & Operational' },
                       { value: 'Electronics', label: 'Electronics' },
                       { value: 'Office Furniture', label: 'Office Furniture' },
                       { value: 'Software', label: 'Software' },
@@ -651,16 +1110,13 @@ Return Window: 30 Days return policy`;
 
                 <div>
                   <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
-                    Warranty Duration (Months)
+                    Transaction Date
                   </label>
                   <input
-                    type="number"
-                    value={extractedData.warrantyMonths ?? 12}
+                    type="date"
+                    value={extractedData.purchaseDate || ''}
                     onChange={(e) =>
-                      setExtractedData({
-                        ...extractedData,
-                        warrantyMonths: parseInt(e.target.value) || 0,
-                      })
+                      setExtractedData({ ...extractedData, purchaseDate: e.target.value })
                     }
                     className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A]"
                   />
@@ -668,16 +1124,29 @@ Return Window: 30 Days return policy`;
 
                 <div>
                   <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
-                    Return Window (Days)
+                    Final Total Price ({extractedData.currency || 'USD'})
                   </label>
                   <input
                     type="number"
-                    value={extractedData.returnDays ?? 14}
+                    step="0.01"
+                    value={extractedData.price || 0}
                     onChange={(e) =>
-                      setExtractedData({
-                        ...extractedData,
-                        returnDays: parseInt(e.target.value) || 0,
-                      })
+                      setExtractedData({ ...extractedData, price: parseFloat(e.target.value) || 0 })
+                    }
+                    className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A] font-semibold text-base"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
+                    Tax / VAT Amount
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={extractedData.tax ?? 0}
+                    onChange={(e) =>
+                      setExtractedData({ ...extractedData, tax: parseFloat(e.target.value) || 0 })
                     }
                     className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A]"
                   />
@@ -685,33 +1154,112 @@ Return Window: 30 Days return policy`;
 
                 <div>
                   <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
-                    Serial Number / IMEI
+                    Tip / Gratuity
                   </label>
                   <input
-                    type="text"
-                    value={extractedData.serialNumber || ''}
+                    type="number"
+                    step="0.01"
+                    value={extractedData.tip ?? 0}
                     onChange={(e) =>
-                      setExtractedData({ ...extractedData, serialNumber: e.target.value })
+                      setExtractedData({ ...extractedData, tip: parseFloat(e.target.value) || 0 })
                     }
-                    placeholder="e.g. SN-8829-X01"
                     className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A]"
                   />
                 </div>
 
-                <div className="sm:col-span-2">
+                <div>
                   <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
-                    Warranty Provider & Terms
+                    Order / Reference ID
                   </label>
                   <input
                     type="text"
-                    value={extractedData.warrantyTerms || extractedData.warrantyProvider || ''}
+                    value={extractedData.orderNumber || ''}
                     onChange={(e) =>
-                      setExtractedData({ ...extractedData, warrantyTerms: e.target.value })
+                      setExtractedData({ ...extractedData, orderNumber: e.target.value })
                     }
-                    placeholder="Manufacturer warranty coverage summary"
-                    className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl text-[#0F172A]"
+                    placeholder="e.g. ORD-88192 or Ticket #"
+                    className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A]"
                   />
                 </div>
+
+                {/* Line Items Preview */}
+                {extractedData.lineItems && extractedData.lineItems.length > 0 && (
+                  <div className="sm:col-span-2 pt-2 border-t border-[#E2E8F0]">
+                    <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-2">
+                      Itemized Line Items ({extractedData.lineItems.length} Extracted)
+                    </label>
+                    <div className="border border-[#E2E8F0] rounded-xl overflow-hidden text-[12px]">
+                      <table className="w-full text-left">
+                        <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#64748B] font-mono-code text-[10px] uppercase">
+                          <tr>
+                            <th className="py-2 px-3">Description</th>
+                            <th className="py-2 px-2 text-center">Qty</th>
+                            <th className="py-2 px-3 text-right">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E2E8F0]">
+                          {extractedData.lineItems.map((item: any, idx: number) => (
+                            <tr key={idx} className="hover:bg-slate-50/50">
+                              <td className="py-2 px-3">
+                                <span className="font-medium text-[#0F172A]">{item.name}</span>
+                                {item.itemFlags?.includes('alcohol') && (
+                                  <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-rose-100 text-rose-800">
+                                    Alcohol
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2 px-2 text-center text-[#64748B]">{item.quantity || 1}</td>
+                              <td className="py-2 px-3 text-right font-mono-code font-medium">
+                                {extractedData.currency || '$'}{Number(item.amount || item.unitPrice || 0).toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Warranty fields if tech/hardware asset */}
+                {(extractedData.category === 'Electronics' ||
+                  extractedData.category === 'Appliances' ||
+                  extractedData.category === 'Office Furniture') && (
+                  <>
+                    <div>
+                      <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
+                        Warranty Duration (Months)
+                      </label>
+                      <input
+                        type="number"
+                        value={extractedData.warrantyMonths ?? 12}
+                        onChange={(e) =>
+                          setExtractedData({
+                            ...extractedData,
+                            warrantyMonths: parseInt(e.target.value) || 0,
+                          })
+                        }
+                        className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[#76777D] font-mono-code text-[11px] uppercase mb-1">
+                        Return Window (Days)
+                      </label>
+                      <input
+                        type="number"
+                        value={extractedData.returnDays ?? 14}
+                        onChange={(e) =>
+                          setExtractedData({
+                            ...extractedData,
+                            returnDays: parseInt(e.target.value) || 0,
+                          })
+                        }
+                        className="w-full px-3.5 py-2 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl font-mono-code text-[#0F172A]"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="sm:col-span-2 flex items-center gap-3 p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl">
                   <input
@@ -724,7 +1272,7 @@ Return Window: 30 Days return policy`;
                     className="w-4 h-4 rounded text-[#0F172A] focus:ring-0 cursor-pointer"
                   />
                   <label htmlFor="taxDeductibleCheck" className="text-[12px] text-[#0F172A] cursor-pointer">
-                    <span className="font-medium">Tax Deductible Expense</span>
+                    <span className="font-medium">Tax Deductible Business Expense</span>
                     {extractedData.taxCategory && (
                       <span className="ml-2 text-[#76777D] font-mono-code text-[11px]">
                         ({extractedData.taxCategory})
@@ -739,12 +1287,20 @@ Return Window: 30 Days return policy`;
 
         {/* Modal Footer */}
         <div className="p-4 border-t border-[#E2E8F0] flex justify-between items-center bg-white">
-          {extractedData ? (
+          {extractedData && !activeIssue?.code?.startsWith('DUPLICATE') ? (
             <button
               onClick={resetState}
               className="text-[12px] text-[#76777D] hover:text-[#0F172A] font-medium cursor-pointer"
             >
               ← Scan Another Document
+            </button>
+          ) : activeIssue?.code?.startsWith('DUPLICATE') ? (
+            <button
+              onClick={resetState}
+              className="text-[12px] text-rose-700 hover:text-rose-900 font-semibold cursor-pointer flex items-center gap-1.5"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Try Another Receipt</span>
             </button>
           ) : (
             <span className="text-[11px] text-[#76777D] font-mono-code">
@@ -757,9 +1313,9 @@ Return Window: 30 Days return policy`;
               onClick={handleCloseModal}
               className="px-4 py-2 text-[12px] font-medium text-[#45464D] hover:bg-[#F9F9FB] rounded-xl cursor-pointer"
             >
-              Cancel
+              {activeIssue?.code?.startsWith('DUPLICATE') ? 'Close' : 'Cancel'}
             </button>
-            {extractedData && (
+            {extractedData && !activeIssue?.code?.startsWith('DUPLICATE') && (
               <button
                 onClick={handleSave}
                 className="px-4 py-2 bg-[#0F172A] text-white text-[12px] font-medium hover:bg-[#1E293B] rounded-xl flex items-center gap-1.5 shadow-xs cursor-pointer"

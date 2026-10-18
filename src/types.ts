@@ -1,4 +1,7 @@
 export type CategoryType =
+  | 'Meals & Entertainment'
+  | 'Travel & Transit'
+  | 'Office & Operational'
   | 'Electronics'
   | 'Office Furniture'
   | 'Software'
@@ -6,6 +9,108 @@ export type CategoryType =
   | 'Home & Living'
   | 'Travel'
   | 'Other';
+
+export type IssueSeverity = 'error' | 'warning' | 'info';
+
+export interface ReceiptIssue {
+  code: string;
+  severity: IssueSeverity;
+  title: string;
+  message: string;
+  suggestion?: string;
+  field?: string;
+  duplicateStage?: 'raw_image_hash' | 'anchor_json_hash';
+  rawImageHash?: string;
+  anchorJsonHash?: string;
+  matchedRecordId?: string;
+  isDuplicate?: boolean;
+}
+
+export interface ReceiptAnchor {
+  transaction_date: string;
+  total_amount: number;
+  vendor: string;
+  currency: string;
+  order_number?: string;
+}
+
+export interface DuplicateCheckResult {
+  isDuplicate: boolean;
+  stage?: 'raw_image_hash' | 'anchor_json_hash';
+  hash?: string;
+  matchedRecordId?: string;
+  matchedRecordTitle?: string;
+  reason?: string;
+  anchor?: ReceiptAnchor;
+}
+
+export interface ExtractedReceiptData {
+  name: string;
+  vendor: string;
+  category: CategoryType | string;
+  subcategory?: string;
+  purchaseDate: string;
+  purchaseTime?: string;
+  price: number;
+  subtotal?: number;
+  tax?: number;
+  tip?: number;
+  currency: string;
+  orderNumber?: string;
+  serialNumber?: string;
+  paymentMethod?: string;
+  warrantyMonths?: number;
+  warrantyProvider?: string;
+  warrantyTerms?: string;
+  returnDays?: number;
+  returnPolicy?: string;
+  notes?: string;
+  taxDeductible?: boolean;
+  taxCategory?: string;
+  aiConfidence: number;
+  rawOcrSummary?: string;
+  lineItems?: Array<{
+    id?: string;
+    name: string;
+    description?: string;
+    quantity: number;
+    unitPrice: number;
+    amount: number;
+    category?: string;
+    itemFlags?: string[];
+  }>;
+  mealsContext?: {
+    diningType?: string;
+    attendeeCount?: number;
+    hasAlcohol?: boolean;
+    alcoholTotal?: number;
+  };
+  travelContext?: {
+    travelType?: 'Flight' | 'Hotel' | 'Rideshare' | 'Train' | 'Car Rental' | 'Fuel' | 'Other';
+    origin?: string;
+    destination?: string;
+    carrier?: string;
+    passengerName?: string;
+    bookingReference?: string;
+    travelDates?: string;
+  };
+  operationalContext?: {
+    poNumber?: string;
+    department?: string;
+    servicePeriod?: string;
+    isRecurring?: boolean;
+  };
+  isReceipt?: boolean;
+  isReadable?: boolean;
+  qualityScore?: number;
+  hasIssue?: boolean;
+  issues?: ReceiptIssue[];
+  primaryIssue?: ReceiptIssue | null;
+  rawImageHash?: string;
+  anchorJsonHash?: string;
+  isDuplicate?: boolean;
+  duplicateStage?: 'raw_image_hash' | 'anchor_json_hash';
+}
 
 export interface DocumentItem {
   id: string;
@@ -56,6 +161,8 @@ export interface PurchaseItem {
   aiConfidence?: number;
   aiExtractedNotes?: string;
   taxDeductible?: boolean;
+  rawImageHash?: string;
+  anchorJsonHash?: string;
 }
 
 export interface AIActionItem {
