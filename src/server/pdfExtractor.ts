@@ -1,4 +1,4 @@
-import { PDFParse } from 'pdf-parse';
+import './domMatrixPolyfill';
 
 export interface ExtractedPdfResult {
   text: string;
@@ -44,6 +44,7 @@ export async function extractTextFromPdfBuffer(buffer: Buffer): Promise<Extracte
     throw new Error('Provided PDF buffer is empty.');
   }
 
+  const { PDFParse } = await import('pdf-parse');
   const parser = new PDFParse({ data: buffer });
   const result = await parser.getText();
   const info = await parser.getInfo({ parsePageInfo: true }).catch(() => ({}));

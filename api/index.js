@@ -1,3 +1,89 @@
+// src/server/domMatrixPolyfill.ts
+if (typeof globalThis.DOMMatrix === "undefined") {
+  globalThis.DOMMatrix = class DOMMatrix {
+    constructor(_init) {
+      this.a = 1;
+      this.b = 0;
+      this.c = 0;
+      this.d = 1;
+      this.e = 0;
+      this.f = 0;
+      this.m11 = 1;
+      this.m12 = 0;
+      this.m13 = 0;
+      this.m14 = 0;
+      this.m21 = 0;
+      this.m22 = 1;
+      this.m23 = 0;
+      this.m24 = 0;
+      this.m31 = 0;
+      this.m32 = 0;
+      this.m33 = 1;
+      this.m34 = 0;
+      this.m41 = 0;
+      this.m42 = 0;
+      this.m43 = 0;
+      this.m44 = 1;
+      this.is2D = true;
+      this.isIdentity = true;
+    }
+    translate(_x = 0, _y = 0) {
+      return this;
+    }
+    scale(_x = 1, _y = 1) {
+      return this;
+    }
+    multiply(_m) {
+      return this;
+    }
+    multiplySelf(_m) {
+      return this;
+    }
+    preMultiplySelf(_m) {
+      return this;
+    }
+    invertSelf() {
+      return this;
+    }
+    transformPoint(p) {
+      return p;
+    }
+  };
+}
+if (typeof globalThis.ImageData === "undefined") {
+  globalThis.ImageData = class ImageData {
+    constructor(w = 0, h = 0) {
+      this.width = w;
+      this.height = h;
+      this.data = new Uint8ClampedArray(w * h * 4);
+    }
+  };
+}
+if (typeof globalThis.Path2D === "undefined") {
+  globalThis.Path2D = class Path2D {
+    addPath(_path, _transform) {
+    }
+    closePath() {
+    }
+    moveTo(_x = 0, _y = 0) {
+    }
+    lineTo(_x = 0, _y = 0) {
+    }
+    bezierCurveTo(_cp1x = 0, _cp1y = 0, _cp2x = 0, _cp2y = 0, _x = 0, _y = 0) {
+    }
+    quadraticCurveTo(_cpx = 0, _cpy = 0, _x = 0, _y = 0) {
+    }
+    arc(_x = 0, _y = 0, _r = 0, _s = 0, _e = 0, _ccw = false) {
+    }
+    arcTo(_x1 = 0, _y1 = 0, _x2 = 0, _y2 = 0, _r = 0) {
+    }
+    ellipse(_x = 0, _y = 0, _rx = 0, _ry = 0, _rot = 0, _s = 0, _e = 0, _ccw = false) {
+    }
+    rect(_x = 0, _y = 0, _w = 0, _h = 0) {
+    }
+  };
+}
+
 // src/server/api.ts
 import "dotenv/config";
 import express2 from "express";
@@ -1919,7 +2005,6 @@ function parsePolicyFromText(rawText, options = {}) {
 }
 
 // src/server/pdfExtractor.ts
-import { PDFParse } from "pdf-parse";
 function cleanExtractedPdfText(rawText) {
   if (!rawText) return "";
   let text = rawText;
@@ -1936,6 +2021,7 @@ async function extractTextFromPdfBuffer(buffer) {
   if (!buffer || buffer.length === 0) {
     throw new Error("Provided PDF buffer is empty.");
   }
+  const { PDFParse } = await import("pdf-parse");
   const parser = new PDFParse({ data: buffer });
   const result = await parser.getText();
   const info = await parser.getInfo({ parsePageInfo: true }).catch(() => ({}));
