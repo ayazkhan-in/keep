@@ -7,6 +7,8 @@ import {
   Expense,
 } from '../types/expense';
 import { detectPolicyConflicts } from '../engine/policySchema';
+import { parsePolicyFromText } from '../engine/policyIngestion';
+import { extractTextFromPdfArrayBuffer } from '../utils/pdfExtractorClient';
 
 export const DEFAULT_ACME_POLICY: PolicyVersion = {
   id: 'pol_acme_v1',
@@ -507,32 +509,120 @@ export function createDraftFromText(name: string, rawText: string): PolicyVersio
   const active = getActivePolicy();
   const newVersionNum = active.versionNumber + 1;
 
+  const result = parsePolicyFromText(rawText, {
+    policyName: name || `Extracted Policy v${newVersionNum}`,
+    orgId: active.orgId,
+  });
+
   const draft: PolicyVersion = {
-    ...active,
+    ...result.policy,
     id: `pol_extracted_${Date.now()}`,
     versionNumber: newVersionNum,
     status: 'draft',
-    name: name || `Extracted Policy v${newVersionNum}`,
-    sourceText: rawText,
+    name: name || result.policy.name || `Extracted Policy v${newVersionNum}`,
     createdAt: new Date().toISOString(),
-    rules: [
-      ...active.rules.map((r) => ({ ...r })),
-      {
-        id: `rule_extracted_custom_${Date.now().toString().slice(-4)}`,
-        type: 'cap',
-        section: 'Extracted Section - Travel & Commute',
-        title: 'Extracted Ground Commute Limit',
-        priority: 45,
-        enabled: true,
-        sourceQuote: 'Commute and local taxi charges are reimbursed up to ₹1,500 per day.',
-        sourceParagraphIndex: 1,
-        conditions: { category: ['transportation'] },
-        parameters: { capAmountMinor: 150000, capPeriod: 'day', capScope: 'employee' },
-      },
-    ],
   };
+
   saveDraftPolicy(draft);
   return draft;
+}
+
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  const cleanBase64 = base64.replace(/^data:.*?;base64,/i, '').trim();
+  if (typeof atob === 'function') {
+    const binaryString = atob(cleanBase64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  } else if (typeof Buffer !== 'undefined') {
+    const nodeBuf = Buffer.from(cleanBase64, 'base64');
+    return nodeBuf.buffer.slice(nodeBuf.byteOffset, nodeBuf.byteOffset + nodeBuf.byteLength);
+  }
+  throw new Error('No base64 decoder available in runtime.');
+}
+
+/**
+ * Extracts plain text from a Base64 or ArrayBuffer PDF document.
+ * Tries server endpoint first and seamlessly falls back to client-side extraction.
+ */
+export async function extractPdfText(
+  pdfBase64: string,
+  fileName?: string,
+  arrayBuffer?: ArrayBuffer
+): Promise<{ text: string; pageCount: number; wordCount: number; characterCount: number }> {
+  // 1. Try server endpoint first if available
+  try {
+    const endpoint = typeof window !== 'undefined' ? '/api/policy/extract-pdf' : 'http://localhost:3000/api/policy/extract-pdf';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pdfBase64, fileName }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && typeof data.text === 'string' && data.text.trim().length > 0) {
+        return {
+          text: data.text,
+          pageCount: data.pageCount || 1,
+          wordCount: data.wordCount || (data.text ? data.text.split(/\s+/).filter(Boolean).length : 0),
+          characterCount: data.characterCount || data.text.length,
+        };
+      }
+    }
+  } catch (err) {
+    // Expected in offline, tests, or when dev server is restarting
+  }
+
+  // 2. Client-side extraction fallback (uses pdfjs-dist directly for 100% offline resilience)
+  try {
+    const buf = arrayBuffer || base64ToArrayBuffer(pdfBase64);
+    const clientResult = await extractTextFromPdfArrayBuffer(buf);
+    return clientResult;
+  } catch (clientErr) {
+    console.error('Client PDF fallback extraction failed:', clientErr);
+    throw new Error('Could not extract text from PDF. Please check the document format.');
+  }
+}
+
+/**
+ * Ingests a policy document (PDF or text) and synthesizes real, structured policy rules.
+ */
+export async function ingestPolicyDocument(params: {
+  text?: string;
+  pdfBase64?: string;
+  fileName?: string;
+  policyName?: string;
+}): Promise<PolicyVersion> {
+  // 1. Try server-side ingestion endpoint first
+  try {
+    const endpoint = typeof window !== 'undefined' ? '/api/policy/ingest' : 'http://localhost:3000/api/policy/ingest';
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && data.policy) {
+        saveDraftPolicy(data.policy);
+        return data.policy;
+      }
+    }
+  } catch (err) {
+    console.warn('Backend /api/policy/ingest call failed, using deterministic local engine:', err);
+  }
+
+  // 2. Deterministic local engine fallback
+  const rawText = params.text || DEFAULT_ACME_POLICY.sourceText || '';
+  const parsed = parsePolicyFromText(rawText, {
+    policyName: params.policyName || (params.fileName ? `Parsed: ${params.fileName.replace(/\.[^/.]+$/, '')}` : undefined),
+    sourceFileName: params.fileName,
+  });
+
+  saveDraftPolicy(parsed.policy);
+  return parsed.policy;
 }
 
 export function dismissConflictWarning(
@@ -800,10 +890,16 @@ export function queryPolicyGrounded(
     };
   }
 
-  // 2. Meal limits & City Tiers (Tier 1: Mumbai, Bengaluru, Delhi, Hyderabad)
+  // 2. Meal limits & Daily Cap
   if (
-    q.includes('tier 1') ||
-    q.includes('tier-1') ||
+    q.includes('meal') ||
+    q.includes('food') ||
+    q.includes('lunch') ||
+    q.includes('dinner') ||
+    q.includes('breakfast') ||
+    q.includes('per diem') ||
+    q.includes('allowance') ||
+    q.includes('tier') ||
     q.includes('mumbai') ||
     q.includes('bengaluru') ||
     q.includes('bangalore') ||
@@ -811,81 +907,27 @@ export function queryPolicyGrounded(
     q.includes('ncr') ||
     q.includes('gurgaon') ||
     q.includes('noida') ||
-    q.includes('hyderabad')
+    q.includes('hyderabad') ||
+    q.includes('pune') ||
+    q.includes('chennai')
   ) {
     const rule = policy.rules.find((r) => r.id === 'rule_cap_tier1_daily_meal');
     const cap = ((rule?.parameters.capAmountMinor || 300000) / 100).toLocaleString();
     return {
-      answer: `Under ${rule?.section || 'Section 4.1'}, daily meal expenses in Tier-1 cities (Mumbai, Bengaluru, Delhi-NCR, Hyderabad) are eligible up to a maximum cap of ₹${cap} per day. Any excess above ₹${cap} is capped at checkout and borne by the employee.`,
+      answer: `Under ${rule?.section || 'Section 4.1'}, daily meal expenses are eligible up to a corporate daily cap of ₹${cap} per day. Any excess above ₹${cap} is capped at checkout and borne by the employee. Single-meal individual transactions may not exceed ₹2,000 without prior manager authorization.`,
       citedRule: rule,
       isSilent: false,
       verdict: 'capped',
       verdictLabel: `Capped at ₹${cap} / Day`,
-      sourceSection: rule?.section || 'Section 4.1 - Daily Meal Caps by City Tier',
-      sourceQuote: rule?.sourceQuote || 'Tier-1 Cities (Mumbai, Bengaluru, Delhi, Hyderabad): Capped at ₹3,000 per day.',
+      sourceSection: rule?.section || 'Section 4.1 - Daily Meal Allowance',
+      sourceQuote: rule?.sourceQuote || 'Daily Meals: Capped at ₹3,000 per day.',
       tips: [
         'Single transaction lunch limit is ₹2,000 without prior manager sign-off',
         'Itemized restaurant bill is required — credit card charge slips alone are not accepted',
       ],
       suggestedFollowUps: [
         'What is the lunch limit per single meal?',
-        'What is the cap for Tier-2 cities like Pune or Chennai?',
-      ],
-    };
-  }
-
-  // 2b. Tier 2: Pune, Chennai, Kolkata, Ahmedabad
-  if (
-    q.includes('tier 2') ||
-    q.includes('tier-2') ||
-    q.includes('pune') ||
-    q.includes('chennai') ||
-    q.includes('kolkata') ||
-    q.includes('ahmedabad')
-  ) {
-    const rule = policy.rules.find((r) => r.id === 'rule_cap_tier2_daily_meal');
-    const cap = ((rule?.parameters.capAmountMinor || 180000) / 100).toLocaleString();
-    return {
-      answer: `Under ${rule?.section || 'Section 4.1'}, daily meal expenses in Tier-2 cities (Pune, Chennai, Kolkata, Ahmedabad) are reimbursable up to ₹${cap} per day.`,
-      citedRule: rule,
-      isSilent: false,
-      verdict: 'capped',
-      verdictLabel: `Capped at ₹${cap} / Day`,
-      sourceSection: rule?.section || 'Section 4.1 - Daily Meal Caps by City Tier',
-      sourceQuote: rule?.sourceQuote || 'Tier-2 Cities (Pune, Chennai, Kolkata, Ahmedabad): Capped at ₹1,800 per day.',
-      tips: [
-        'Always ask the restaurant for a GST tax invoice showing food items',
-      ],
-      suggestedFollowUps: [
-        'What cities count as Tier-1?',
-        'Are tips included in the daily cap?',
-      ],
-    };
-  }
-
-  // 2c. Tier 3: Jaipur, Goa, other domestic cities
-  if (
-    q.includes('tier 3') ||
-    q.includes('tier-3') ||
-    q.includes('jaipur') ||
-    q.includes('goa') ||
-    q.includes('kochi') ||
-    q.includes('chandigarh') ||
-    q.includes('tier')
-  ) {
-    const rule = policy.rules.find((r) => r.id === 'rule_cap_tier3_daily_meal');
-    const cap = ((rule?.parameters.capAmountMinor || 120000) / 100).toLocaleString();
-    return {
-      answer: `Under ${rule?.section || 'Section 4.1'}, daily meal expenses in Tier-3 and all other domestic cities are capped at ₹${cap} per day.`,
-      citedRule: rule,
-      isSilent: false,
-      verdict: 'capped',
-      verdictLabel: `Capped at ₹${cap} / Day`,
-      sourceSection: rule?.section || 'Section 4.1 - Daily Meal Caps by City Tier',
-      sourceQuote: rule?.sourceQuote || 'Tier-3 Cities (Jaipur, Goa, and other domestic): Capped at ₹1,200 per day.',
-      tips: ['Retain food vendor bills showing line item breakdown.'],
-      suggestedFollowUps: [
-        'What are the Tier-1 city meal caps?',
+        'Are tips included in the daily meal cap?',
       ],
     };
   }
@@ -1036,7 +1078,7 @@ export function queryPolicyGrounded(
         'Keep the itemized hotel folio highlighting the WiFi charge',
       ],
       suggestedFollowUps: [
-        'What is the daily meal cap in Tier-1 cities?',
+        'What is the daily meal cap allowance?',
       ],
     };
   }
@@ -1120,7 +1162,7 @@ export function queryPolicyGrounded(
   if (q.includes('tip') || q.includes('gratuity') || q.includes('service charge')) {
     return {
       answer:
-        'Standard restaurant service charges and tips up to 10% of the food total are reimbursable as part of the meal allowance, provided they fit within the city daily meal cap. Tips on alcohol are strictly excluded.',
+        'Standard restaurant service charges and tips up to 10% of the food total are reimbursable as part of the meal allowance, provided they fit within the daily meal cap. Tips on alcohol are strictly excluded.',
       isSilent: false,
       verdict: 'capped',
       verdictLabel: 'Reimbursable up to 10% (Within Meal Cap)',
@@ -1130,7 +1172,7 @@ export function queryPolicyGrounded(
         'Ensure the tip is itemized on the restaurant bill or receipt folio',
       ],
       suggestedFollowUps: [
-        'What is the Tier-1 meal cap?',
+        'What is the daily meal cap allowance?',
       ],
     };
   }

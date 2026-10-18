@@ -10,7 +10,6 @@ import {
   DollarSign,
   CheckCircle2,
   Lock,
-  Sparkles,
   ChevronDown,
   ChevronUp,
   Receipt,
@@ -59,7 +58,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const faqs = [
     {
       q: 'How does Keepr verify corporate expense policy compliance?',
-      a: 'Keepr uses a deterministic policy engine that evaluates every receipt against company guidelines—including daily meal per diems, city tier allowances (Tier-1 vs Tier-2), alcohol restrictions, and mandatory receipt thresholds. Unlike probabilistic LLM chatbots, Keepr executes verifiable mathematical rules with zero hallucination.',
+      a: 'Keepr uses a deterministic policy engine that evaluates every receipt against company guidelines—including daily meal per diems, travel allowances, alcohol restrictions, and mandatory receipt thresholds. Unlike probabilistic LLM chatbots, Keepr executes verifiable mathematical rules with zero hallucination.',
     },
     {
       q: 'How does Keepr prevent duplicate claims and altered receipts?',
@@ -71,7 +70,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     },
     {
       q: 'Can we upload our existing corporate policy documents?',
-      a: 'Yes. Keepr’s Policy Studio includes a document parser that ingests corporate PDF handbooks and plain text policies. It automatically translates prose into structured, executable policy cards with tier caps, category rules, and conflict detection.',
+      a: 'Yes. Keepr’s Policy Studio includes a document parser that ingests corporate PDF handbooks and plain text policies. It automatically translates prose into structured, executable policy cards with spend caps, category rules, and conflict detection.',
     },
     {
       q: 'How are audit reports and payroll disbursements generated?',
@@ -431,7 +430,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
             <div className="lg:col-span-6 text-[#76777D] text-[15px] leading-relaxed lg:pt-2 space-y-3">
               <p>
-                Keepr pairs multimodal vision OCR with an immutable deterministic audit engine. Automatically evaluate meal per diems, city travel tiers, hotel limits, and duplicate submissions with cryptographic proof.
+                Keepr pairs multimodal vision OCR with an immutable deterministic audit engine. Automatically evaluate meal per diems, travel allowances, hotel limits, and duplicate submissions with cryptographic proof.
               </p>
               <p className="text-xs text-[#0F172A] font-medium flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -541,7 +540,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span><strong>Card Policy Section:</strong> Upload policy PDFs or customize tier rules manually.</span>
+                    <span><strong>Card Policy Section:</strong> Upload policy PDFs or customize policy rules manually.</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -613,7 +612,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     Deterministic Policy Engine
                   </h3>
                   <p className="text-[13px] text-[#76777D] mt-2 sm:mt-2.5 leading-relaxed">
-                    Evaluates city tier caps, alcohol exclusions, per diems, and threshold requirements mathematically with zero hallucination.
+                    Evaluates spend caps, alcohol exclusions, per diems, and threshold requirements mathematically with zero hallucination.
                   </p>
                 </div>
               </motion.div>
@@ -665,7 +664,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       Card Policy Studio & Ingestion
                     </h3>
                     <p className="text-[13px] text-[#76777D] mt-2 sm:mt-2.5 leading-relaxed">
-                      Upload PDF employee handbooks or build manual tier rule cards with automatic conflict detection and Grounded Q&A citations.
+                      Upload PDF employee handbooks or build manual policy rule cards with automatic conflict detection and Grounded Q&A citations.
                     </p>
                   </div>
                 </motion.div>
@@ -863,8 +862,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         <p className="font-semibold text-[#0F172A] mt-0.5">₹3,240.00 INR</p>
                       </div>
                       <div className="p-3 bg-white border border-[#E2E8F0] rounded-xl">
-                        <span className="text-[#76777D]">Category & Tier</span>
-                        <p className="font-semibold text-[#0F172A] mt-0.5">Meals · Tier-1 Metro</p>
+                        <span className="text-[#76777D]">Category</span>
+                        <p className="font-semibold text-[#0F172A] mt-0.5">Meals · Corporate Cap</p>
                       </div>
                       <div className="p-3 bg-white border border-[#E2E8F0] rounded-xl">
                         <span className="text-[#76777D]">Policy Evaluation</span>
@@ -922,7 +921,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         <span className="text-xs font-mono-code text-emerald-700 font-semibold">14 Active Rules</span>
                       </div>
                       <h4 className="font-semibold text-sm text-[#0F172A] mt-2">Acme Global Travel & Expense Policy</h4>
-                      <p className="text-xs text-[#64748B] mt-1">Tier 1 Meals: ₹3,500/day · Tier 2 Meals: ₹2,200/day · Mandatory Receipt &gt; ₹500</p>
+                      <p className="text-xs text-[#64748B] mt-1">Daily Meals: ₹3,000/day · Mandatory Receipt &gt; ₹500</p>
                     </div>
 
                     {/* Policy Card 2 */}

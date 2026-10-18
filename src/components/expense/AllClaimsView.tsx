@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   XCircle,
   CreditCard,
-  Sparkles,
   FileText,
   DollarSign,
   ArrowRight,
@@ -25,7 +24,11 @@ import {
   List,
 } from 'lucide-react';
 import { Expense, ClaimStatus } from '../../types/expense';
-import { getAllExpenses, applyReviewerDecision } from '../../services/expenseService';
+import {
+  getAllExpenses,
+  applyReviewerDecision,
+  subscribeExpenses,
+} from '../../services/expenseService';
 import { getActiveEmployee } from '../../services/employeeService';
 import { VerdictCard } from './VerdictCard';
 
@@ -37,6 +40,18 @@ export const AllClaimsView: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const activeReviewer = getActiveEmployee();
+
+  // Real-time Firestore sync
+  React.useEffect(() => {
+    const unsubscribe = subscribeExpenses((updated) => {
+      setExpenses(updated);
+      if (selectedClaim) {
+        const found = updated.find((e) => e.id === selectedClaim.id);
+        if (found) setSelectedClaim(found);
+      }
+    });
+    return () => unsubscribe();
+  }, [selectedClaim?.id]);
 
   const refreshExpenses = () => {
     setExpenses(getAllExpenses());

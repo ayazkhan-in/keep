@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   ChevronRight,
   RotateCcw,
-  Sparkles,
+  Bot,
   HelpCircle,
   X,
   Code,
@@ -44,6 +44,8 @@ import {
   createDraftFromActive,
   createDraftFromTemplate,
   createDraftFromText,
+  extractPdfText,
+  ingestPolicyDocument,
   dismissConflictWarning,
   getStructuredPolicyConflicts,
   detectPolicyGaps,
@@ -58,14 +60,13 @@ import { getAllExpenses } from '../../services/expenseService';
 import { DEMO_EMPLOYEES } from '../../services/employeeService';
 import { SYNTHETIC_EXPENSES } from '../../data/syntheticClaims';
 
-type StudioTab = 'review' | 'tiers' | 'checks' | 'test' | 'diff' | 'qa';
+type StudioTab = 'review' | 'checks' | 'test' | 'diff' | 'qa';
 
 const SAMPLE_POLICY_TEXT = `ACME CORPORATE TRAVEL & REIMBURSEMENT POLICY (REV 2026.2)
 
 1. DAILY MEAL PER-DIEM
-Tier-1 Cities (Mumbai, Bengaluru, Delhi, Hyderabad): Capped at ₹3,000 per day.
-Tier-2 Cities (Pune, Chennai, Kolkata, Ahmedabad): Capped at ₹1,800 per day.
-Tier-3 Cities (Jaipur, Goa, and domestic remote): Capped at ₹1,200 per day.
+Corporate Daily Meal Allowance: Capped at ₹3,000 per day.
+Single-Meal Limit: Individual transactions capped at ₹2,000 without prior manager authorization.
 
 2. NON-REIMBURSABLE EXPENSES
 Alcohol, tobacco products, minibar items, and parking/traffic fines are non-reimbursable. Associated statutory taxes will be excluded proportionally.
@@ -109,6 +110,9 @@ export const PolicyStudioView: React.FC = () => {
   const [uploadedFileName, setUploadedFileName] = useState('');
   const [uploadedFileSize, setUploadedFileSize] = useState<string | null>(null);
   const [uploadText, setUploadText] = useState('');
+  const [isExtractingPdf, setIsExtractingPdf] = useState(false);
+  const [pdfStats, setPdfStats] = useState<{ pageCount?: number; wordCount?: number } | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   // Manual creation state
   const [manualTitle, setManualTitle] = useState('Acme Global T&E Policy 2026.2');
@@ -342,25 +346,71 @@ export const PolicyStudioView: React.FC = () => {
     refreshPolicies(selectedPolicy.id);
   };
 
-  const handleStartExtraction = () => {
+  const handleFileUpload = async (file: File) => {
+    setPdfError(null);
+    setUploadedFileName(file.name);
+    setUploadedFileSize((file.size / 1024).toFixed(1) + ' KB');
+
+    if (file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf') {
+      setIsExtractingPdf(true);
+      setExtractionProgress('Extracting text from PDF pages...');
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        const base64Data = await base64Promise;
+
+        const res = await extractPdfText(base64Data, file.name, arrayBuffer);
+        if (!res.text || res.text.trim().length === 0) {
+          setPdfError('No selectable text found in this PDF (it may be a scanned image or non-searchable). You can type or paste policy clauses below.');
+          showNotification('No text detected in PDF. You can paste or type clauses manually.');
+        } else {
+          setUploadText(res.text);
+          setPdfStats({ pageCount: res.pageCount, wordCount: res.wordCount });
+          showNotification(`Extracted ${res.wordCount} words (${res.pageCount} page${res.pageCount > 1 ? 's' : ''}) from "${file.name}".`);
+        }
+      } catch (err: any) {
+        console.error('PDF text extraction error:', err);
+        setPdfError(`Extraction note: ${err?.message || 'Unable to parse PDF'}. You can paste clauses directly below.`);
+        showNotification('Could not extract PDF text automatically. Manual entry is available below.');
+      } finally {
+        setIsExtractingPdf(false);
+      }
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = (event.target?.result as string) || '';
+        setUploadText(text);
+        const words = text.split(/\s+/).filter(Boolean).length;
+        setPdfStats({ pageCount: 1, wordCount: words });
+        showNotification(`Loaded ${words} words from "${file.name}".`);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleStartExtraction = async () => {
     setIsExtracting(true);
     setExtractionProgress('Reading document clauses...');
 
-    setTimeout(() => {
-      setExtractionProgress('Extracting structured rules (caps, exclusions, thresholds)...');
-    }, 500);
-
-    setTimeout(() => {
-      setExtractionProgress('Mapping city tiers & ambiguous clauses...');
-    }, 1000);
-
-    setTimeout(() => {
-      setIsExtracting(false);
+    try {
       let draft: PolicyVersion;
 
       if (createMode === 'upload') {
-        const title = uploadedFileName ? `Parsed: ${uploadedFileName.replace(/\.[^/.]+$/, '')}` : 'Policy Draft v2';
-        draft = createDraftFromText(title, uploadText || DEFAULT_ACME_POLICY.sourceText || '');
+        setExtractionProgress('Synthesizing structured rules (caps, exclusions, thresholds)...');
+        const title = uploadedFileName
+          ? `Parsed: ${uploadedFileName.replace(/\.[^/.]+$/, '')}`
+          : 'Policy Draft v2';
+
+        draft = await ingestPolicyDocument({
+          text: uploadText || DEFAULT_ACME_POLICY.sourceText || '',
+          fileName: uploadedFileName,
+          policyName: title,
+        });
       } else if (createMode === 'template') {
         draft = createDraftFromTemplate(selectedTemplate === 'tech_startup' ? 'tech_startup' : 'enterprise');
       } else {
@@ -384,14 +434,23 @@ export const PolicyStudioView: React.FC = () => {
         saveDraftPolicy(draft);
       }
 
+      setExtractionProgress('Validating Zod schemas & detecting conflict warnings...');
+      await new Promise((r) => setTimeout(r, 400));
+
       refreshPolicies(draft.id);
       setIsCreateModalOpen(false);
       setUploadText('');
       setUploadedFileName('');
       setUploadedFileSize(null);
+      setPdfStats(null);
       setActiveTab('review');
-      showNotification(`Created draft: "${draft.name}".`);
-    }, 1500);
+      showNotification(`Created draft: "${draft.name}" with ${draft.rules.length} policy rules.`);
+    } catch (err: any) {
+      console.error('Extraction error:', err);
+      showNotification('Error creating policy draft.');
+    } finally {
+      setIsExtracting(false);
+    }
   };
 
   const handleConfirmDismissWarning = () => {
@@ -720,16 +779,6 @@ export const PolicyStudioView: React.FC = () => {
             Review
           </button>
 
-          <button
-            onClick={() => setActiveTab('tiers')}
-            className={`py-2.5 cursor-pointer whitespace-nowrap ${
-              activeTab === 'tiers'
-                ? 'text-slate-900 font-semibold border-b-2 border-slate-900 -mb-[1px]'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            City Tiers ({Object.keys(selectedPolicy.cityTiers).length})
-          </button>
 
           <button
             onClick={() => setActiveTab('checks')}
@@ -777,7 +826,7 @@ export const PolicyStudioView: React.FC = () => {
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            <Sparkles className="w-3 h-3 text-emerald-600" />
+            <Bot className="w-3 h-3 text-emerald-600" />
             <span>Q&A & Gaps</span>
           </button>
         </div>
@@ -970,49 +1019,6 @@ export const PolicyStudioView: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 2: CITY TIERS */}
-          {activeTab === 'tiers' && (
-            <div className="max-w-xl">
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium">
-                    <tr>
-                      <th className="px-3.5 py-2">City</th>
-                      <th className="px-3.5 py-2">Tier</th>
-                      <th className="px-3.5 py-2 text-right">Daily Meal Cap</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {Object.entries(selectedPolicy.cityTiers).map(([city, tier]) => {
-                      const mealCap =
-                        tier === 'Tier-1' ? '₹3,000' : tier === 'Tier-2' ? '₹1,800' : '₹1,200';
-
-                      return (
-                        <tr key={city} className="hover:bg-slate-50/50">
-                          <td className="px-3.5 py-2 font-medium text-slate-900">{city}</td>
-                          <td className="px-3.5 py-2">
-                            <select
-                              value={tier}
-                              onChange={(e) => handleUpdateCityTier(city, e.target.value as CityTier)}
-                              className="px-2 py-0.5 bg-white border border-slate-200 rounded text-xs font-mono-code focus:outline-none"
-                            >
-                              <option value="Tier-1">Tier-1</option>
-                              <option value="Tier-2">Tier-2</option>
-                              <option value="Tier-3">Tier-3</option>
-                              <option value="International">International</option>
-                            </select>
-                          </td>
-                          <td className="px-3.5 py-2 text-right font-mono-code text-slate-600">
-                            {mealCap}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
 
           {/* TAB 3: CONFLICTS & CHECKS */}
           {activeTab === 'checks' && (
@@ -1337,7 +1343,7 @@ export const PolicyStudioView: React.FC = () => {
               {isExtracting ? (
                 <div className="py-10 flex flex-col items-center justify-center text-center space-y-3">
                   <div className="w-9 h-9 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 animate-spin">
-                    <Sparkles className="w-5 h-5" />
+                    <Bot className="w-5 h-5" />
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-slate-900">Extracting Rules with Gemini AI</h4>
@@ -1386,24 +1392,33 @@ export const PolicyStudioView: React.FC = () => {
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            setUploadedFileName(file.name);
-                            setUploadedFileSize((file.size / 1024).toFixed(1) + ' KB');
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              setUploadText((event.target?.result as string) || '');
-                            };
-                            reader.readAsText(file);
+                            handleFileUpload(file);
                           }
                         }}
                       />
 
-                      {uploadedFileName ? (
+                      {isExtractingPdf ? (
+                        <div className="p-4 border-2 border-dashed border-emerald-400 rounded-xl bg-emerald-50/40 flex flex-col items-center justify-center text-center animate-pulse">
+                          <div className="w-8 h-8 rounded-full bg-white border border-emerald-300 flex items-center justify-center text-emerald-600 mb-1.5 shadow-2xs">
+                            <Bot className="w-4 h-4 animate-spin" />
+                          </div>
+                          <span className="text-xs font-semibold text-slate-900">
+                            Extracting Text from PDF...
+                          </span>
+                          <span className="text-[11px] text-emerald-700 mt-0.5 font-medium">
+                            Parsing document pages & taking out all clauses
+                          </span>
+                        </div>
+                      ) : uploadedFileName ? (
                         <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <FileText className="w-4 h-4 text-emerald-600" />
                             <div>
                               <div className="font-semibold text-slate-800 text-xs">{uploadedFileName}</div>
-                              <div className="text-[11px] text-emerald-700">{uploadedFileSize} · Ready for AI extraction</div>
+                              <div className="text-[11px] text-emerald-700 font-medium">
+                                {uploadedFileSize}
+                                {pdfStats ? ` · ${pdfStats.pageCount || 1} page${(pdfStats.pageCount || 1) > 1 ? 's' : ''} · ${pdfStats.wordCount?.toLocaleString() || 0} words extracted` : ' · Ready for rule extraction'}
+                              </div>
                             </div>
                           </div>
                           <button
@@ -1412,8 +1427,11 @@ export const PolicyStudioView: React.FC = () => {
                               setUploadedFileName('');
                               setUploadedFileSize(null);
                               setUploadText('');
+                              setPdfStats(null);
+                              setPdfError(null);
+                              if (fileInputRef.current) fileInputRef.current.value = '';
                             }}
-                            className="text-xs text-slate-400 hover:text-rose-600 font-medium"
+                            className="text-xs text-slate-400 hover:text-rose-600 font-medium cursor-pointer"
                           >
                             Remove
                           </button>
@@ -1435,23 +1453,43 @@ export const PolicyStudioView: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Textarea for Pasting Clauses */}
+                      {pdfError && (
+                        <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-[11px] flex items-center gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                          <span>{pdfError}</span>
+                        </div>
+                      )}
+
+                      {/* Textarea for Pasting / Reviewing Extracted Clauses */}
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <label className="text-slate-600 font-medium text-xs">Or Paste Policy Clauses</label>
+                          <label className="text-slate-600 font-medium text-xs">
+                            {uploadText ? (
+                              <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                                <Check className="w-3 h-3 text-emerald-600" />
+                                Extracted Policy Text ({uploadText.split(/\s+/).filter(Boolean).length} words)
+                              </span>
+                            ) : (
+                              'Or Paste Policy Clauses'
+                            )}
+                          </label>
                           <button
                             type="button"
-                            onClick={() => setUploadText(SAMPLE_POLICY_TEXT)}
+                            onClick={() => {
+                              setUploadText(SAMPLE_POLICY_TEXT);
+                              setUploadedFileName('');
+                              setPdfStats({ pageCount: 1, wordCount: SAMPLE_POLICY_TEXT.split(/\s+/).filter(Boolean).length });
+                            }}
                             className="text-[11px] text-emerald-600 hover:text-emerald-800 font-medium cursor-pointer"
                           >
                             Paste Sample Policy
                           </button>
                         </div>
                         <textarea
-                          rows={5}
+                          rows={6}
                           value={uploadText}
                           onChange={(e) => setUploadText(e.target.value)}
-                          placeholder="Paste Section 1-5 clauses from your travel & meal policy here..."
+                          placeholder="Extracted PDF text or pasted policy clauses will appear here..."
                           className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono-code focus:outline-none focus:border-slate-400 focus:bg-white resize-none"
                         />
                       </div>
@@ -1474,7 +1512,7 @@ export const PolicyStudioView: React.FC = () => {
                           {selectedTemplate === 'enterprise' && <Check className="w-4 h-4 text-emerald-600" />}
                         </div>
                         <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                          Tiered city caps (₹3,000 Tier-1 / ₹1,800 Tier-2), alcohol exclusion, and ₹10,000 finance review threshold.
+                          Daily meal caps (₹3,000/day), alcohol exclusion, and ₹10,000 finance review threshold.
                         </p>
                       </div>
 
@@ -1537,28 +1575,18 @@ export const PolicyStudioView: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <div>
-                          <label className="block text-slate-700 font-medium mb-1">Tier-1 Daily Meal Cap (₹)</label>
-                          <input
-                            type="number"
-                            value={manualTier1Cap}
-                            onChange={(e) => setManualTier1Cap(e.target.value)}
-                            placeholder="3000"
-                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-slate-700 font-medium mb-1">Tier-2 Daily Meal Cap (₹)</label>
-                          <input
-                            type="number"
-                            value={manualTier2Cap}
-                            onChange={(e) => setManualTier2Cap(e.target.value)}
-                            placeholder="1800"
-                            className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none text-xs"
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-slate-700 font-medium mb-1">Daily Meal Cap (₹)</label>
+                        <input
+                          type="number"
+                          value={manualTier1Cap}
+                          onChange={(e) => {
+                            setManualTier1Cap(e.target.value);
+                            setManualTier2Cap(e.target.value);
+                          }}
+                          placeholder="3000"
+                          className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg bg-slate-50 focus:outline-none text-xs"
+                        />
                       </div>
                     </div>
                   )}
@@ -1578,7 +1606,7 @@ export const PolicyStudioView: React.FC = () => {
                       onClick={handleStartExtraction}
                       className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium flex items-center gap-1.5 cursor-pointer shadow-xs"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
+                      <Bot className="w-3.5 h-3.5" />
                       <span>{createMode === 'manual' ? 'Create Policy' : 'Extract Rules with AI'}</span>
                     </button>
                   </div>
@@ -1777,7 +1805,7 @@ export const PolicyStudioView: React.FC = () => {
                   rows={2}
                   value={activationChangeNote}
                   onChange={(e) => setActivationChangeNote(e.target.value)}
-                  placeholder="e.g. Lowered Tier-1 meal cap to ₹2,500."
+                  placeholder="e.g. Lowered daily meal cap to ₹2,500."
                   className="w-full p-2 border border-slate-200 rounded-lg focus:outline-none"
                 />
               </div>

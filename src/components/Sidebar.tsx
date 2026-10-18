@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   Settings,
   HelpCircle,
-  Sparkles,
+  Bot,
   LogOut,
   Globe,
   User as UserIcon,
@@ -153,7 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => setActiveView(item.id)}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 shadow-xs font-semibold'
+                  ? 'bg-[#F1F5F9] dark:bg-[#1E293B] text-[#0F172A] dark:text-white shadow-xs font-semibold'
                   : 'text-[#45464D] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F9F9FB] dark:hover:bg-[#151B22]'
               }`}
             >
@@ -178,12 +178,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => setIsManageOpen(!isManageOpen)}
             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all cursor-pointer ${
               isManageItemActive
-                ? 'text-emerald-900 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/40 font-semibold'
+                ? 'text-[#0F172A] dark:text-white bg-[#F1F5F9]/80 dark:bg-[#1E293B]/80 font-semibold'
                 : 'text-[#45464D] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F9F9FB] dark:hover:bg-[#151B22]'
             }`}
           >
             <div className="flex items-center gap-3">
-              <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Manage Tools</span>
             </div>
             <ChevronDown className={`w-3.5 h-3.5 text-[#94A3B8] transition-transform duration-200 ${isManageOpen ? 'rotate-180' : ''}`} />
@@ -200,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={() => setActiveView(item.id)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 shadow-xs font-semibold'
+                        ? 'bg-[#F1F5F9] dark:bg-[#1E293B] text-[#0F172A] dark:text-white shadow-xs font-semibold'
                         : 'text-[#45464D] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-white hover:bg-[#F9F9FB] dark:hover:bg-[#151B22]'
                     }`}
                   >
@@ -226,7 +226,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Quick Ingestion Box */}
       <div className="p-3 my-2.5 bg-[#F9F9FB] dark:bg-[#151B22] rounded-2xl border border-[#E2E8F0] dark:border-[#212C36]">
         <div className="flex items-center gap-2 mb-1">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <Bot className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span className="font-mono-code text-[10px] uppercase tracking-wider text-[#76777D] dark:text-[#94A3B8] font-semibold">
             Deterministic Auditor
           </span>

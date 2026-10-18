@@ -14,10 +14,109 @@ import {
   verifyReceiptIntegrity,
 } from '../engine';
 import { getActivePolicy } from './policyService';
-import { DEMO_EMPLOYEES } from './employeeService';
+import { DEMO_EMPLOYEES, getAllEmployeesList } from './employeeService';
 import { logAuditEvent, getAuditEventsForExpense } from './auditService';
+import {
+  collection,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  getDocs,
+  CollectionReference,
+  DocumentReference,
+} from 'firebase/firestore';
+import { db } from '../firebase';
+import { sanitizeFirestoreData } from './purchaseService';
 
 const STORAGE_KEY_EXPENSES = 'keepr_expenses_v1';
+
+export function getExpensesCollection(orgId: string = 'org_acme'): CollectionReference {
+  return collection(db, 'orgs', orgId, 'expenses');
+}
+
+export function getExpenseDoc(expenseId: string, orgId: string = 'org_acme'): DocumentReference {
+  return doc(db, 'orgs', orgId, 'expenses', expenseId);
+}
+
+/**
+ * Real-time subscription to corporate expenses in Firestore.
+ */
+export function subscribeExpenses(
+  onUpdate: (expenses: Expense[]) => void,
+  onError?: (err: Error) => void,
+  orgId: string = 'org_acme'
+): () => void {
+  const colRef = getExpensesCollection(orgId);
+
+  const unsubscribe = onSnapshot(
+    colRef,
+    (snapshot) => {
+      const items: Expense[] = [];
+      snapshot.forEach((docSnap) => {
+        items.push({ id: docSnap.id, ...docSnap.data() } as Expense);
+      });
+
+      if (items.length > 0) {
+        // Sort chronologically (newest first)
+        const sorted = items.sort((a, b) => {
+          const dateA = a.submittedAt || a.expenseDate || '';
+          const dateB = b.submittedAt || b.expenseDate || '';
+          return dateB.localeCompare(dateA);
+        });
+
+        // Cache locally for synchronous consumers
+        saveAllExpenses(sorted);
+        onUpdate(sorted);
+      } else {
+        onUpdate(getAllExpenses());
+      }
+    },
+    (err) => {
+      console.warn('Firestore expenses sync error (falling back to local cache):', err);
+      if (onError) onError(err);
+      onUpdate(getAllExpenses());
+    }
+  );
+
+  return unsubscribe;
+}
+
+/**
+ * Asynchronously save expense document to Firestore
+ */
+export async function addExpenseToDb(expense: Expense, orgId: string = 'org_acme'): Promise<void> {
+  try {
+    const docRef = getExpenseDoc(expense.id, orgId);
+    const sanitized = sanitizeFirestoreData(expense);
+    await setDoc(docRef, sanitized);
+    // Also save to root collection for redundancy
+    await setDoc(doc(db, 'expenses', expense.id), sanitized).catch(() => {});
+    console.log(`[EXPENSE DB] Synchronized claim ${expense.id} to Firestore!`);
+  } catch (err) {
+    console.warn(`[EXPENSE DB] Could not sync claim ${expense.id} to Firestore:`, err);
+  }
+}
+
+/**
+ * Asynchronously update expense document in Firestore
+ */
+export async function updateExpenseInDb(
+  expenseId: string,
+  updates: Partial<Expense>,
+  orgId: string = 'org_acme'
+): Promise<void> {
+  try {
+    const docRef = getExpenseDoc(expenseId, orgId);
+    const sanitized = sanitizeFirestoreData(updates);
+    await updateDoc(docRef, sanitized);
+    await updateDoc(doc(db, 'expenses', expenseId), sanitized).catch(() => {});
+    console.log(`[EXPENSE DB] Updated claim ${expenseId} in Firestore!`);
+  } catch (err) {
+    console.warn(`[EXPENSE DB] Could not update claim ${expenseId} in Firestore:`, err);
+  }
+}
 
 export function getAllExpenses(): Expense[] {
   try {
@@ -37,7 +136,21 @@ export function saveAllExpenses(expenses: Expense[]): void {
 }
 
 export function getEmployeeExpenses(employeeId: string): Expense[] {
-  return getAllExpenses().filter((e) => e.employeeId === employeeId);
+  const all = getAllExpenses();
+  return all.filter((e) => {
+    if (e.employeeId === employeeId) return true;
+    if ((e as any).employeeAlias && (e as any).employeeAlias === employeeId) return true;
+    // Cross-link Alice Walker's claims between UID and emp_101
+    const isAliceParam =
+      employeeId === 'emp_101' ||
+      employeeId === 'pXmBbGDnDwTsrErsGuad8r4Gz4S2' ||
+      employeeId === 'nEqzcEzb0zPDjsvy4tfL8tm2QHl1';
+    const isAliceClaim =
+      e.employeeId === 'emp_101' ||
+      e.employeeId === 'pXmBbGDnDwTsrErsGuad8r4Gz4S2' ||
+      e.employeeId === 'nEqzcEzb0zPDjsvy4tfL8tm2QHl1';
+    return isAliceParam && isAliceClaim;
+  });
 }
 
 export function getExpenseById(expenseId: string): Expense | undefined {
@@ -64,7 +177,7 @@ export function replayLedger(expenses: Expense[]): {
   });
 
   for (const exp of sorted) {
-    const employee = DEMO_EMPLOYEES.find((emp) => emp.id === exp.employeeId) || {
+    const employee = getAllEmployeesList().find((emp) => emp.id === exp.employeeId) || {
       id: exp.employeeId,
       orgId: exp.orgId,
       identity: { email: `${exp.employeeId}@acme.com`, name: exp.employeeId },
@@ -145,7 +258,8 @@ export function submitExpense(newExpense: Expense): {
 } {
   const all = getAllExpenses();
   const policy = getActivePolicy();
-  const employee = DEMO_EMPLOYEES.find((e) => e.id === newExpense.employeeId) || DEMO_EMPLOYEES[0];
+  const allEmps = getAllEmployeesList();
+  const employee = allEmps.find((e) => e.id === newExpense.employeeId) || allEmps[0];
 
   // 1. Authoritative Currency Normalization
   const rawAmount = newExpense.corrected?.total ?? newExpense.extracted?.total?.value ?? 0;
@@ -216,13 +330,16 @@ export function submitExpense(newExpense: Expense): {
   newExpense.verdict = verdict;
   newExpense.status = verdict.status;
 
-  // Append claim
+  // Append claim locally
   all.push(newExpense);
   saveAllExpenses(all);
 
+  // Sync claim to Firestore
+  addExpenseToDb(newExpense, newExpense.orgId || 'org_acme');
+
   // Append-only audit events
   logAuditEvent({
-    orgId: newExpense.orgId,
+    orgId: newExpense.orgId || 'org_acme',
     expenseId: newExpense.id,
     actor: { id: employee.id, name: employee.identity.name, role: employee.role },
     action: 'CLAIM_SUBMITTED',
@@ -236,7 +353,7 @@ export function submitExpense(newExpense: Expense): {
   });
 
   logAuditEvent({
-    orgId: newExpense.orgId,
+    orgId: newExpense.orgId || 'org_acme',
     expenseId: newExpense.id,
     actor: { id: 'system', name: 'Deterministic Evaluator', role: 'admin' },
     action: 'POLICY_EVALUATED',
@@ -315,8 +432,19 @@ export function applyReviewerDecision(params: {
 
   saveAllExpenses(all);
 
+  // Sync to Firestore
+  updateExpenseInDb(
+    expense.id,
+    {
+      reviewerAction: expense.reviewerAction,
+      status: expense.status,
+      verdict: expense.verdict,
+    },
+    expense.orgId || 'org_acme'
+  );
+
   logAuditEvent({
-    orgId: expense.orgId,
+    orgId: expense.orgId || 'org_acme',
     expenseId: expense.id,
     actor: params.reviewer,
     action: `REVIEWER_${params.action.toUpperCase()}`,
@@ -355,8 +483,15 @@ export function resolveDuplicateClaim(params: {
 
   saveAllExpenses(all);
 
+  // Sync to Firestore
+  updateExpenseInDb(
+    expense.id,
+    { duplicateInfo: expense.duplicateInfo },
+    expense.orgId || 'org_acme'
+  );
+
   logAuditEvent({
-    orgId: expense.orgId,
+    orgId: expense.orgId || 'org_acme',
     expenseId: expense.id,
     actor: params.reviewer,
     action: `DUPLICATE_${params.resolutionStatus.toUpperCase()}`,
@@ -401,6 +536,13 @@ export function appendThreadMessage(params: {
   expense.thread.push(msg);
   saveAllExpenses(all);
 
+  // Sync to Firestore
+  updateExpenseInDb(
+    expense.id,
+    { thread: expense.thread },
+    expense.orgId || 'org_acme'
+  );
+
   return expense;
 }
 
@@ -430,8 +572,20 @@ export function applyThreadPatch(params: {
 
   saveAllExpenses(all);
 
+  // Sync to Firestore
+  updateExpenseInDb(
+    expense.id,
+    {
+      thread: expense.thread,
+      context: expense.context,
+      verdict: expense.verdict,
+      status: expense.status,
+    },
+    expense.orgId || 'org_acme'
+  );
+
   logAuditEvent({
-    orgId: expense.orgId,
+    orgId: expense.orgId || 'org_acme',
     expenseId: expense.id,
     actor: params.actor,
     action: 'CONTEXT_PATCH_APPLIED',

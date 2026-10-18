@@ -4,7 +4,7 @@ import {
   X,
   User,
   Bell,
-  Sparkles,
+  Bot,
   Shield,
   CreditCard,
   Database,
@@ -243,7 +243,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 </h4>
                 <div className="p-3.5 bg-[#F8FAFC] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Bot className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <div>
                       <p className="font-medium text-[#0F172A] dark:text-white">Gemini 3.6 Flash Model</p>
                       <p className="text-[11px] text-[#76777D] dark:text-[#94A3B8]">Active backend OCR & Purchase Parser</p>

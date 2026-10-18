@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   Timer,
   Laptop,
-  Sparkles,
+  Bot,
   ArrowRight,
   MoreVertical,
   ShieldCheck,
@@ -138,7 +138,7 @@ export const WarrantiesView: React.FC<WarrantiesViewProps> = ({
           {/* Alert Card 2: AI Claim */}
           <div className="bg-white ai-border-subtle p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.02)] group">
             <div className="absolute top-3.5 right-3.5 text-[#94A3B8]">
-              <Sparkles className="w-3.5 h-3.5" />
+              <Bot className="w-3.5 h-3.5" />
             </div>
             <div className="flex justify-between items-start mb-3">
               <div className="flex items-center gap-3">
@@ -167,7 +167,7 @@ export const WarrantiesView: React.FC<WarrantiesViewProps> = ({
                 }}
                 className="bg-[#0F172A] text-white text-[12px] font-medium px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-[#1E293B] transition-colors cursor-pointer"
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Bot className="w-3.5 h-3.5" />
                 <span>Review AI Claim</span>
               </button>
             </div>

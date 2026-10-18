@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   Send,
   X,
-  Sparkles,
+  Bot,
   Shield,
   PieChart,
   DollarSign,
@@ -17,7 +17,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Expense } from '../../types/expense';
-import { getAllExpenses } from '../../services/expenseService';
+import { getAllExpenses, subscribeExpenses } from '../../services/expenseService';
 import { getActivePolicy } from '../../services/policyService';
 import { getActiveEmployee } from '../../services/employeeService';
 
@@ -30,9 +30,16 @@ export const ReportsView: React.FC = () => {
   const [emailNotes, setEmailNotes] = useState('Attached is the verified monthly expense reimbursement schedule and policy compliance summary for your executive review.');
   const [sendSuccessMsg, setSendSuccessMsg] = useState<string | null>(null);
 
-  const expenses = useMemo(() => getAllExpenses(), []);
+  const [expenses, setExpenses] = useState<Expense[]>(() => getAllExpenses());
   const policy = useMemo(() => getActivePolicy(), []);
   const activeEmployee = getActiveEmployee();
+
+  React.useEffect(() => {
+    const unsubscribe = subscribeExpenses((updated) => {
+      setExpenses(updated);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Filtered claims for the report
   const reportExpenses = useMemo(() => {
@@ -226,7 +233,7 @@ export const ReportsView: React.FC = () => {
           <p className="text-slate-700 leading-relaxed">
             All disbursements listed in this schedule have been audited by deterministic Zod policy schemas without generative LLM hallucination.
             Non-reimbursable alcohol and tobacco items have been excluded with statutory tax apportioned proportionally under <strong>Section 3.1</strong>.
-            Destination city limits (Tier-1 ₹3,000 / Tier-2 ₹1,800) have been resolved via chronological ledger replay under <strong>Section 4.1</strong>.
+            Daily meal limits (₹3,000 / day) have been resolved via chronological ledger replay under <strong>Section 4.1</strong>.
           </p>
         </div>
 

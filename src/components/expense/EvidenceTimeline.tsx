@@ -11,7 +11,7 @@ import {
   Clock,
   ArrowRight,
   Hash,
-  Sparkles,
+  Bot,
   DollarSign,
   AlertCircle,
   Eye,
@@ -92,7 +92,7 @@ export const EvidenceTimeline: React.FC<EvidenceTimelineProps> = ({
         {/* Node 2: Extracted Values vs Corrections */}
         <div className="relative group">
           <div className="absolute -left-6 top-1 w-5 h-5 rounded-full bg-white border-2 border-emerald-600 flex items-center justify-center">
-            <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+            <Bot className="w-2.5 h-2.5 text-emerald-600" />
           </div>
           <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3.5">
             <div className="flex items-center justify-between mb-1.5">

@@ -11,7 +11,9 @@ import {
   simulatePolicyChange,
   detectPolicyConflicts,
   PolicyVersionSchema,
+  parsePolicyFromText,
 } from '../engine';
+import { extractTextFromPdfBase64 } from './pdfExtractor';
 import { getActivePolicy, queryPolicyGrounded } from '../services/policyService';
 import { DEMO_EMPLOYEES } from '../services/employeeService';
 import { Expense, PolicyVersion } from '../types/expense';
@@ -321,6 +323,67 @@ router.post('/api/expense/parse-reply', (req: Request, res: Response) => {
 // ---------------------------------------------------------------------------
 // 8. Policy Ingestion, Conflict Checking & Grounded QA
 // ---------------------------------------------------------------------------
+router.post('/api/policy/extract-pdf', async (req: Request, res: Response) => {
+  try {
+    const { pdfBase64, fileName } = req.body;
+    if (!pdfBase64) {
+      return res.status(400).json({ ok: false, error: 'pdfBase64 is required' });
+    }
+    const result = await extractTextFromPdfBase64(pdfBase64);
+    return res.json({
+      ok: true,
+      text: result.text,
+      pageCount: result.pageCount,
+      wordCount: result.wordCount,
+      characterCount: result.characterCount,
+      fileName,
+    });
+  } catch (error: any) {
+    console.error('Error extracting text from PDF:', error);
+    return res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+router.post('/api/policy/ingest', async (req: Request, res: Response) => {
+  try {
+    let { text, pdfBase64, fileName, policyName } = req.body;
+
+    let extractedPdfInfo: any = null;
+    // 1. If pdfBase64 is provided and text is missing or short, extract text from PDF
+    if (pdfBase64 && (!text || text.trim().length === 0)) {
+      extractedPdfInfo = await extractTextFromPdfBase64(pdfBase64);
+      text = extractedPdfInfo.text;
+    }
+
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ ok: false, error: 'No text or PDF content provided for policy ingestion' });
+    }
+
+    // 2. Synthesize structured policy rules using deterministic engine
+    const ingestion = parsePolicyFromText(text, {
+      policyName: policyName || (fileName ? `Parsed: ${fileName.replace(/\.[^/.]+$/, '')}` : undefined),
+      sourceFileName: fileName,
+    });
+
+    return res.json({
+      ok: true,
+      policy: ingestion.policy,
+      extractedText: text,
+      metadata: {
+        rulesCount: ingestion.extractedRulesCount,
+        ambiguousCount: ingestion.ambiguousClausesCount,
+        conflictsCount: ingestion.conflicts.length,
+        pageCount: extractedPdfInfo?.pageCount || 1,
+        wordCount: extractedPdfInfo?.wordCount || text.split(/\s+/).filter(Boolean).length,
+      },
+      source: 'ingestion_engine',
+    });
+  } catch (error: any) {
+    console.error('Error ingesting policy:', error);
+    return res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
 router.post('/api/policy/conflicts', (req: Request, res: Response) => {
   try {
     const policy = req.body.policy || getActivePolicy();

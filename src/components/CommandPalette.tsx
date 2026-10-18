@@ -8,7 +8,7 @@ import {
   Vault,
   BarChart3,
   Calendar,
-  Sparkles,
+  Bot,
   ArrowRight,
   X,
   Loader2,
@@ -112,7 +112,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     },
     {
       label: 'Scan & Ingest Receipt (AI)',
-      icon: Sparkles,
+      icon: Bot,
       action: () => {
         onClose();
         openScanner();
@@ -193,7 +193,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           />
           {semanticResults && (
             <span className="flex items-center gap-1 font-mono-code text-[10px] text-[#0F172A] bg-[#F1F5F9] px-2 py-0.5 rounded-md border border-[#E2E8F0]">
-              <Sparkles className="w-3 h-3" /> AI Matched
+              <Bot className="w-3 h-3" /> AI Matched
             </span>
           )}
           <kbd className="font-mono-code text-[10px] text-[#76777D] bg-[#F1F5F9] px-2 py-0.5 rounded-md border border-[#E2E8F0]">
@@ -207,7 +207,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           {semanticResults && semanticResults.length > 0 && (
             <div className="pb-2">
               <span className="px-2 py-1 flex items-center gap-1 text-[10px] font-mono-code uppercase text-[#0F172A] font-semibold">
-                <Sparkles className="w-3 h-3" />
+                <Bot className="w-3 h-3" />
                 Gemini Semantic Matches ({semanticResults.length})
               </span>
               {semanticResults.map((match) => {

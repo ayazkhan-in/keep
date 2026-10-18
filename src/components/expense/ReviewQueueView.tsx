@@ -18,12 +18,17 @@ import {
   ChevronDown,
   DollarSign,
   AlertOctagon,
-  Sparkles,
+  Bot,
   Users,
   Building,
 } from 'lucide-react';
 import { Expense, ClaimStatus, UserRole } from '../../types/expense';
-import { getAllExpenses, applyReviewerDecision, resolveDuplicateClaim } from '../../services/expenseService';
+import {
+  getAllExpenses,
+  applyReviewerDecision,
+  resolveDuplicateClaim,
+  subscribeExpenses,
+} from '../../services/expenseService';
 import { getActiveEmployee } from '../../services/employeeService';
 import { VerdictCard } from './VerdictCard';
 import { EvidenceTimeline } from './EvidenceTimeline';
@@ -43,6 +48,14 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({ initialTab = '
   const [searchQuery, setSearchQuery] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+
+  // Real-time Firestore sync
+  React.useEffect(() => {
+    const unsubscribe = subscribeExpenses((updated) => {
+      setExpenses(updated);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Modals
   const [timelineExpense, setTimelineExpense] = useState<Expense | null>(null);
@@ -184,7 +197,7 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({ initialTab = '
       case 'auto_approved':
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-            <Sparkles className="w-3 h-3 text-emerald-600" />
+            <Bot className="w-3 h-3 text-emerald-600" />
             Auto-Approved
           </span>
         );
@@ -333,7 +346,7 @@ export const ReviewQueueView: React.FC<ReviewQueueViewProps> = ({ initialTab = '
         <div className="p-3.5 bg-white dark:bg-[#11161B] border border-[#E2E8F0] dark:border-[#1E293B] rounded-xl shadow-2xs">
           <div className="flex items-center justify-between text-[#64748B] dark:text-slate-400">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Touchless Ready</span>
-            <Sparkles className="w-4 h-4 text-emerald-500" />
+            <Bot className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{metrics.autoApprovedCount}</span>

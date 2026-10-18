@@ -19,8 +19,8 @@ import {
   FileText,
 } from 'lucide-react';
 import { Employee, Expense } from '../../types/expense';
-import { DEMO_EMPLOYEES } from '../../services/employeeService';
-import { getAllExpenses } from '../../services/expenseService';
+import { getAllEmployeesList } from '../../services/employeeService';
+import { getAllExpenses, subscribeExpenses } from '../../services/expenseService';
 import { getActivePolicy } from '../../services/policyService';
 
 export const EmployeesView: React.FC = () => {
@@ -28,13 +28,37 @@ export const EmployeesView: React.FC = () => {
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
   const [inspectEmployee, setInspectEmployee] = useState<Employee | null>(null);
 
-  const expenses = useMemo(() => getAllExpenses(), []);
+  const [expenses, setExpenses] = useState<Expense[]>(() => getAllExpenses());
   const policy = useMemo(() => getActivePolicy(), []);
+
+  // Real-time Firestore sync
+  React.useEffect(() => {
+    const unsubscribe = subscribeExpenses((updated) => {
+      setExpenses(updated);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Compute metrics per employee
   const employeeData = useMemo(() => {
-    return DEMO_EMPLOYEES.map((emp) => {
-      const empExpenses = expenses.filter((e) => e.employeeId === emp.id);
+    const allEmps = getAllEmployeesList();
+    // Unique employees by email
+    const seen = new Set<string>();
+    const uniqueEmployees = allEmps.filter((emp) => {
+      const email = emp.identity.email.toLowerCase();
+      if (seen.has(email)) return false;
+      seen.add(email);
+      return true;
+    });
+
+    return uniqueEmployees.map((emp) => {
+      const empExpenses = expenses.filter(
+        (e) =>
+          e.employeeId === emp.id ||
+          (e as any).employeeAlias === emp.id ||
+          ((emp.id === 'emp_101' || emp.identity.email.includes('employee@keepr') || emp.identity.email.includes('alice.walker')) &&
+           (e.employeeId === 'emp_101' || e.employeeId === 'pXmBbGDnDwTsrErsGuad8r4Gz4S2' || e.employeeId === 'nEqzcEzb0zPDjsvy4tfL8tm2QHl1'))
+      );
 
       let totalSubmitted = empExpenses.length;
       let approvedAmountMinor = 0;
@@ -100,9 +124,9 @@ export const EmployeesView: React.FC = () => {
 
   const departments = useMemo(() => {
     const set = new Set<string>();
-    DEMO_EMPLOYEES.forEach((e) => set.add(e.department));
+    employeeData.forEach((d) => set.add(d.employee.department));
     return Array.from(set);
-  }, []);
+  }, [employeeData]);
 
   return (
     <div className="space-y-6">
@@ -121,7 +145,7 @@ export const EmployeesView: React.FC = () => {
         {/* Global summary badge */}
         <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-[#E2E8F0] rounded-xl text-xs shadow-2xs">
           <span className="text-[#64748B]">Active Staff:</span>
-          <span className="font-bold text-[#0F172A]">{DEMO_EMPLOYEES.length} Members</span>
+          <span className="font-bold text-[#0F172A]">{employeeData.length} Members</span>
           <span className="text-[#94A3B8]">•</span>
           <span className="font-mono-code font-bold text-emerald-700">
             ₹{employeeData.reduce((acc, d) => acc + d.approvedAmount, 0).toLocaleString()} Reimbursed
@@ -227,7 +251,7 @@ export const EmployeesView: React.FC = () => {
                 {/* Minimal Allowance Meter */}
                 <div className="space-y-1">
                   <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-                    <span>Allowance: {data.cityTier}</span>
+                    <span>Daily Meal Allowance</span>
                     <span className="font-mono-code font-bold text-slate-800">{data.allowancePercent}% used</span>
                   </div>
                   <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
@@ -291,7 +315,7 @@ export const EmployeesView: React.FC = () => {
                   <span className="text-slate-400 text-[10px] uppercase font-mono-code">Home Station</span>
                   <div className="font-bold text-slate-900 mt-0.5">{inspectEmployee.homeCity}</div>
                   <div className="text-[11px] text-emerald-600 font-medium">
-                    {policy.cityTiers[inspectEmployee.homeCity] || 'Tier-1'} Destination Tier
+                    Corporate Hub
                   </div>
                 </div>
 

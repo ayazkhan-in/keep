@@ -17,7 +17,6 @@ import {
   DollarSign,
   Calendar,
   Building2,
-  Sparkles,
   ExternalLink,
   ChevronDown,
   Loader2,

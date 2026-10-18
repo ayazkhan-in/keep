@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp,
-  Sparkles,
   BarChart3,
   DollarSign,
   ShieldCheck,
@@ -230,7 +229,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         className="space-y-3"
       >
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#0F172A]" />
+          <Bot className="w-4 h-4 text-[#0F172A]" />
           <h3 className="font-mono-code text-[11px] uppercase tracking-wider text-[#76777D] font-semibold">
             Keepr Intelligence Insights
           </h3>

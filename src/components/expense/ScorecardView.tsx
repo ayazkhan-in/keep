@@ -11,7 +11,7 @@ import {
   DollarSign,
   TrendingUp,
   FileCheck2,
-  Sparkles,
+  Bot,
   Users,
   Search,
   Filter,
@@ -106,7 +106,7 @@ export const ScorecardView: React.FC = () => {
             <div className="p-4 bg-white border border-[#E2E8F0] rounded-xl shadow-2xs">
               <div className="flex items-center justify-between text-[#64748B]">
                 <span className="text-[10px] font-mono-code uppercase tracking-wider font-semibold">Touchless Rate</span>
-                <Sparkles className="w-4 h-4 text-emerald-600" />
+                <Bot className="w-4 h-4 text-emerald-600" />
               </div>
               <div className="mt-1 flex items-baseline gap-1.5">
                 <span className="text-2xl font-bold text-emerald-700">

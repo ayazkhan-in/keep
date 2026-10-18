@@ -6,7 +6,6 @@ import {
   User as UserIcon,
   LogIn,
   AlertCircle,
-  Sparkles,
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
@@ -29,8 +28,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 }) => {
   const [selectedRole, setSelectedRole] = useState<UserRole>('employee');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-  const [email, setEmail] = useState('alice.walker@acme.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('employee@keepr.com');
+  const [password, setPassword] = useState('KeeprEmployee2026!');
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,27 +41,45 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const handleRoleApply = (role: UserRole) => {
     setSelectedRole(role);
     if (role === 'finance') {
-      setEmail('frank.castle@acme.com');
+      setEmail('auditor@keepr.com');
+      setPassword('KeeprAuditor2026!');
       setActiveRole('finance');
-      setActiveEmployee('emp_106');
+      setActiveEmployee('3OcwLiDA6vURaNXWvXXv8ZONgQs2');
     } else {
-      setEmail('alice.walker@acme.com');
+      setEmail('employee@keepr.com');
+      setPassword('KeeprEmployee2026!');
       setActiveRole('employee');
-      setActiveEmployee('emp_101');
+      setActiveEmployee('pXmBbGDnDwTsrErsGuad8r4Gz4S2');
     }
   };
 
-  const handleQuickRoleEnter = (role: UserRole) => {
-    if (role === 'finance') {
-      setActiveRole('finance');
-      setActiveEmployee('emp_106');
-      handleRoleChange('finance');
-    } else {
-      setActiveRole('employee');
-      setActiveEmployee('emp_101');
-      handleRoleChange('employee');
+  const handleQuickRoleEnter = async (role: UserRole) => {
+    setError(null);
+    setLoading(true);
+    try {
+      const targetEmail = role === 'finance' ? 'auditor@keepr.com' : 'employee@keepr.com';
+      const targetPass = role === 'finance' ? 'KeeprAuditor2026!' : 'KeeprEmployee2026!';
+      if (role === 'finance') {
+        setActiveRole('finance');
+        handleRoleChange('finance');
+      } else {
+        setActiveRole('employee');
+        handleRoleChange('employee');
+      }
+      await signInWithEmail(targetEmail, targetPass);
+      onLoginSuccess();
+    } catch (err: any) {
+      console.warn('Quick login notice:', err);
+      // Fallback local switch if network is restricted
+      if (role === 'finance') {
+        handleRoleChange('finance');
+      } else {
+        handleRoleChange('employee');
+      }
+      onLoginSuccess();
+    } finally {
+      setLoading(false);
     }
-    onLoginSuccess();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,20 +88,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setLoading(true);
 
     try {
-      if (selectedRole === 'finance') {
-        setActiveRole('finance');
-        setActiveEmployee('emp_106');
-        handleRoleChange('finance');
-      } else {
-        setActiveRole('employee');
-        setActiveEmployee('emp_101');
-        handleRoleChange('employee');
-      }
-
       if (mode === 'signin') {
         await signInWithEmail(email, password);
       } else {
         await signUpWithEmail(email, password, displayName);
+      }
+
+      if (selectedRole === 'finance') {
+        setActiveRole('finance');
+        handleRoleChange('finance');
+      } else {
+        setActiveRole('employee');
+        handleRoleChange('employee');
       }
       onLoginSuccess();
     } catch (err: any) {
@@ -98,19 +113,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setError(null);
     setLoading(true);
     try {
+      // Prompt user to select Google account and wait for authentication
+      await signInWithGoogle();
+
+      // Apply clearance role and route to portal only after successful sign-in
       if (selectedRole === 'finance') {
         setActiveRole('finance');
-        setActiveEmployee('emp_106');
         handleRoleChange('finance');
       } else {
         setActiveRole('employee');
-        setActiveEmployee('emp_101');
         handleRoleChange('employee');
       }
-      await signInWithGoogle();
       onLoginSuccess();
     } catch (err: any) {
-      setError(err?.message || 'Google sign-in failed.');
+      if (err?.code !== 'auth/popup-closed-by-user') {
+        setError(err?.message || 'Google sign-in failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -247,10 +265,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <div className="flex items-center justify-between px-2.5 py-1.5 mb-3 bg-slate-50 dark:bg-[#151B22] rounded-lg border border-slate-200/70 dark:border-[#212C36] text-[11px]">
             <div className="flex items-center gap-1.5 text-slate-600 dark:text-[#CBD5E1] truncate">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-              <span className="truncate">
+              <span className="truncate font-mono-code text-[10.5px]">
                 {selectedRole === 'finance'
-                  ? 'Frank Castle (Finance Auditor)'
-                  : 'Alice Walker (Employee • emp_101)'}
+                  ? 'auditor@keepr.com • KeeprAuditor2026!'
+                  : 'employee@keepr.com • KeeprEmployee2026!'}
               </span>
             </div>
             <button
@@ -258,7 +276,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               onClick={() => handleQuickRoleEnter(selectedRole)}
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 shrink-0 cursor-pointer"
             >
-              <span>1-Click In</span>
+              <span>1-Click Sign In</span>
               <ArrowRight className="w-3 h-3" />
             </button>
           </div>

@@ -8,7 +8,6 @@ import {
   Calendar,
   Filter,
   Search,
-  Sparkles,
   DollarSign,
   Building,
   Users,

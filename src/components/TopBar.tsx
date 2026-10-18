@@ -11,7 +11,7 @@ import {
   ShieldAlert,
   CheckCircle2,
   FileText,
-  Sparkles,
+  Bot,
   User as UserIcon,
   LogOut,
   LogIn,
@@ -23,7 +23,6 @@ import {
   Vault,
   BarChart3,
   Clock,
-  Bot,
   FileSpreadsheet,
   FilePlus2,
   Receipt,
@@ -197,7 +196,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           className="p-2 sm:px-3 sm:py-2 bg-[#F9F9FB] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] hover:border-emerald-500 dark:hover:border-emerald-500 text-[#0F172A] dark:text-[#F1F5F9] rounded-xl text-xs sm:text-[13px] font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
           title="Ask Keepr AI Assistant"
         >
-          <Sparkles className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-600 dark:text-emerald-400" />
+          <Bot className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-emerald-600 dark:text-emerald-400" />
           <span className="hidden sm:inline">Ask AI</span>
         </button>
 
@@ -390,7 +389,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                           }}
                           className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
                             isActive
-                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 font-semibold'
+                              ? 'bg-[#F1F5F9] dark:bg-[#1E293B] text-[#0F172A] dark:text-white font-semibold'
                               : 'text-[#475569] dark:text-[#94A3B8] hover:bg-[#F8FAFC] dark:hover:bg-[#151B22] hover:text-[#0F172A] dark:hover:text-white'
                           }`}
                         >
@@ -431,7 +430,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   }}
                   className="py-2.5 px-3 bg-[#F9F9FB] dark:bg-[#151B22] border border-[#E2E8F0] dark:border-[#212C36] text-[#0F172A] dark:text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer hover:bg-[#F1F5F9] dark:hover:bg-[#1E293B]"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <Bot className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>Ask AI</span>
                 </button>
               </div>

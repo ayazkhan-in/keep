@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Sparkles,
+  Bot,
   Search,
   CheckCircle2,
   AlertTriangle,
@@ -37,7 +37,7 @@ export const EmployeePolicyAssistant: React.FC<EmployeePolicyAssistantProps> = (
   const sampleQuestions = [
     'Can I expense a cab after 10 pm?',
     'Is alcohol covered with client dinner?',
-    'What is the daily meal cap in Mumbai?',
+    'What is the daily meal cap allowance?',
     'What is the receipt submission deadline?',
     'What approval is needed for ₹15,000?',
   ];
@@ -71,7 +71,7 @@ export const EmployeePolicyAssistant: React.FC<EmployeePolicyAssistantProps> = (
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
-            <Sparkles className="w-4 h-4" />
+            <Bot className="w-4 h-4" />
           </div>
           <div>
             <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2">

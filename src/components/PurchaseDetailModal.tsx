@@ -7,7 +7,7 @@ import {
   Download,
   Trash2,
   FileText,
-  Sparkles,
+  Bot,
   ExternalLink,
   Calendar,
   CreditCard,
@@ -223,7 +223,7 @@ export const PurchaseDetailModal: React.FC<PurchaseDetailModalProps> = ({
               {purchase.aiConfidence && (
                 <div className="p-3.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl flex items-center justify-between text-[12px]">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#0F172A]" />
+                    <Bot className="w-4 h-4 text-[#0F172A]" />
                     <span className="text-[#45464D]">{purchase.aiExtractedNotes || 'Verified by Keepr OCR Engine'}</span>
                   </div>
                   <span className="font-mono-code text-[11px] text-[#10B981] font-semibold">
@@ -290,7 +290,7 @@ export const PurchaseDetailModal: React.FC<PurchaseDetailModalProps> = ({
 
                   <div className="p-4 bg-white border border-[#E2E8F0] rounded-2xl space-y-2 text-[13px]">
                     <h4 className="font-semibold text-[#0F172A] text-[12px] font-mono-code uppercase text-[#76777D] flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#0F172A]" />
+                      <Bot className="w-3.5 h-3.5 text-[#0F172A]" />
                       AI Resale Recommendation
                     </h4>
                     <p className="text-[#0F172A] font-medium">
@@ -358,7 +358,7 @@ export const PurchaseDetailModal: React.FC<PurchaseDetailModalProps> = ({
                     }}
                     className="px-4 py-2 bg-[#0F172A] text-white text-[12px] font-medium rounded-xl hover:bg-[#1E293B] flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Bot className="w-3.5 h-3.5" />
                     <span>Generate AI Claim</span>
                   </button>
                 </div>
@@ -412,7 +412,7 @@ export const PurchaseDetailModal: React.FC<PurchaseDetailModalProps> = ({
                     }}
                     className="px-4 py-2 bg-[#0F172A] text-white text-[12px] font-medium rounded-xl hover:bg-[#1E293B] flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Bot className="w-3.5 h-3.5" />
                     <span>Draft Return Email</span>
                   </button>
                 </div>

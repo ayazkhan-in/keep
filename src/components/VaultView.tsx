@@ -13,7 +13,7 @@ import {
   FileCheck,
   ExternalLink,
   X,
-  Sparkles,
+  Bot,
   Loader2,
   AlertTriangle,
   FileSearch,
@@ -278,7 +278,7 @@ TAX & COMPLIANCE:
 
               <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-2xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <span className="bg-white text-[#0F172A] text-[12px] font-medium px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> AI Deep Audit
+                  <Bot className="w-3.5 h-3.5" /> AI Deep Audit
                 </span>
               </div>
 
@@ -311,7 +311,7 @@ TAX & COMPLIANCE:
                     className="p-1.5 text-[#45464D] hover:text-[#0F172A] rounded-lg hover:bg-[#F1F5F9] transition-colors cursor-pointer"
                     title="Audit with Gemini"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Bot className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDownloadDoc(item)}

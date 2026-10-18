@@ -140,7 +140,7 @@ export function MinimalSelect<T extends string = string>({
                   }}
                   className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all text-left cursor-pointer ${
                     isSelected
-                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 font-semibold border border-emerald-200 dark:border-emerald-800'
+                      ? 'bg-[#F1F5F9] dark:bg-[#1E293B] text-[#0F172A] dark:text-white font-semibold border border-[#E2E8F0] dark:border-[#2D3748]'
                       : 'text-[#475569] dark:text-[#94A3B8] hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B] hover:text-[#0F172A] dark:hover:text-white border border-transparent font-medium'
                   }`}
                 >
@@ -148,7 +148,7 @@ export function MinimalSelect<T extends string = string>({
                     {Icon && (
                       <Icon
                         className={`w-3.5 h-3.5 ${
-                          isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#94A3B8]'
+                          isSelected ? 'text-[#0F172A] dark:text-white' : 'text-[#94A3B8]'
                         }`}
                       />
                     )}
@@ -160,7 +160,7 @@ export function MinimalSelect<T extends string = string>({
                       <span
                         className={`text-[10px] font-mono-code px-1.5 py-0.2 rounded-full ${
                           isSelected
-                            ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300'
+                            ? 'bg-[#E2E8F0] dark:bg-[#334155] text-[#334155] dark:text-slate-200'
                             : 'bg-[#F1F5F9] dark:bg-[#1E293B] text-[#64748B] dark:text-[#94A3B8]'
                         }`}
                       >

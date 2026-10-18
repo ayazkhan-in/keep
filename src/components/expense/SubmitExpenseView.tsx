@@ -24,7 +24,7 @@ import {
   Plane,
   MapPin,
   RotateCcw,
-  Sparkles,
+  Bot,
   Loader2,
   ExternalLink,
 } from 'lucide-react';
@@ -1284,7 +1284,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
                     <Plane className="w-4 h-4 text-emerald-600" />
                     <div>
                       <span className="font-semibold text-slate-800 block">{suggestedTripName}</span>
-                      <span className="text-[11px] text-slate-500">{city} ({policy.cityTiers[city] || 'Tier-1'})</span>
+                      <span className="text-[11px] text-slate-500">{city}</span>
                     </div>
                   </div>
                   <button
@@ -1485,7 +1485,7 @@ export const SubmitExpenseView: React.FC<SubmitExpenseViewProps> = ({
             {/* Daily Cap Meter */}
             <div className="pt-3 border-t border-slate-100">
               <div className="flex justify-between text-xs text-slate-600 mb-1.5">
-                <span>Daily Allowance Meter ({policy.cityTiers[city] || 'Tier-1'} Meals):</span>
+                <span>Daily Allowance Meter (Meals):</span>
                 <span className="font-semibold text-slate-800">₹{totalNum} of ₹3,000 allowance</span>
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">

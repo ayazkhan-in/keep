@@ -8,7 +8,7 @@ import {
   Printer,
   Save,
   CheckCircle2,
-  Sparkles,
+  Bot,
   Building2,
   User,
   CreditCard,
@@ -403,7 +403,7 @@ export const CreateInvoiceView: React.FC<CreateInvoiceViewProps> = ({
       {/* Preset Quick Fill Bar */}
       <div className="bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl p-2.5 flex items-center justify-between flex-wrap gap-2 text-xs">
         <div className="flex items-center gap-2 text-[#45464D]">
-          <Sparkles className="w-3.5 h-3.5 text-[#0F172A]" />
+          <Bot className="w-3.5 h-3.5 text-[#0F172A]" />
           <span className="font-medium">Quick Template Presets:</span>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">

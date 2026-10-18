@@ -7,4 +7,5 @@ export * from './integrity';
 export * from './fx';
 export * from './tripBundler';
 export * from './simulator';
+export * from './policyIngestion';
 export * from '../types/expense';

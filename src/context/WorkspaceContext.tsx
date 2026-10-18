@@ -8,23 +8,24 @@ import {
   InvoiceStatus,
 } from '../types';
 import { UserRole } from '../types/expense';
-import { INITIAL_PURCHASES, INITIAL_ACTIONS } from '../data/mockData';
-import { INITIAL_INVOICES } from '../data/mockInvoices';
+import { INITIAL_ACTIONS } from '../data/mockData';
 import {
   subscribePurchases,
   addPurchaseToDb,
   deletePurchaseFromDb,
-  seedPurchasesIfEmpty,
 } from '../services/purchaseService';
 import {
   subscribeInvoices,
   addInvoiceToDb,
   updateInvoiceInDb,
   deleteInvoiceFromDb,
-  seedInvoicesIfEmpty,
 } from '../services/invoiceService';
-import { getAllExpenses, saveAllExpenses, replayLedger } from '../services/expenseService';
-import { SYNTHETIC_EXPENSES } from '../data/syntheticClaims';
+import {
+  getAllExpenses,
+  saveAllExpenses,
+  replayLedger,
+  subscribeExpenses,
+} from '../services/expenseService';
 import { getActiveRole, setActiveRole } from '../services/employeeService';
 import { useAuth } from './AuthContext';
 import { getPathToView, VIEW_TO_PATH, ROUTES } from '../routes/routeConfig';
@@ -146,17 +147,13 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   };
 
-  // Auto-seed synthetic claims if storage is empty
+  // Real-time synchronization of corporate expense claims from database
   useEffect(() => {
-    try {
-      const existing = getAllExpenses();
-      if (!existing || existing.length === 0) {
-        saveAllExpenses(SYNTHETIC_EXPENSES);
-        replayLedger(SYNTHETIC_EXPENSES);
-      }
-    } catch (err) {
-      console.warn('Expense seeding notice:', err);
-    }
+    const unsubscribeExpenses = subscribeExpenses((allExpenses) => {
+      // Replay ledger on fresh database updates
+      replayLedger(allExpenses);
+    });
+    return () => unsubscribeExpenses();
   }, []);
 
   // Purchases state & local cache
@@ -167,7 +164,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } catch (e) {
       console.error(e);
     }
-    return INITIAL_PURCHASES;
+    return [];
   });
 
   // Invoices state & local cache
@@ -178,7 +175,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     } catch (e) {
       console.error(e);
     }
-    return INITIAL_INVOICES;
+    return [];
   });
 
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
@@ -198,17 +195,13 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
     mode: 'warranty_claim',
   });
 
-  // Subscribe to real-time Firestore updates
+  // Subscribe to real-time Firestore updates for purchases and invoices
   useEffect(() => {
     const userId = user?.uid;
-    seedPurchasesIfEmpty(INITIAL_PURCHASES, userId);
-    seedInvoicesIfEmpty(INITIAL_INVOICES, userId);
 
     const unsubscribePurchases = subscribePurchases(
       (items) => {
-        if (items && items.length > 0) {
-          setPurchases(items);
-        }
+        setPurchases(items || []);
         setDbConnected(true);
       },
       (_error) => {
@@ -219,9 +212,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     const unsubscribeInvoices = subscribeInvoices(
       (items) => {
-        if (items && items.length > 0) {
-          setInvoices(items);
-        }
+        setInvoices(items || []);
       },
       (err) => {
         console.warn('Invoices sync error:', err);
